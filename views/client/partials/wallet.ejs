@@ -1,26 +1,26 @@
 <section class="wallet-card">
     <div class="wallet-header">
         <div class="wallet-title-group">
-            <p class="wallet-label">Total Wallet Balance</p>
-            <h3 class="wallet-amount">₹ 12,450.00</h3>
+            <p class="wallet-label"> Wallet </p>
+            <!-- <h3 class="wallet-amount">₹ 12,450.00</h3> -->
         </div>
-        <div class="wallet-icon" aria-hidden="true">
+        <!-- <div class="wallet-icon" aria-hidden="true">
             <i class="fa-solid fa-wallet"></i>
-        </div>
+        </div> -->
     </div>
 
     <div class="wallet-stats">
         <div class="stat-item">
             <span class="stat-label">Available Balance</span>
-            <strong class="stat-val">₹ 8,200</strong>
+            <strong class="stat-val">₹ <%= wallet.availableBalance %></strong>
         </div>
         <div class="stat-item">
             <span class="stat-label">Won Prizepool</span>
-            <strong class="stat-val">₹ 3,250</strong>
+            <strong class="stat-val">₹ <%= wallet.prizePool %> </strong>
         </div>
         <div class="stat-item highlight">
-            <span class="stat-label">Bonus Cash</span>
-            <strong class="stat-val">₹ 1,000</strong>
+            <span class="stat-label">Total Cash</span>
+            <strong class="stat-val">₹ <%= wallet.prizePool + wallet.availableBalance %></strong>
         </div>
     </div>
 

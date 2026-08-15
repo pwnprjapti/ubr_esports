@@ -20,7 +20,7 @@
                     <div class="add-tournament-card">
                         <h1>Add Tournament</h1>
 
-                        <form class="tournament-form" onsubmit="event.preventDefault(); alert('Tournament added successfully!');">
+                        <form class="tournament-form" method="post">
                             <!-- Select Category Dropdown -->
                             <div class="form-group">
                                 <label for="tournamentCategory">Select Category</label>
@@ -30,11 +30,12 @@
                                     class="form-input" 
                                     required
                                 >
-                                    <option value="" disabled selected>-- Choose Category --</option>
-                                    <option value="daily-scrims">Daily BGMI Scrims</option>
-                                    <option value="cash-tournaments">Paid Cash Tournaments</option>
-                                    <option value="custom-rooms">Squad Custom Rooms</option>
-                                    <option value="anti-cheat">Anti-Cheat Verified Events</option>
+                                <option value="" disabled selected>-- Choose Category --</option>
+
+                                <% for (const category of categories ){  %>
+                                    <option value="<%= category.title %>"><%= category.title %></option>
+                                    
+                                <% } %>
                                 </select>
                             </div>
 
@@ -64,7 +65,7 @@
                                     >
                                 </div>
 
-                                <div class="form-group">
+                                <!-- <div class="form-group">
                                     <label for="matchTime">Match Time</label>
                                     <input 
                                         type="time" 
@@ -73,7 +74,7 @@
                                         class="form-input" 
                                         required
                                     >
-                                </div>
+                                </div> -->
                             </div>
 
                             <!-- Total Slots & Entry Fee -->
@@ -130,7 +131,7 @@
                             </div>
 
                             <!-- Submit Button -->
-                            <button type="submit" class="submit-btn">
+                            <button type="submit" id="submitbtn" class="submit-btn">
                                 Submit Tournament
                             </button>
                         </form>
@@ -141,5 +142,52 @@
             <%- include("../partials/footer") %>
         </div>
     </div>
+
+    <script>
+        const category = document.getElementById("tournamentCategory");
+        const title = document.getElementById("tournamentTitle");
+        const date = document.getElementById("matchDate");
+        const slots = document.getElementById("totalSlots");
+        const entryFee = document.getElementById("entryFee");
+        const prizePool = document.getElementById("prizePool");
+        const idpTiming = document.getElementById("idpTiming");
+        const submitbtn = document.getElementById("submitbtn");
+
+        async function submitData(e) {
+            e.preventDefault();
+
+            const data = {
+                date:date.value,
+                title:title.value,
+                prizePool:prizePool.value, 
+                slots:slots.value,
+                entryFee:entryFee.value,
+                idpTimings:idpTiming.value,
+            }
+
+            const category_ = category.value;
+
+           try{
+                console.log(data);
+
+            const res = await fetch("http://localhost:3000/admin/addtournament", {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify({data, category:category_})
+            });
+
+            const result = await res.json();
+
+            console.log(result);
+           }catch(err){
+            console.log(err);
+           }
+        }
+
+
+       submitbtn.addEventListener("click", submitData);
+    </script>
 </body>
 </html>

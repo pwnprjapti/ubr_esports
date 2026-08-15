@@ -131,6 +131,8 @@
 
     <script>
         const teamLogoInput = document.getElementById('teamLogo');
+        const teamName = document.getElementById('teamName');
+        const whatsappNumber = document.getElementById('whatsappNumber');
         const uploadBox = document.getElementById('uploadBox');
         const uploadPlaceholder = document.getElementById('uploadPlaceholder');
         const uploadPreviewContainer = document.getElementById('uploadPreviewContainer');
@@ -177,24 +179,54 @@
         });
 
         // Form Submit Handler
-        function handleTeamSubmit(e) {
+       async function handleTeamSubmit(e) {
             e.preventDefault();
             
-            const originalBtnHtml = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+           const payload = {
+    teamName: teamName.value.trim(),
+    whatsappNumber: whatsappNumber.value.trim(),
+    teamLogo: teamLogoInput.files[0] ? teamLogoInput.files[0].name : ''
+  };
 
-            setTimeout(() => {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnHtml;
+  console.log(payload);
 
-                // Show toast
-                successToast.classList.add('show');
-                setTimeout(() => {
-                    successToast.classList.remove('show');
-                }, 3500);
-            }, 600);
+            try{
+               const originalBtnHtml = submitBtn.innerHTML;
+               submitBtn.disabled = true;
+               submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+
+               console.log("hello")
+               const res = await fetch(`http://localhost:3000/team-settings`, {
+                method:'POST',
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify(payload)
+               });
+
+               const result = await res.json();
+
+               console.log(result);
+
+               submitBtn.disabled = false;
+               submitBtn.innerHTML = 'Team added';
+
+            } catch (err){
+                console.log(err);
+            }
+            // setTimeout(() => {
+            //     submitBtn.disabled = false;
+            //     submitBtn.innerHTML = originalBtnHtml;
+
+            //     // Show toast
+            //     successToast.classList.add('show');
+            //     setTimeout(() => {
+            //         successToast.classList.remove('show');
+            //     }, 3500);
+            // }, 600);
         }
+
+        submitBtn.addEventListener("click", handleTeamSubmit);
     </script>
 </body>
 </html>

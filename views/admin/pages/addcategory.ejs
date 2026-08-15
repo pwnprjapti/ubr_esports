@@ -20,7 +20,7 @@
                     <div class="add-category-card">
                         <h1>Add Category</h1>
 
-                        <form class="category-form" onsubmit="event.preventDefault(); alert('Category submitted successfully!');">
+                        <form class="category-form" method="post">
                             <!-- 1. Category Name Field -->
                             <div class="form-group">
                                 <label for="categoryName">Category Name</label>
@@ -61,7 +61,7 @@
                             </div>
 
                             <!-- 4. Submit Button -->
-                            <button type="submit" class="submit-btn">
+                            <button type="submit" id="submitButton" class="submit-btn">
                                 Submit
                             </button>
                         </form>
@@ -72,5 +72,41 @@
             <%- include("../partials/footer") %>
         </div>
     </div>
+
+
+    <script>
+        const categoryName = document.getElementById("categoryName");
+        const categoryPicture = document.getElementById("categoryPicture");
+        const categoryDescription = document.getElementById("categoryDescription");
+        const submitButton = document.getElementById("submitButton");
+
+        async function submitData(e){
+            e.preventDefault();
+          try{
+
+            const data = {
+                 title:categoryName.value,
+                 description:categoryDescription.value,
+                 img:categoryPicture.files[0] ? categoryPicture.files[0].name : ''
+            }
+
+            console.log(data);
+            const res = await fetch("http://localhost:3000/admin/addcategory", {  
+                method:'POST',
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify(data)
+            });
+
+            const result = await res.json();
+            console.log(result);
+          }catch(err){
+                console.log(err)
+          }
+        }
+
+        submitButton.addEventListener("click", submitData);
+    </script>
 </body>
 </html>

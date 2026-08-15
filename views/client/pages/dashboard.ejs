@@ -16,8 +16,8 @@
         <%- include("../partials/nav") %>
 
         <main class="main-content">
-            <h1>Welcome Back Dear, <span style="color:rgb(253, 31, 31);">Pawan</span> </h1>
-             <%- include("../partials/wallet") %>
+            <h1>Welcome Back, <span style="color:rgb(253, 31, 31);"><%= user.name %></span> </h1>
+             <%- include("../partials/wallet", { wallet:user.balance}) %>
              
             <!-- <section class="hero">
                 <div class="hero-badge">
