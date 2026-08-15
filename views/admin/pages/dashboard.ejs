@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Admin Dashboard | UBR Esports</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css">
+    <link rel="stylesheet" href="/css/admin/dashboard.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="page-title-bar">
+                    <div>
+                        <h1 class="page-heading">Dashboard</h1>
+                        <p class="page-sub">Quick overview of tournaments, teams & payouts.</p>
+                    </div>
+                </div>
+
+                <!-- 3 Simple Key Stats -->
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-red">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Tournaments</span>
+                            <span class="stat-num">8</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Registered Teams</span>
+                            <span class="stat-num">24</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon icon-yellow">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Pending Withdrawals</span>
+                            <span class="stat-num">3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Tournaments Table -->
+                <div class="content-card">
+                    <div class="card-header-flex">
+                        <h2 class="card-title"><i class="fa-solid fa-gamepad"></i> Active Categories</h2>
+                        <a href="/admin/category" class="btn-link">View All</a>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Tournament Name</th>
+                                    <th>Map</th>
+                                    <th>Slots</th>
+                                    <th>Prize Pool</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>BGMI Daily Pro Scrims</strong></td>
+                                    <td>Erangel</td>
+                                    <td>18 / 20</td>
+                                    <td><span class="text-green">₹5,000</span></td>
+                                    <td><span class="badge badge-green">Live</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Daily Cash Cup</strong></td>
+                                    <td>Miramar</td>
+                                    <td>12 / 20</td>
+                                    <td><span class="text-green">₹10,000</span></td>
+                                    <td><span class="badge badge-blue">Upcoming</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Squad Night Customs</strong></td>
+                                    <td>Sanhok</td>
+                                    <td>8 / 20</td>
+                                    <td><span class="text-green">₹2,500</span></td>
+                                    <td><span class="badge badge-blue">Upcoming</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pending Payout Requests -->
+                <div class="content-card">
+                    <div class="card-header-flex">
+                        <h2 class="card-title"><i class="fa-solid fa-money-bill-transfer"></i> Pending Withdrawal Requests</h2>
+                        <a href="/admin/withdrawals" class="btn-link">Manage All</a>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Player / Team</th>
+                                    <th>Amount</th>
+                                    <th>UPI ID</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Pawan</strong></td>
+                                    <td><strong class="text-green">₹1,500</strong></td>
+                                    <td><code>pawan@oksbi</code></td>
+                                    <td>
+                                        <button class="btn-action btn-approve" onclick="this.closest('tr').remove(); alert('Withdrawal Approved!');"><i class="fa-solid fa-check"></i> Approve</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Aman</strong></td>
+                                    <td><strong class="text-green">₹2,000</strong></td>
+                                    <td><code>aman@okaxis</code></td>
+                                    <td>
+                                        <button class="btn-action btn-approve" onclick="this.closest('tr').remove(); alert('Withdrawal Approved!');"><i class="fa-solid fa-check"></i> Approve</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+</body>
+</html>

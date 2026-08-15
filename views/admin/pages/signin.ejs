@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Admin Sign In | UBR Esports</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/login.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-brand">
+                    <span class="brand-accent">UBR</span> ESPORTS
+                </div>
+                <h1 class="auth-title">Admin Sign In</h1>
+                <p class="auth-sub">Sign in to manage tournaments and payouts</p>
+            </div>
+
+            <form class="auth-form" onsubmit="event.preventDefault(); window.location.href='/admin/dashboard';">
+                <!-- 1. Email Field -->
+                <div class="form-group">
+                    <label for="signInEmail">Email Address</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input 
+                            type="email" 
+                            id="signInEmail" 
+                            name="signInEmail" 
+                            class="form-input" 
+                            placeholder="admin@ubresport.com" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- 2. Password Field -->
+                <div class="form-group">
+                    <label for="signInPassword">Password</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input 
+                            type="password" 
+                            id="signInPassword" 
+                            name="signInPassword" 
+                            class="form-input" 
+                            placeholder="••••••••" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="auth-submit-btn">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <span>Already have an account? <a href="/admin/login">Login</a></span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

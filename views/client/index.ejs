@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>UBR Esports | Supporting Upcoming BGMI Talent</title>
+    <meta name="description" content="UBR Esports is a premier platform for rising BGMI talent, daily competitive scrims, custom tournaments, and fast prize withdrawals.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/css/footer.css">
+</head>
+<body>
+    <div class="page-shell">
+        <%- include("partials/nav") %>
+
+        <main class="main-content">
+            <section class="hero">
+                <!-- <div class="hero-badge">
+                    <span class="pulse-dot"></span>
+                    <span>Live BGMI Tournaments</span>
+                </div> -->
+                <h1>SUPPORTING UPCOMING BGMI TALENT</h1>
+                <p>UBR Esports is creating a dedicated arena for rising BGMI players, competitive squads, and passionate esports fans to compete, earn, and dominate the battleground.</p>
+            </section>
+
+            <section class="section-title">
+                <h4>OUR TOP CATEGORIES</h4>
+                <h2>Explore What We Offer</h2>
+            </section>
+
+            <div class="categories">
+                <div class="category-card">
+                    <div class="category-card-img">
+                        <i class="fa-solid fa-gamepad"></i>
+                    </div>
+                    <h3>Daily BGMI Scrims</h3>
+                    <p>Compete in daily scrims against top tier teams, practice rotations, and climb the competitive ladder.</p>
+                    <a href="/category" class="card-btn">
+                        <i class="fa-solid fa-calendar-days"></i> View Schedule
+                    </a>
+                </div>
+
+                <div class="category-card">
+                    <div class="category-card-img">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h3>Paid Cash Tournaments</h3>
+                    <p>Enter high-stakes squad & solo tournaments with instant prize pool payouts directly to your wallet.</p>
+                    <a href="/withdrawal" class="card-btn">
+                        <i class="fa-solid fa-bolt"></i> View Payouts
+                    </a>
+                </div>
+
+                <div class="category-card">
+                    <div class="category-card-img">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <h3>Squad Custom Rooms</h3>
+                    <p>Organize custom room matches, challenge rival clans, and showcase your team's tactical gameplay.</p>
+                    <a href="/contactus" class="card-btn">
+                        <i class="fa-solid fa-users-gear"></i> Host Room
+                    </a>
+                </div>
+
+                <div class="category-card">
+                    <div class="category-card-img">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3>Anti-Cheat Verified Events</h3>
+                    <p>100% fair gameplay guaranteed with strict anti-hack verification and dedicated live tournament marshals.</p>
+                    <a href="/aboutus" class="card-btn">
+                        <i class="fa-solid fa-circle-info"></i> Learn More
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <%- include("partials/footer") %>
+    </div>
+</body>
+</html>

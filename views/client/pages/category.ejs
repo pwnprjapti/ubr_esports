@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Tournaments & Categories | UBR Esports</title>
+    <meta name="description" content="Browse and filter upcoming BGMI tournaments by date. Book your squad slots and compete for cash prize pools.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/css/category.css">
+    <link rel="stylesheet" href="/css/footer.css">
+</head>
+<body>
+    <div class="page-shell">
+        <%- include("../partials/nav") %>
+
+        <main class="main-content category-page">
+            <!-- Hero Header -->
+            <section class="category-hero">
+                <div class="hero-text">
+                    <div class="hero-badge">
+                        <span class="pulse-dot"></span>
+                        <span>Date-Wise Tournament Schedule</span>
+                    </div>
+                    <h1>BGMI Tournaments & Scrims</h1>
+                    <p>Select a date to find live scrims, daily cash cups, and weekend custom matches.</p>
+                </div>
+            </section>
+
+            <!-- Date-Based Filter Section -->
+            <section class="date-filter-section">
+                <div class="filter-header">
+                    <div class="filter-title">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <span>Filter by Tournament Date</span>
+                    </div>
+                </div>
+
+                <div class="filter-controls-wrapper">
+
+                    <!-- Specific Custom Date Picker -->
+                    <div class="custom-date-picker">
+                        <label for="customDatePicker"><i class="fa-regular fa-calendar"></i> Pick Specific Date:</label>
+                        <input type="date" id="customDatePicker" name="customDate" min="2026-08-01" max="2026-12-31">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tournament Grid -->
+            <section class="tournament-grid" id="tournamentGrid">
+                <!-- Tournament 1: Today -->
+                <article class="tournament-card" data-date="2026-08-11" data-period="today">
+                    
+                    <h3 class="tournament-title">BGMI Daily Pro Scrims</h3>
+                    <div class="tournament-meta">
+                        <div class="meta-item">
+                            <span class="meta-label"><i class="fa-regular fa-calendar"></i> Match Date</span>
+                            <span class="meta-val highlight-date">11 Aug 2026</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label"><i class="fa-solid fa-sack-dollar"></i> Prize Pool</span>
+                            <span class="meta-val prize">₹ 5,000</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label"><i class="fa-solid fa-users"></i> Slots Left</span>
+                            <span class="meta-val slot-highlight">4 / 20 Slots</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label"><i class="fa-solid fa-rupee-sign"></i></i> Entry Fee</span>
+                            <span class="meta-val slot-highlight"> ₹60 </span>
+                        </div>
+                    </div>
+                      <div class="idp-timing">
+                        <span class="meta-label"><i class="fa-regular fa-clock"></i> IDP Timing</span>
+                        <div class="timings">
+                           <span>07:00 pm</span>
+                           <span>09:00 pm</span>
+                           <span>11:00 pm</span>
+                        </div>
+                      </div>
+                      <br>
+                    <div class="card-actions">
+                        <button class="slot-btn"><i class="fa-solid fa-ticket"></i> Book Slot</button>
+                    </div>
+                </article>
+
+            <!-- Empty State if no tournaments match selected date -->
+            <div class="no-tournaments-card" id="noTournamentsMsg" style="display: none;">
+                <div class="empty-icon"><i class="fa-regular fa-calendar-xmark"></i></div>
+                <h3>No Tournaments Found on this Date</h3>
+                <p>There are no matches scheduled for the selected date. Choose another date or view all upcoming tournaments.</p>
+                <button type="button" class="reset-filter-btn" id="resetDateFilter">
+                    <i class="fa-solid fa-rotate-left"></i> View All Dates
+                </button>
+            </div>
+        </main>
+
+        <%- include("../partials/footer") %>
+    </div>
+
+    <!-- Date Filter Script -->
+    <script>
+        (function() {
+            const datePills = document.querySelectorAll('.date-pill');
+            const customDatePicker = document.getElementById('customDatePicker');
+            const tournamentCards = document.querySelectorAll('.tournament-card');
+            const countDisplay = document.getElementById('tournamentCount');
+            const emptyMsg = document.getElementById('noTournamentsMsg');
+            const resetBtn = document.getElementById('resetDateFilter');
+
+            function applyFilter(filterType, customDateValue = null) {
+                let visibleCount = 0;
+
+                tournamentCards.forEach(card => {
+                    const cardDate = card.getAttribute('data-date');
+                    const cardPeriod = card.getAttribute('data-period');
+                    let isMatch = false;
+
+                    if (customDateValue) {
+                        isMatch = (cardDate === customDateValue);
+                    } else if (filterType === 'all') {
+                        isMatch = true;
+                    } else if (filterType === 'today') {
+                        isMatch = (cardPeriod === 'today' || cardDate === '2026-08-11');
+                    } else if (filterType === 'tomorrow') {
+                        isMatch = (cardPeriod === 'tomorrow' || cardDate === '2026-08-12');
+                    } else if (filterType === 'weekend') {
+                        isMatch = (cardPeriod === 'weekend' || cardDate === '2026-08-15' || cardDate === '2026-08-16');
+                    } else if (filterType === 'week') {
+                        isMatch = (cardDate >= '2026-08-11' && cardDate <= '2026-08-17');
+                    }
+
+                    if (isMatch) {
+                        card.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                // Update counter and empty state
+                countDisplay.textContent = `Showing ${visibleCount} of ${tournamentCards.length} Tournaments`;
+                if (visibleCount === 0) {
+                    emptyMsg.style.display = 'block';
+                } else {
+                    emptyMsg.style.display = 'none';
+                }
+            }
+
+            // Quick Pill Clicks
+            datePills.forEach(pill => {
+                pill.addEventListener('click', function() {
+                    datePills.forEach(p => p.classList.remove('active'));
+                    this.classList.add('active');
+                    if (customDatePicker) customDatePicker.value = '';
+                    const filter = this.getAttribute('data-filter');
+                    applyFilter(filter);
+                });
+            });
+
+            // Date Picker Change
+            if (customDatePicker) {
+                customDatePicker.addEventListener('change', function() {
+                    if (this.value) {
+                        datePills.forEach(p => p.classList.remove('active'));
+                        applyFilter('custom', this.value);
+                    }
+                });
+            }
+
+            // Reset Button
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    datePills.forEach(p => p.classList.remove('active'));
+                    const allPill = document.querySelector('.date-pill[data-filter="all"]');
+                    if (allPill) allPill.classList.add('active');
+                    if (customDatePicker) customDatePicker.value = '';
+                    applyFilter('all');
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

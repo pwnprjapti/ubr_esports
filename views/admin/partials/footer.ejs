@@ -1,0 +1,47 @@
+<footer class="admin-footer">
+    <span>&copy; 2026 UBR Esports. Admin Portal.</span>
+</footer>
+
+<!-- Sidebar Overlay for Mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<script>
+    (function() {
+        const toggleBtn = document.getElementById('sidebarToggleBtn');
+        const closeBtn = document.getElementById('sidebarCloseBtn');
+        const sidebar = document.getElementById('adminSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        function openSidebar() {
+            if (sidebar) sidebar.classList.add('open');
+            if (overlay) overlay.classList.add('active');
+            document.body.classList.add('sidebar-open');
+        }
+
+        function closeSidebar() {
+            if (sidebar) sidebar.classList.remove('open');
+            if (overlay) overlay.classList.remove('active');
+            document.body.classList.remove('sidebar-open');
+        }
+
+        if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+        if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+        if (overlay) overlay.addEventListener('click', closeSidebar);
+
+        // Highlight active link based on URL
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/admin/category')) {
+            const el = document.getElementById('nav-category');
+            if (el) el.classList.add('active');
+        } else if (currentPath.includes('/admin/teams')) {
+            const el = document.getElementById('nav-teams');
+            if (el) el.classList.add('active');
+        } else if (currentPath.includes('/admin/withdrawals')) {
+            const el = document.getElementById('nav-withdrawals');
+            if (el) el.classList.add('active');
+        } else if (currentPath.includes('/admin')) {
+            const el = document.getElementById('nav-dashboard');
+            if (el) el.classList.add('active');
+        }
+    })();
+</script>

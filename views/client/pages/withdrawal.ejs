@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Withdrawal | UBR Esports</title>
+    <meta name="description" content="Fast, reliable tournament winning withdrawals via UPI or QR barcode scanner.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/css/withdrawal.css">
+    <link rel="stylesheet" href="/css/footer.css">
+</head>
+<body>
+    <div class="page-shell">
+        <%- include("../partials/nav") %>
+
+        <main class="main-content withdrawal-page">
+            <%- include("../partials/wallet") %>
+
+            <div class="withdrawal-grid">
+                <section class="panel">
+                    <h2>Withdrawal Request</h2>
+                    <p class="panel-desc">Choose your preferred payout method and enter the required details.</p>
+
+                    <form onsubmit="event.preventDefault(); alert('Withdrawal request submitted successfully!');">
+                        <div class="form-group">
+                            <label for="amount">Amount (₹)</label>
+                            <input type="number" id="amount" name="amount" placeholder="e.g. 500" min="100" max="100000" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="method">Payout Method</label>
+                            <select id="method" name="method">
+                                <option value="upi">UPI ID (e.g. yourname@okaxis)</option>
+                                <option value="qr">QR / Barcode Upload</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="detailGroup">
+                            <label for="detail" id="detailLabel">UPI ID</label>
+                            <input type="text" id="detail" name="detail" placeholder="Enter UPI ID (e.g. gamer@oksbi)" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="note">Note (Optional)</label>
+                            <textarea id="note" name="note" rows="3" placeholder="Add tournament name or match ID"></textarea>
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <i class="fa-solid fa-paper-plane"></i> Submit Withdrawal
+                        </button>
+                    </form>
+                </section>
+
+                <section class="panel">
+                    <h3><i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-2); margin-right: 6px;"></i> Processing Batches</h3>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <span><strong><i class="fa-regular fa-sun"></i> Morning Batch</strong></span>
+                            <span>10:00 AM</span>
+                        </div>
+                        <div class="timeline-item">
+                            <span><strong><i class="fa-regular fa-moon"></i> Evening Batch</strong></span>
+                            <span>05:00 PM</span>
+                        </div>
+                        <div class="timeline-item">
+                            <span><strong><i class="fa-solid fa-bolt"></i> Midnight Batch</strong></span>
+                            <span>12:00 AM</span>
+                        </div>
+                    </div>
+
+                    <p style="margin-top: 1rem; font-size: 0.88rem; color: var(--muted);"><strong style="color:#ffb2b2;">Note:</strong> Requests submitted after 12:00 AM will be processed in the next morning batch.</p>
+
+                    <h3 style="margin-top: 1.5rem;"><i class="fa-solid fa-list-check" style="color: var(--accent-2); margin-right: 6px;"></i> Withdrawal History</h3>
+                    <div class="table-responsive-wrapper">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                    <th>Remark</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>11 Aug 2026</td>
+                                    <td><strong>₹ 2,000</strong></td>
+                                    <td>UPI ID</td>
+                                    <td><span class="status-badge status-paid"><i class="fa-solid fa-check"></i> Paid</span></td>
+                                    <td>Completed</td>
+                                </tr>
+                                <tr>
+                                    <td>10 Aug 2026</td>
+                                    <td><strong>₹ 1,200</strong></td>
+                                    <td>QR Code</td>
+                                    <td><span class="status-badge status-pending"><i class="fa-solid fa-clock"></i> Pending</span></td>
+                                    <td>Under review</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <%- include("../partials/footer") %>
+    </div>
+
+    <script>
+        const methodSelect = document.getElementById('method');
+        const detailLabel = document.getElementById('detailLabel');
+        const detailInput = document.getElementById('detail');
+
+        function toggleDetailInput() {
+            if (methodSelect.value === 'qr') {
+                detailLabel.textContent = 'Upload QR Code / Screenshot';
+                detailInput.type = 'file';
+                detailInput.accept = 'image/*';
+                detailInput.placeholder = '';
+                detailInput.required = true;
+            } else {
+                detailLabel.textContent = 'UPI ID';
+                detailInput.type = 'text';
+                detailInput.placeholder = 'Enter UPI ID (e.g. gamer@oksbi)';
+                detailInput.required = true;
+            }
+        }
+
+        if (methodSelect) {
+            methodSelect.addEventListener('change', toggleDetailInput);
+            toggleDetailInput();
+        }
+    </script>
+</body>
+</html>

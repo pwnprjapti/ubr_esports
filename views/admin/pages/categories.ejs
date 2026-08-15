@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Categories | UBR Esports Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <style>
+        .admin-categories-page {
+            width: 100%;
+        }
+
+        .category-card {
+            background: #151720;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.25s ease, border-color 0.25s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(215, 38, 61, 0.4);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .category-card-img {
+            width: 100%;
+            height: 160px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #1e2029, #13141b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            color: #ff455e;
+            font-size: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .category-card h3 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 0 0 0.5rem;
+        }
+
+        .category-card p {
+            color: #a0a0aa;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            margin: 0 0 1.25rem;
+            flex: 1;
+        }
+
+        .card-btn {
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, #d7263d, #ff455e);
+            color: #ffffff !important;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(215, 38, 61, 0.35);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .card-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(215, 38, 61, 0.5);
+        }
+
+        .add-category-top-btn {
+            padding: 0.65rem 1.25rem;
+            background: linear-gradient(135deg, #d7263d, #ff455e);
+            color: #ffffff !important;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 14px rgba(215, 38, 61, 0.35);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .add-category-top-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(215, 38, 61, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="admin-categories-page">
+                    <!-- Top Title Bar with Add Category Button -->
+                    <div class="page-title-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h1 class="page-heading" style="font-size: 1.6rem; font-weight: 800; color: #fff; margin: 0;">Categories</h1>
+                            <p class="page-sub" style="color: #a0a0aa; font-size: 0.9rem; margin-top: 0.25rem;">Browse and manage all esports categories and game modes.</p>
+                        </div>
+                        <a href="/admin/addcategory" class="add-category-top-btn">
+                            <i class="fa-solid fa-plus"></i> Add Category
+                        </a>
+                    </div>
+
+                    <div class="categories">
+                        <div class="category-card">
+                            <div class="category-card-img">
+                                <i class="fa-solid fa-gamepad"></i>
+                            </div>
+                            <h3>Daily BGMI Scrims</h3>
+                            <p>Compete in daily scrims against top tier teams, practice rotations, and climb the competitive ladder.</p>
+                            <button class="card-btn" onclick="window.location.href='/admin/category'">
+                                <i class="fa-solid fa-eye"></i> View Details
+                            </button>
+                        </div>
+
+                        <div class="category-card">
+                            <div class="category-card-img">
+                                <i class="fa-solid fa-trophy"></i>
+                            </div>
+                            <h3>Paid Cash Tournaments</h3>
+                            <p>Enter high-stakes squad & solo tournaments with instant prize pool payouts directly to your wallet.</p>
+                            <button class="card-btn" onclick="window.location.href='/admin/category'">
+                                <i class="fa-solid fa-eye"></i> View Details
+                            </button>
+                        </div>
+
+                        <div class="category-card">
+                            <div class="category-card-img">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <h3>Squad Custom Rooms</h3>
+                            <p>Organize custom room matches, challenge rival clans, and showcase your team's tactical gameplay.</p>
+                            <button class="card-btn" onclick="alert('Viewing Squad Custom Rooms details')">
+                                <i class="fa-solid fa-eye"></i> View Details
+                            </button>
+                        </div>
+
+                        <div class="category-card">
+                            <div class="category-card-img">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <h3>Anti-Cheat Verified Events</h3>
+                            <p>100% fair gameplay guaranteed with strict anti-hack verification and dedicated live tournament marshals.</p>
+                            <button class="card-btn" onclick="alert('Viewing Anti-Cheat Verified Events details')">
+                                <i class="fa-solid fa-eye"></i> View Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+</body>
+</html>

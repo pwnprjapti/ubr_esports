@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Add Tournament | UBR Esports Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css">
+    <link rel="stylesheet" href="/css/addtournament.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="add-tournament-wrapper">
+                    <div class="add-tournament-card">
+                        <h1>Add Tournament</h1>
+
+                        <form class="tournament-form" onsubmit="event.preventDefault(); alert('Tournament added successfully!');">
+                            <!-- Select Category Dropdown -->
+                            <div class="form-group">
+                                <label for="tournamentCategory">Select Category</label>
+                                <select 
+                                    id="tournamentCategory" 
+                                    name="tournamentCategory" 
+                                    class="form-input" 
+                                    required
+                                >
+                                    <option value="" disabled selected>-- Choose Category --</option>
+                                    <option value="daily-scrims">Daily BGMI Scrims</option>
+                                    <option value="cash-tournaments">Paid Cash Tournaments</option>
+                                    <option value="custom-rooms">Squad Custom Rooms</option>
+                                    <option value="anti-cheat">Anti-Cheat Verified Events</option>
+                                </select>
+                            </div>
+
+                            <!-- Tournament Title -->
+                            <div class="form-group">
+                                <label for="tournamentTitle">Tournament Title</label>
+                                <input 
+                                    type="text" 
+                                    id="tournamentTitle" 
+                                    name="tournamentTitle" 
+                                    class="form-input" 
+                                    placeholder="e.g. BGMI Daily Pro Scrims" 
+                                    required
+                                >
+                            </div>
+
+                            <!-- Match Date & Match Time -->
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="matchDate">Match Date</label>
+                                    <input 
+                                        type="date" 
+                                        id="matchDate" 
+                                        name="matchDate" 
+                                        class="form-input" 
+                                        required
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="matchTime">Match Time</label>
+                                    <input 
+                                        type="time" 
+                                        id="matchTime" 
+                                        name="matchTime" 
+                                        class="form-input" 
+                                        required
+                                    >
+                                </div>
+                            </div>
+
+                            <!-- Total Slots & Entry Fee -->
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="totalSlots">Total Slots</label>
+                                    <input 
+                                        type="number" 
+                                        id="totalSlots" 
+                                        name="totalSlots" 
+                                        class="form-input" 
+                                        value="20" 
+                                        required
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="entryFee">Entry Fee (₹)</label>
+                                    <input 
+                                        type="number" 
+                                        id="entryFee" 
+                                        name="entryFee" 
+                                        class="form-input" 
+                                        placeholder="e.g. 60 (0 for Free)" 
+                                        required
+                                    >
+                                </div>
+                            </div>
+
+                            <!-- Prize Pool -->
+                            <div class="form-group">
+                                <label for="prizePool">Prize Pool (₹)</label>
+                                <input 
+                                    type="number" 
+                                    id="prizePool" 
+                                    name="prizePool" 
+                                    class="form-input" 
+                                    placeholder="e.g. 5000" 
+                                    required
+                                >
+                            </div>
+
+                            <!-- IDP Timing -->
+                            <div class="form-group">
+                                <label for="idpTiming">IDP Timing (Room Schedule)</label>
+                                <input 
+                                    type="text" 
+                                    id="idpTiming" 
+                                    name="idpTiming" 
+                                    class="form-input" 
+                                    placeholder="e.g. 07:00 pm, 09:00 pm, 11:00 pm" 
+                                    required
+                                >
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" class="submit-btn">
+                                Submit Tournament
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+</body>
+</html>

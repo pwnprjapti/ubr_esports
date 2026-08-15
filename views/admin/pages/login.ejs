@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Admin Login | UBR Esports</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/login.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-brand">
+                    <span class="brand-accent">UBR</span> ESPORTS
+                </div>
+                <h1 class="auth-title">Admin Login</h1>
+                <p class="auth-sub">Enter your credentials to access the admin portal</p>
+            </div>
+
+            <form class="auth-form" onsubmit="event.preventDefault(); window.location.href='/admin/dashboard';">
+                <!-- 1. Email Field -->
+                <div class="form-group">
+                    <label for="adminEmail">Email Address</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input 
+                            type="email" 
+                            id="adminEmail" 
+                            name="adminEmail" 
+                            class="form-input" 
+                            placeholder="admin@ubresport.com" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- 2. Password Field -->
+                <div class="form-group">
+                    <label for="adminPassword">Password</label>
+                    <div class="input-wrap">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input 
+                            type="password" 
+                            id="adminPassword" 
+                            name="adminPassword" 
+                            class="form-input" 
+                            placeholder="••••••••" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="auth-submit-btn">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <span>Need to sign in? <a href="/admin/signin">Sign In</a></span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

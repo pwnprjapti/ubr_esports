@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Add Category | UBR Esports Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css">
+    <link rel="stylesheet" href="/css/addcategory.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="add-category-wrapper">
+                    <div class="add-category-card">
+                        <h1>Add Category</h1>
+
+                        <form class="category-form" onsubmit="event.preventDefault(); alert('Category submitted successfully!');">
+                            <!-- 1. Category Name Field -->
+                            <div class="form-group">
+                                <label for="categoryName">Category Name</label>
+                                <input 
+                                    type="text" 
+                                    id="categoryName" 
+                                    name="categoryName" 
+                                    class="form-input" 
+                                    placeholder="Enter category name" 
+                                    required
+                                >
+                            </div>
+
+                            <!-- 2. Category Picture Upload Field -->
+                            <div class="form-group">
+                                <label for="categoryPicture">Category Picture</label>
+                                <input 
+                                    type="file" 
+                                    id="categoryPicture" 
+                                    name="categoryPicture" 
+                                    class="form-file-input" 
+                                    accept="image/*" 
+                                    required
+                                >
+                            </div>
+
+                            <!-- 3. Category Description Field -->
+                            <div class="form-group">
+                                <label for="categoryDescription">Category Description</label>
+                                <textarea 
+                                    id="categoryDescription" 
+                                    name="categoryDescription" 
+                                    class="form-textarea" 
+                                    rows="4" 
+                                    placeholder="Enter category description" 
+                                    required
+                                ></textarea>
+                            </div>
+
+                            <!-- 4. Submit Button -->
+                            <button type="submit" class="submit-btn">
+                                Submit
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+</body>
+</html>

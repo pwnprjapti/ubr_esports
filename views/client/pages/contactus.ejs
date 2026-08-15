@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Contact Us | UBR Esports</title>
+    <meta name="description" content="Get in touch with UBR Esports support team for tournament queries, sponsorship, and custom rooms.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/terms.css">
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/css/footer.css">
+    <style>
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .contact-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .contact-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(215, 38, 61, 0.3);
+        }
+        .contact-icon {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            border-radius: 12px;
+            background: rgba(215, 38, 61, 0.15);
+            color: var(--accent-2);
+            display: grid;
+            place-items: center;
+            font-size: 1.25rem;
+        }
+        .contact-info h4 {
+            margin: 0 0 0.25rem;
+            color: #ffffff;
+            font-size: 1rem;
+        }
+        .contact-info p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+        <%- include("../partials/nav") %>
+
+        <main class="terms-page">
+            <div class="card">
+                <h1>Contact Us</h1>
+                <p class="meta">We're here to help 24/7</p>
+                <p>Have questions about tournaments, wallet deposits, withdrawals, or business partnerships? Connect directly with our team through any channel below.</p>
+
+                <div class="contact-grid">
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fa-solid fa-envelope"></i>
+                        </div>
+                        <div class="contact-info">
+                            <h4>Email Support</h4>
+                            <p><a href="mailto:ubresport@gmail.com">ubresport@gmail.com</a></p>
+                        </div>
+                    </div>
+
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fa-brands fa-whatsapp"></i>
+                        </div>
+                        <div class="contact-info">
+                            <h4>WhatsApp Channel</h4>
+                            <p><a href="https://whatsapp.com/channel/0029Vb4qJgJ1Hsq43s3r" target="_blank" rel="noopener">Join Official Channel</a></p>
+                        </div>
+                    </div>
+
+                    <div class="contact-item">
+                        <div class="contact-icon">
+                            <i class="fa-brands fa-youtube"></i>
+                        </div>
+                        <div class="contact-info">
+                            <h4>YouTube Official</h4>
+                            <p><a href="https://www.youtube.com/@ubresports?si=1pmQyRgCUUTIeRJI" target="_blank" rel="noopener">@ubresports</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <%- include("../partials/footer") %>
+    </div>
+</body>
+</html>

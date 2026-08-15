@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Team Settings | UBR Esports</title>
+    <meta name="description" content="Manage your esports squad profile, team logo, and WhatsApp contact details for UBR tournaments and scrims.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/css/teamSettings.css">
+    <link rel="stylesheet" href="/css/footer.css">
+</head>
+<body>
+    <div class="page-shell">
+        <%- include("../partials/nav") %>
+
+        <main class="team-settings-page">
+            
+            <div class="settings-container">
+                <%- include("../partials/wallet") %>
+                <!-- Squad Information Card -->
+                <section class="settings-card">
+                    <div class="card-heading">
+                        <div class="heading-icon">
+                            <i class="fa-solid fa-users-gear"></i>
+                        </div>
+                        <div>
+                            <h2>Squad Information</h2>
+                            <p>Update your team credentials for upcoming tournaments</p>
+                        </div>
+                    </div>
+
+                    <form id="teamSettingsForm" class="settings-form" onsubmit="handleTeamSubmit(event)">
+                        <!-- Team Name Field -->
+                        <div class="form-group">
+                            <label for="teamName" class="form-label">
+                                Team Name <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-shield-halved input-icon"></i>
+                                <input 
+                                    type="text" 
+                                    id="teamName" 
+                                    name="teamName" 
+                                    class="form-control" 
+                                    placeholder="Enter your team name" 
+                                    required 
+                                    maxlength="50"
+                                    autocomplete="off"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Team Logo Upload Field -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                Team Logo <span class="required">*</span>
+                            </label>
+                            
+                            <div class="upload-box" id="uploadBox">
+                                <input 
+                                    type="file" 
+                                    id="teamLogo" 
+                                    name="teamLogo" 
+                                    class="file-input" 
+                                    accept="image/png, image/jpeg, image/webp"
+                                    required
+                                >
+                                
+                                <div class="upload-placeholder" id="uploadPlaceholder">
+                                    <div class="upload-icon">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    </div>
+                                    <p class="upload-text">Upload squad logo or <span>browse file</span></p>
+                                    <p class="upload-hint">PNG, JPG or WebP (Max 2MB)</p>
+                                </div>
+
+                                <div class="upload-preview-container" id="uploadPreviewContainer">
+                                    <div class="logo-preview-wrapper">
+                                        <img id="logoPreviewImg" class="logo-preview-img" src="" alt="Team Logo Preview">
+                                    </div>
+                                    <button type="button" class="remove-logo-btn" id="removeLogoBtn">
+                                        <i class="fa-solid fa-trash-can"></i> Change Logo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- WhatsApp Mobile Number Field -->
+                        <div class="form-group">
+                            <label for="whatsappNumber" class="form-label">
+                                WhatsApp Mobile Number <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper whatsapp-wrapper">
+                                <i class="fa-brands fa-whatsapp input-icon"></i>
+                                <span class="input-prefix">+91</span>
+                                <input 
+                                    type="tel" 
+                                    id="whatsappNumber" 
+                                    name="whatsappNumber" 
+                                    class="form-control whatsapp-input" 
+                                    placeholder="Enter 10 digit number" 
+                                    pattern="[0-9]{10}"
+                                    maxlength="10"
+                                    required
+                                    inputmode="numeric"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="submit-btn" id="submitBtn">
+                            <i class="fa-solid fa-floppy-disk"></i> Submit
+                        </button>
+                    </form>
+                </section>
+            </div>
+        </main>
+
+        <%- include("../partials/footer") %>
+    </div>
+
+    <!-- Success Toast Notification -->
+    <div class="toast-msg" id="successToast">
+        <div class="toast-icon">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <span>Team settings submitted successfully!</span>
+    </div>
+
+    <script>
+        const teamLogoInput = document.getElementById('teamLogo');
+        const uploadBox = document.getElementById('uploadBox');
+        const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+        const uploadPreviewContainer = document.getElementById('uploadPreviewContainer');
+        const logoPreviewImg = document.getElementById('logoPreviewImg');
+        const removeLogoBtn = document.getElementById('removeLogoBtn');
+        const successToast = document.getElementById('successToast');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // File upload change handler
+        teamLogoInput.addEventListener('change', function(e) {
+            handleFile(this.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload a valid image file (PNG, JPG, or WebP).');
+                return;
+            }
+
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Image size should not exceed 2MB.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                logoPreviewImg.src = e.target.result;
+                uploadPlaceholder.style.display = 'none';
+                uploadPreviewContainer.classList.add('active');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Remove logo / re-upload
+        removeLogoBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            teamLogoInput.value = '';
+            logoPreviewImg.src = '';
+            uploadPlaceholder.style.display = 'flex';
+            uploadPreviewContainer.classList.remove('active');
+            teamLogoInput.click();
+        });
+
+        // Form Submit Handler
+        function handleTeamSubmit(e) {
+            e.preventDefault();
+            
+            const originalBtnHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+
+                // Show toast
+                successToast.classList.add('show');
+                setTimeout(() => {
+                    successToast.classList.remove('show');
+                }, 3500);
+            }, 600);
+        }
+    </script>
+</body>
+</html>

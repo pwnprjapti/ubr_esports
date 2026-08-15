@@ -1,0 +1,117 @@
+:root {
+    --bg-dark: #070709;
+    --card-bg: #151720;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --accent: #d7263d;
+    --accent-light: #ff455e;
+    --text: #ffffff;
+    --text-muted: #a0a0aa;
+}
+
+.add-tournament-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem 0;
+}
+
+.add-tournament-card {
+    width: 100%;
+    max-width: 600px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    box-sizing: border-box;
+}
+
+.add-tournament-card h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0 0 1.5rem;
+}
+
+.tournament-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    background: rgba(10, 11, 15, 0.85);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 0.92rem;
+    font-family: inherit;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s;
+    color-scheme: dark;
+}
+
+select.form-input {
+    cursor: pointer;
+}
+
+select.form-input option {
+    background: #151720;
+    color: #ffffff;
+    padding: 0.5rem;
+}
+
+.form-input:focus {
+    border-color: var(--accent-light);
+}
+
+.submit-btn {
+    margin-top: 0.5rem;
+    width: 100%;
+    padding: 0.9rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent-light));
+    border: none;
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(215, 38, 61, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(215, 38, 61, 0.5);
+}
+
+@media (max-width: 600px) {
+    .add-tournament-card {
+        padding: 1.25rem;
+    }
+    .form-grid-2 {
+        grid-template-columns: 1fr;
+    }
+}

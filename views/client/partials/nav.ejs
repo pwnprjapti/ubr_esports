@@ -1,0 +1,200 @@
+<header class="navbar-wrapper">
+    <nav class="navbar">
+        <a href="/" class="brand">
+            <span class="brand-accent">UBR</span> ESPORTS
+        </a>
+
+        <!-- Mobile Hamburger Toggle -->
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </button>
+
+        <div class="nav-menu" id="navMenu">
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="https://whatsapp.com/channel/0029VaAyrzMLo4hgL0I5lN38" target="_blank" rel="noopener noreferrer" class="nav-link">
+                    <i class="fa-brands fa-whatsapp"></i> WhatsApp Channel
+                </a>
+                <a href="/contactus" class="nav-link">Contact Us</a>
+            </div>
+
+            <div class="nav-actions">
+                <!-- Login / Sign In Button -->
+                <a href="/signin" class="nav-btn">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Login / Sign In
+                </a>
+
+                <!-- Profile Circle with Dropdown Menu -->
+                <div class="profile" id="profileDropdown">
+                    <button class="profile-circle" id="profileBtn" type="button" aria-label="User Profile Menu" aria-expanded="false" aria-haspopup="true">
+                        <div class="profile-avatar">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <!-- <span class="online-indicator" title="Online"></span> -->
+                    </button>
+
+                    <div class="profile-dropdown-menu" id="profileMenu" role="menu">
+                        <div class="profile-dropdown-header">
+                            <div class="header-avatar">
+                                <i class="fa-solid fa-user-ninja"></i>
+                            </div>
+                            <div class="header-details">
+                                <span class="profile-name">Pawan</span>
+                                <!-- <span class="profile-tag"><i class="fa-solid fa-circle"></i> Online</span> -->
+                            </div>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+
+                        <div class="dropdown-items">
+                            <!-- 1. Dashboard -->
+                            <a href="/dashboard" class="dropdown-item" role="menuitem">
+                                <div class="item-icon">
+                                    <i class="fa-solid fa-table-columns"></i>
+                                </div>
+                                <div class="item-info">
+                                    <span class="item-title">Dashboard</span>
+                                    <!-- <span class="item-desc">Stats & Overview</span> -->
+                                </div>
+                            </a>
+
+                            <!-- 2. Team Settings -->
+                            <a href="/team-settings" class="dropdown-item" role="menuitem">
+                                <div class="item-icon">
+                                    <i class="fa-solid fa-users-gear"></i>
+                                </div>
+                                <div class="item-info">
+                                    <span class="item-title">Team Settings</span>
+                                    <!-- <span class="item-desc">Manage squad & roster</span> -->
+                                </div>
+                            </a>
+
+                            <!-- 3. Withdrawal -->
+                            <a href="/withdrawal" class="dropdown-item" role="menuitem">
+                                <div class="item-icon">
+                                    <i class="fa-solid fa-wallet"></i>
+                                </div>
+                                <div class="item-info">
+                                    <span class="item-title">Withdrawal</span>
+                                    <!-- <span class="item-desc">Wallet balance & payouts</span> -->
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+
+                        <!-- 4. Log Out -->
+                        <div class="dropdown-footer">
+                            <a href="/logout" class="dropdown-item logout-btn" role="menuitem">
+                                <div class="item-icon logout-icon">
+                                    <i class="fa-solid fa-right-from-bracket"></i>
+                                </div>
+                                <div class="item-info">
+                                    <span class="item-title">Log Out</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<script>
+    (function() {
+        const navToggle = document.getElementById('navToggle');
+        const navMenu = document.getElementById('navMenu');
+        const profileBtn = document.getElementById('profileBtn');
+        const profileMenu = document.getElementById('profileMenu');
+        const profileDropdown = document.getElementById('profileDropdown');
+
+        // Mobile Nav Toggle
+        if (navToggle && navMenu) {
+            navToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isOpen = navMenu.classList.toggle('active');
+                navToggle.classList.toggle('active', isOpen);
+                navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                document.body.classList.toggle('menu-open', isOpen);
+            });
+        }
+
+        // Profile Dropdown Toggle
+        if (profileBtn && profileMenu) {
+            profileBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isOpen = profileMenu.classList.toggle('active');
+                profileBtn.classList.toggle('active', isOpen);
+                profileBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+        }
+
+        // Close on clicking links
+        if (navMenu) {
+            navMenu.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (navMenu.classList.contains('active')) {
+                        navMenu.classList.remove('active');
+                        if (navToggle) {
+                            navToggle.classList.remove('active');
+                            navToggle.setAttribute('aria-expanded', 'false');
+                        }
+                        document.body.classList.remove('menu-open');
+                    }
+                    if (profileMenu && profileMenu.classList.contains('active')) {
+                        profileMenu.classList.remove('active');
+                        if (profileBtn) {
+                            profileBtn.classList.remove('active');
+                            profileBtn.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                });
+            });
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (profileDropdown && !profileDropdown.contains(e.target)) {
+                if (profileMenu && profileMenu.classList.contains('active')) {
+                    profileMenu.classList.remove('active');
+                    if (profileBtn) {
+                        profileBtn.classList.remove('active');
+                        profileBtn.setAttribute('aria-expanded', 'false');
+                    }
+                }
+            }
+
+            if (navMenu && navToggle && navMenu.classList.contains('active') && !navMenu.contains(e.target) && !navToggle.contains(e.target)) {
+                navMenu.classList.remove('active');
+                navToggle.classList.remove('active');
+                navToggle.setAttribute('aria-expanded', 'false');
+                document.body.classList.remove('menu-open');
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (profileMenu && profileMenu.classList.contains('active')) {
+                    profileMenu.classList.remove('active');
+                    if (profileBtn) {
+                        profileBtn.classList.remove('active');
+                        profileBtn.setAttribute('aria-expanded', 'false');
+                        profileBtn.focus();
+                    }
+                }
+                if (navMenu && navMenu.classList.contains('active')) {
+                    navMenu.classList.remove('active');
+                    if (navToggle) {
+                        navToggle.classList.remove('active');
+                        navToggle.setAttribute('aria-expanded', 'false');
+                    }
+                    document.body.classList.remove('menu-open');
+                }
+            }
+        });
+    })();
+</script>

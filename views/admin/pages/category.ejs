@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Category | UBR Esports Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css">
+    <link rel="stylesheet" href="/css/admin/category.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="admin-category-page">
+                    <!-- Hero Header -->
+                    <section class="category-hero">
+                        <div class="hero-text">
+                            <!-- <div class="hero-badge" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.65rem; background: rgba(215,38,61,0.15); border: 1px solid rgba(215,38,61,0.3); border-radius: 999px; font-size: 0.75rem; font-weight: 700; color: #ff455e; margin-bottom: 0.5rem;">
+                                <i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> Date-Wise Category Schedule
+                            </div> -->
+                        <div class="hero-text" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                            <div>
+                                <h1>BGMI Tournaments & Scrims</h1>
+                                <p>Select a date to find live scrims, daily cash cups, and weekend custom matches.</p>
+                            </div>
+                            <a href="/admin/addtournament" class="slot-btn-full" style="width: auto; padding: 0.65rem 1.25rem; text-decoration: none;">
+                                <i class="fa-solid fa-plus"></i> Add Tournament
+                            </a>
+                        </div>
+                    </section>
+
+                    <!-- Date-Based Filter Section -->
+                    <section class="date-filter-section">
+                        <div class="filter-header">
+                            <div class="filter-title">
+                                <i class="fa-solid fa-calendar-days"></i>
+                                <span>Filter by Tournament Date</span>
+                            </div>
+                        </div>
+
+                        <div class="filter-controls-wrapper">
+                            <!-- Specific Custom Date Picker -->
+                            <div class="custom-date-picker">
+                                <label for="customDatePicker"><i class="fa-regular fa-calendar"></i> Pick Specific Date:</label>
+                                <input type="date" id="customDatePicker" name="customDate" min="2026-08-01" max="2026-12-31">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Tournament / Category Grid -->
+                    <section class="tournament-grid" id="tournamentGrid">
+                        <!-- Card 1 -->
+                        <article class="tournament-card" data-date="2026-08-11">
+                            <h3 class="tournament-title">BGMI Daily Pro Scrims</h3>
+                            <div class="tournament-meta">
+                                <div class="meta-item">
+                                    <span class="meta-label"><i class="fa-regular fa-calendar"></i> Match Date</span>
+                                    <span class="meta-val highlight-date">11 Aug 2026</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label"><i class="fa-solid fa-sack-dollar"></i> Prize Pool</span>
+                                    <span class="meta-val prize">₹ 5,000</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label"><i class="fa-solid fa-users"></i> Slots Left</span>
+                                    <span class="meta-val slot-highlight">4 / 20 Slots</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label"><i class="fa-solid fa-rupee-sign"></i> Entry Fee</span>
+                                    <span class="meta-val slot-highlight">₹60</span>
+                                </div>
+                            </div>
+                            <div class="idp-timing">
+                                <span class="meta-label"><i class="fa-regular fa-clock"></i> IDP Timing</span>
+                                <div class="timings">
+                                    <span>07:00 pm</span>
+                                    <span>09:00 pm</span>
+                                    <span>11:00 pm</span>
+                                </div>
+                            </div>
+                            <div class="card-actions-single">
+                                <button class="slot-btn-full" onclick="window.location.href='/admin/teams'">
+                                    <i class="fa-solid fa-eye"></i> View Details
+                                </button>
+                            </div>
+                        </article>
+
+                        <!-- Card 2 -->
+                        <article class="tournament-card" data-date="2026-08-12">
+                            <h3 class="tournament-title">Daily Cash Championship</h3>
+                            <div class="tournament-meta">
+                                <div class="meta-item">
+                                    <span class="meta-label"><i class="fa-regular fa-calendar"></i> Match Date</span>
+                                    <span class="meta-val highlight-date">12 Aug 2026</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label"><i class="fa-solid fa-sack-dollar"></i> Prize Pool</span>
+                                    <span class="meta-val prize">₹ 10,000</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label"><i class="fa-solid fa-users"></i> Slots Left</span>
+                                    <span class="meta-val slot-highlight">8 / 20 Slots</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label"><i class="fa-solid fa-rupee-sign"></i> Entry Fee</span>
+                                    <span class="meta-val slot-highlight">₹50</span>
+                                </div>
+                            </div>
+                            <div class="idp-timing">
+                                <span class="meta-label"><i class="fa-regular fa-clock"></i> IDP Timing</span>
+                                <div class="timings">
+                                    <span>08:30 pm</span>
+                                    <span>10:30 pm</span>
+                                </div>
+                            </div>
+                            <div class="card-actions-single">
+                                <button class="slot-btn-full" onclick="window.location.href='/admin/teams'">
+                                    <i class="fa-solid fa-eye"></i> View Details
+                                </button>
+                            </div>
+                        </article>
+                    </section>
+
+                    <!-- Empty State -->
+                    <div class="no-tournaments-card" id="noTournamentsMsg" style="display: none;">
+                        <div class="empty-icon"><i class="fa-regular fa-calendar-xmark"></i></div>
+                        <h3>No Tournaments Found on this Date</h3>
+                        <p>There are no matches scheduled for the selected date.</p>
+                        <button type="button" class="reset-filter-btn" id="resetDateFilter">
+                            <i class="fa-solid fa-rotate-left"></i> View All Dates
+                        </button>
+                    </div>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+
+    <!-- Date Filter Script -->
+    <script>
+        (function() {
+            const customDatePicker = document.getElementById('customDatePicker');
+            const tournamentCards = document.querySelectorAll('.tournament-card');
+            const emptyMsg = document.getElementById('noTournamentsMsg');
+            const resetBtn = document.getElementById('resetDateFilter');
+
+            function applyFilter(customDateValue) {
+                let visibleCount = 0;
+                tournamentCards.forEach(card => {
+                    const cardDate = card.getAttribute('data-date');
+                    if (!customDateValue || cardDate === customDateValue) {
+                        card.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                if (visibleCount === 0) {
+                    emptyMsg.style.display = 'block';
+                } else {
+                    emptyMsg.style.display = 'none';
+                }
+            }
+
+            if (customDatePicker) {
+                customDatePicker.addEventListener('change', function() {
+                    applyFilter(this.value);
+                });
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    if (customDatePicker) customDatePicker.value = '';
+                    applyFilter(null);
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

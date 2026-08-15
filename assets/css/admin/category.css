@@ -1,0 +1,278 @@
+/* Admin Category Page Styles */
+.admin-category-page {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+/* Hero Header */
+.category-hero {
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #151722 0%, #101117 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.category-hero h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 0.35rem;
+}
+
+.category-hero p {
+    font-size: 0.92rem;
+    color: #a0a0aa;
+    margin: 0;
+}
+
+/* Date Filter Section */
+.date-filter-section {
+    background: #151720;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.filter-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.filter-title i {
+    color: #ff455e;
+}
+
+.custom-date-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #0f1015;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.45rem 0.85rem;
+    border-radius: 10px;
+    width: fit-content;
+}
+
+.custom-date-picker label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #a0a0aa;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.custom-date-picker input[type="date"] {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
+    color-scheme: dark;
+}
+
+/* Category Grid */
+.tournament-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+    width: 100%;
+}
+
+.tournament-card {
+    background: #151720;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.tournament-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(215, 38, 61, 0.35);
+}
+
+.tournament-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+}
+
+.tournament-meta {
+    display: grid;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 0.85rem;
+    border-radius: 12px;
+}
+
+.meta-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.88rem;
+}
+
+.meta-label {
+    color: #a0a0aa;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+}
+
+.meta-val {
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.meta-val.highlight-date {
+    color: #ff9da8;
+    background: rgba(215, 38, 61, 0.1);
+    padding: 0.15rem 0.45rem;
+    border-radius: 6px;
+}
+
+.meta-val.prize {
+    color: #22c55e;
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.meta-val.slot-highlight {
+    color: #f59e0b;
+}
+
+/* IDP Timing */
+.idp-timing {
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    background-color: rgba(255, 255, 255, 0.02);
+    margin: 0.25rem 0;
+}
+
+.idp-timing .timings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
+
+.idp-timing .timings span {
+    color: #c084fc;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    background-color: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+/* Single View Details Button */
+.card-actions-single {
+    display: flex;
+    width: 100%;
+    margin-top: auto;
+}
+
+.slot-btn-full {
+    width: 100%;
+    border: 0;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #d7263d, #ff455e);
+    color: white;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 14px rgba(215, 38, 61, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.slot-btn-full:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(215, 38, 61, 0.5);
+}
+
+/* Empty State */
+.no-tournaments-card {
+    background: #151720;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    max-width: 500px;
+    margin: 2rem auto;
+}
+
+.empty-icon {
+    font-size: 2rem;
+    color: #ff455e;
+    margin-bottom: 0.75rem;
+}
+
+.no-tournaments-card h3 {
+    font-size: 1.2rem;
+    color: #ffffff;
+    margin-bottom: 0.35rem;
+}
+
+.no-tournaments-card p {
+    font-size: 0.88rem;
+    color: #a0a0aa;
+    margin-bottom: 1rem;
+}
+
+.reset-filter-btn {
+    border: 0;
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    background: linear-gradient(135deg, #d7263d, #ff455e);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .tournament-grid {
+        grid-template-columns: 1fr;
+    }
+    .custom-date-picker {
+        width: 100%;
+        justify-content: space-between;
+    }
+}

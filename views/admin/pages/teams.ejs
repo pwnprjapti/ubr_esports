@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Teams | UBR Esports Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css">
+    <link rel="stylesheet" href="/css/admin/dashboard.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="page-title-bar">
+                    <div>
+                        <h1 class="page-heading">Registered Teams</h1>
+                        <p class="page-sub">View all squads with direct WhatsApp contact.</p>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Squad Name</th>
+                                    <th>WhatsApp Mobile</th>
+                                    <th>Registered Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 0.65rem;">
+                                            <div style="width: 34px; height: 34px; border-radius: 50%; background: rgba(215,38,61,0.2); display: flex; align-items: center; justify-content: center; color: #ff455e;">
+                                                <i class="fa-solid fa-shield-halved"></i>
+                                            </div>
+                                            <strong>GodLike Elite</strong>
+                                        </div>
+                                    </td>
+                                    <td>+91 9876543210</td>
+                                    <td>11 Aug 2026</td>
+                                    <td>
+                                        <a href="https://wa.me/919876543210" target="_blank" class="btn-whatsapp">
+                                            <i class="fa-brands fa-whatsapp"></i> Chat WhatsApp
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 0.65rem;">
+                                            <div style="width: 34px; height: 34px; border-radius: 50%; background: rgba(215,38,61,0.2); display: flex; align-items: center; justify-content: center; color: #ff455e;">
+                                                <i class="fa-solid fa-shield-halved"></i>
+                                            </div>
+                                            <strong>Soul Esports</strong>
+                                        </div>
+                                    </td>
+                                    <td>+91 9876543211</td>
+                                    <td>10 Aug 2026</td>
+                                    <td>
+                                        <a href="https://wa.me/919876543211" target="_blank" class="btn-whatsapp">
+                                            <i class="fa-brands fa-whatsapp"></i> Chat WhatsApp
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 0.65rem;">
+                                            <div style="width: 34px; height: 34px; border-radius: 50%; background: rgba(215,38,61,0.2); display: flex; align-items: center; justify-content: center; color: #ff455e;">
+                                                <i class="fa-solid fa-shield-halved"></i>
+                                            </div>
+                                            <strong>Entity Gaming</strong>
+                                        </div>
+                                    </td>
+                                    <td>+91 9876543212</td>
+                                    <td>09 Aug 2026</td>
+                                    <td>
+                                        <a href="https://wa.me/919876543212" target="_blank" class="btn-whatsapp">
+                                            <i class="fa-brands fa-whatsapp"></i> Chat WhatsApp
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+</body>
+</html>
