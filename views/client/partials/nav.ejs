@@ -15,6 +15,7 @@
         <div class="nav-menu" id="navMenu">
             <div class="nav-links">
                 <a href="/" class="nav-link">Home</a>
+                <a href="/drop-details" class="nav-link">Drop Details</a>
                 <a href="https://whatsapp.com/channel/0029VaAyrzMLo4hgL0I5lN38" target="_blank" rel="noopener noreferrer" class="nav-link">
                     <i class="fa-brands fa-whatsapp"></i> WhatsApp Channel
                 </a>
@@ -24,9 +25,9 @@
 
          <div class="nav-actions">
                 <!-- Login / Sign In Button -->
-                <!-- <a href="/signin" class="nav-btn">
+                <a href="/signin" id="signin" class="nav-btn">
                     <i class="fa-solid fa-arrow-right-to-bracket"></i>  Sign In
-                </a> -->
+                </a>
 
                 <!-- Profile Circle with Dropdown Menu -->
                 <div class="profile" id="profileDropdown">
@@ -81,6 +82,16 @@
                                 <div class="item-info">
                                     <span class="item-title">Withdrawal</span>
                                     <!-- <span class="item-desc">Wallet balance & payouts</span> -->
+                                </div>
+                            </a>
+
+                            <!-- 4. Drop Details -->
+                            <a href="/drop-details" class="dropdown-item" role="menuitem">
+                                <div class="item-icon">
+                                    <i class="fa-solid fa-crosshairs"></i>
+                                </div>
+                                <div class="item-info">
+                                    <span class="item-title">Drop Details</span>
                                 </div>
                             </a>
                         </div>
@@ -198,4 +209,29 @@
             }
         });
     })();
+
+    async function isSignIned() {
+    const signInLink = document.getElementById("signin");
+    const profileBtn = document.getElementById("profileBtn");
+
+    try {
+        const res = await fetch("/checksignin", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.authenticated) {
+            signInLink.style.display = "none";
+            profileBtn.style.display = "block";
+        } else {
+            signInLink.style.display = "block";
+            profileBtn.style.display = "none";
+        }
+    } catch (err) {
+        console.error("Auth check failed:", err);
+    }
+}
+    isSignIned();
 </script>

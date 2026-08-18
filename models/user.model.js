@@ -9,6 +9,11 @@ const userSchema = new mongoose.Schema({
             prizePool:{type:Number}
         },
         withdrawal:[{date:{String}, amount:{Number}, method:{type:String}, status:{type:String}, remark:{type:String}}]
+    },
+    dropDetails:{
+        erangle:{type:String, default:""},
+        rando:{type:String, default:""},
+        miramar:{type:String, default:""}
     }
 });
 

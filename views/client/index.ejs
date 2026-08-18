@@ -31,53 +31,24 @@
             </section>
 
             <div class="categories">
+                <% for(category of categories) { %>
                 <div class="category-card">
                     <div class="category-card-img">
                         <i class="fa-solid fa-gamepad"></i>
                     </div>
-                    <h3>Daily BGMI Scrims</h3>
-                    <p>Compete in daily scrims against top tier teams, practice rotations, and climb the competitive ladder.</p>
-                    <a href="/category" class="card-btn">
-                        <i class="fa-solid fa-calendar-days"></i> View Schedule
+                    <h3><%= category.title %></h3>
+                    <p><%= category.description %></p>
+                    <a href="/category/<%= category._id %>" class="card-btn">
+                        <i class="fa-solid fa-calendar-days"></i>Explore
                     </a>
                 </div>
+                <% }  %>
 
-                <div class="category-card">
-                    <div class="category-card-img">
-                        <i class="fa-solid fa-trophy"></i>
-                    </div>
-                    <h3>Paid Cash Tournaments</h3>
-                    <p>Enter high-stakes squad & solo tournaments with instant prize pool payouts directly to your wallet.</p>
-                    <a href="/withdrawal" class="card-btn">
-                        <i class="fa-solid fa-bolt"></i> View Payouts
-                    </a>
-                </div>
-
-                <div class="category-card">
-                    <div class="category-card-img">
-                        <i class="fa-solid fa-users"></i>
-                    </div>
-                    <h3>Squad Custom Rooms</h3>
-                    <p>Organize custom room matches, challenge rival clans, and showcase your team's tactical gameplay.</p>
-                    <a href="/contactus" class="card-btn">
-                        <i class="fa-solid fa-users-gear"></i> Host Room
-                    </a>
-                </div>
-
-                <div class="category-card">
-                    <div class="category-card-img">
-                        <i class="fa-solid fa-shield-halved"></i>
-                    </div>
-                    <h3>Anti-Cheat Verified Events</h3>
-                    <p>100% fair gameplay guaranteed with strict anti-hack verification and dedicated live tournament marshals.</p>
-                    <a href="/aboutus" class="card-btn">
-                        <i class="fa-solid fa-circle-info"></i> Learn More
-                    </a>
-                </div>
             </div>
         </main>
 
         <%- include("partials/footer") %>
     </div>
+
 </body>
 </html>

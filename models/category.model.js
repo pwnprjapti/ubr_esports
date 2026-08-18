@@ -11,7 +11,12 @@ const categorySchema = new mongoose.Schema({
             prizePool:{type:Number},
             slots:{type:Number},
             entryFee:{type:Number},
-            idpTimings:{type:String}
+            idpTimings:{type:String},
+            teams:[
+                {
+                    teamName:{type:String}, teamLogo:{type:String}, whatsappNumber:{type:Number} 
+                }
+            ]
         }
     ]
 });

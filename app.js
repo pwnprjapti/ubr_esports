@@ -12,6 +12,7 @@ import './views/client/auth/google.js';
 
 import userModel from "./models/user.model.js"
 import categoryModel from "./models/category.model.js"
+import withdrawalModel from "./models/withdrawal.model.js"
 
 
 const app = express();
@@ -53,8 +54,18 @@ function authCheck(req, res, next){
 }
 
 /* Client Routes */
-app.get("/", (req, res)=>{
-    res.render("index");
+
+app.get("/checksignin", (req, res)=>{
+    if (req.isAuthenticated()) {
+        return res.status(200).json({ authenticated: true });
+    }
+    return res.status(401).json({ authenticated: false });
+});
+app.get("/", async (req, res)=>{
+
+    const categories = await categoryModel.find().select("title description img _id");
+    console.log(categories);
+    res.render("index", { categories });
 })
 
 app.get("/terms", (req, res)=>{
@@ -87,37 +98,112 @@ app.get('/auth/google/callback',
     res.redirect('/');
   });
 
-app.get("/withdrawal", authCheck, (req, res)=>{
-    res.render("pages/withdrawal");
+app.get("/withdrawal", authCheck, async (req, res)=>{
+     try {
+         let isExist = await userModel.findOne({gglId:req.user.id});
+         if(!isExist){
+             const add = await userModel.create({gglId:req.user.id, wallet:{ balance:{availableBalance:0, prizePool:0}, withdrawal:[]}});
+             isExist = await add.save();
+         }
+         const user = {
+            name:req.user.displayName,
+            dp:req.user.photos[0].value,
+            balance:isExist.wallet.balance
+        }
+
+        const withdrawalHistory = await withdrawalModel.find({id:req.user.id});
+        console.log(withdrawalHistory);
+        res.render("pages/withdrawal", {user, withdrawalHistory});
+     } catch (err) {
+         console.error("Withdrawal error:", err);
+         res.status(500).send("Internal Server Error");
+     }
 })
 
-app.get("/category", (req, res)=>{
-    res.render("pages/category");
+app.post("/withdrawal", authCheck, async (req, res)=>{
+    console.log(req.body);
+    const details = req.body;
+    const fulldetail = {...details, status:"pending", playerName:req.user.displayName, id:req.user.id};
+    const checkWallet = await userModel.findOne({gglId:req.user.id}).select("wallet");
+    if(checkWallet.wallet.balance.availableBalance <= 0 || checkWallet.wallet.balance.availableBalance < details.amount){
+        return res.status(409).json({msg:"You Dont have sufficient balance in Your wallet"})
+    };
+
+    const addRequest = await withdrawalModel.create(fulldetail);
+    const result = await addRequest.save();
+    if(result){
+        return res.status(200).json({msg:"Request submited successfully, wait for approvel."});
+    }
+})
+
+app.get("/category/:id", async (req, res)=>{
+    try {
+        const {id} = req.params;
+        console.log(id);
+        const getMatch = await categoryModel.find({_id:id}).select("matches -_id");
+        if (!getMatch || getMatch.length === 0) {
+            return res.status(404).send("Category not found");
+        }
+        const matches = getMatch[0].matches || [];
+        if (matches.length > 0) {
+            console.log(matches[0].date);
+            if (matches[0].idpTimings) {
+                console.log(matches[0].idpTimings.split(","));
+            }
+        }
+        res.render("pages/category", { matches, id });
+    } catch (err) {
+        console.error("Error fetching category matches:", err);
+        res.status(500).send("Internal Server Error");
+    }
 })
 
 app.get("/dashboard", authCheck, async (req, res)=>{
-    console.log(req.user);
+    try {
+        const categories = await categoryModel.find().select("title description img _id");
+        console.log(categories);
 
-    const isExist = await userModel.findOne({gglId:req.user.id});
-    console.log(isExist)
-    if(!isExist){
-        const add = await userModel.create({gglId:req.user.id});
-        const result = await add.save();
-        console.log(result);
+        let isExist = await userModel.findOne({gglId:req.user.id});
+        console.log(isExist)
+        if(!isExist){
+            const add = await userModel.create({gglId:req.user.id, wallet:{ balance:{availableBalance:0, prizePool:0}, withdrawal:[]}});
+            isExist = await add.save();
+            console.log(isExist);
+        }
+
+        const user = {
+            name:req.user.displayName,
+            dp:req.user.photos[0].value,
+            balance:isExist.wallet.balance
+        }
+
+        console.log(user)
+        res.render("pages/dashboard", {user, categories });
+    } catch (err) {
+        console.error("Dashboard error:", err);
+        res.status(500).send("Internal Server Error");
     }
-
-    const user = {
-        name:req.user.displayName,
-        dp:req.user.photos[0].value,
-        balance:isExist.wallet.balance
-    }
-
-    console.log(user)
-    res.render("pages/dashboard", {user:user});
 })
 
-app.get("/team-settings", authCheck, (req, res)=>{
-    res.render("pages/teamSettings");
+app.get("/team-settings", authCheck, async (req, res)=>{
+     try {
+         let isExist = await userModel.findOne({gglId:req.user.id});
+         if(!isExist){
+             isExist = await userModel.create({gglId:req.user.id, wallet:{ balance:{availableBalance:0, prizePool:0}, withdrawal:[]}});
+         }
+         const user = {
+            name:req.user.displayName,
+            dp:req.user.photos[0].value,
+            balance:isExist.wallet.balance
+         }
+
+         const teamSettings = await userModel.findOne({gglId:req.user.id}).select("team");
+         const team = teamSettings.team;
+         res.render("pages/teamSettings", {user, team});
+     } catch (err) {
+         console.error("Team settings error:", err);
+         res.status(500).send("Internal Server Error");
+     }
 })
 
 app.post("/team-settings", authCheck, async (req, res)=>{
@@ -138,10 +224,94 @@ app.post("/team-settings", authCheck, async (req, res)=>{
     return res.status(200).json("team Created Successfully");
 })
 
+app.get("/drop-details", authCheck, async (req, res)=>{
+     try {
+         let isExist = await userModel.findOne({gglId:req.user.id});
+         if(!isExist){
+             isExist = await userModel.create({gglId:req.user.id, wallet:{ balance:{availableBalance:0, prizePool:0}, withdrawal:[]}});
+         }
+         const user = {
+            name:req.user.displayName,
+            dp:req.user.photos[0].value,
+            balance:isExist.wallet.balance
+         }
+
+         const dropDetails = isExist.dropDetails || { erangle: "", rando: "", miramar: "" };
+         res.render("pages/dropDetails", {user, dropDetails});
+     } catch (err) {
+         console.error("Drop details error:", err);
+         res.status(500).send("Internal Server Error");
+     }
+})
+
+app.post("/drop-details", authCheck, async (req, res)=>{
+    try {
+        const isExist = await userModel.findOne({gglId:req.user.id});
+        if(!isExist){
+            return res.status(404).json({msg:"User does not exist"});
+        }
+
+        const updateDrop = await userModel.findOneAndUpdate({gglId:req.user.id}, { dropDetails:req.body }, {new: true});
+        if(!updateDrop){
+            return res.status(500).json({msg:"something went wrong in updating drop details please try again later"});
+        }
+        return res.status(200).json("Drop Details Updated Successfully");
+    } catch (err) {
+        console.error("Error saving drop details:", err);
+        return res.status(500).json({msg:"Internal server error"});
+    }
+})
+
 app.get("/logout", (req, res)=>{
     req.logout(()=>{
         res.redirect('/');
     })
+})
+
+app.post("/book", async (req, res)=>{
+     if (!req.isAuthenticated()) {
+        return res.status(401).json({ authenticated: false });
+    }
+    
+   try {
+       console.log(req.user.id);
+       const getTeam = await userModel.findOne({gglId:req.user.id}).select("team");
+       if (!getTeam || !getTeam.team || !getTeam.team.teamName) {
+           return res.status(400).json({msg:"Please set up your team settings first."});
+       }
+       console.log(getTeam.team.teamName);
+       const { id, title, entryFee } = req.body;
+       
+       const checkBalance = await userModel.findOne({gglId:req.user.id}).select("wallet");
+       if (!checkBalance || !checkBalance.wallet || !checkBalance.wallet.balance) {
+           return res.status(500).json({msg:"Internal server error: wallet balance not found."});
+       }
+       if(checkBalance.wallet.balance.availableBalance < entryFee ){
+         return res.status(400).json({msg:"You dont have sufficient balance in Your wallet"});
+       };
+
+       const isExist = await categoryModel.findOne({_id:id});
+       if(!isExist){
+         return res.status(404).json({msg:"This category does not exist."})
+       }
+
+       const isAlreadyRegistered = await categoryModel.findOne({_id:id, matches:{$elemMatch:{title, teams:{ $elemMatch:{teamName:getTeam.team.teamName}}}}});
+       if(isAlreadyRegistered){
+         return res.status(409).json({msg:"You have already booked"});
+       }
+
+       const saveTeam = await categoryModel.findOneAndUpdate({ _id: id, "matches.title": title }, { $push: { "matches.$.teams": getTeam.team } },  { new: true } );
+       if(saveTeam){
+         const updateWallet = await userModel.findOneAndUpdate({gglId:req.user.id},  { $inc: { "wallet.balance.availableBalance": -entryFee }}, {returnDocument:'after'});
+         if(updateWallet){
+             return res.status(200).json({msg:"Slot booked successfully. "})
+         };
+       }
+       return res.status(500).json({msg:"Failed to book slot. Please try again."});
+   } catch (err) {
+       console.error("Booking error:", err);
+       return res.status(500).json({msg:"Internal server error during booking."});
+   }
 })
 
 /* Admin Control Panel Routes */

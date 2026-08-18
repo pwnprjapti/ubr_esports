@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Drop Details | UBR Esports</title>
+    <meta name="description" content="Configure and manage your team's tactical drop coordinates and locations for Erangle, Rando, and Miramar maps.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/css/teamSettings.css">
+    <link rel="stylesheet" href="/css/footer.css">
+    <style>
+        /* Custom tweaks for the drop details page */
+        .drop-icon-accent {
+            color: var(--accent-light) !important;
+        }
+        .form-control:focus + .input-icon {
+            color: var(--accent-light) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+        <%- include("../partials/nav") %>
+
+        <main class="team-settings-page">
+            <div class="settings-container">
+                <%- include("../partials/wallet", { wallet:user.balance}) %>
+                
+                <!-- Drop Details Card -->
+                <section class="settings-card">
+                    <div class="card-heading">
+                        <div class="heading-icon">
+                            <i class="fa-solid fa-crosshairs"></i>
+                        </div>
+                        <div>
+                            <h2>Drop Details</h2>
+                            <p>Configure your squad's primary drop points for tournaments</p>
+                        </div>
+                    </div>
+
+                    <form id="dropDetailsForm" class="settings-form" onsubmit="handleDropSubmit(event)">
+                        <!-- Erangle Map Field -->
+                        <div class="form-group">
+                            <label for="erangle" class="form-label">
+                                Erangle Drop Location
+                            </label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-location-crosshairs input-icon"></i>
+                                <input 
+                                    type="text" 
+                                    id="erangle" 
+                                    name="erangle" 
+                                    value="<%= dropDetails.erangle %>"
+                                    class="form-control" 
+                                    placeholder="e.g. Pochinki, School, Georgopol" 
+                                    maxlength="100"
+                                    autocomplete="off"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Rando Map Field -->
+                        <div class="form-group">
+                            <label for="rando" class="form-label">
+                                Rando Drop Location
+                            </label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-shuffle input-icon"></i>
+                                <input 
+                                    type="text" 
+                                    id="rando" 
+                                    name="rando" 
+                                    value="<%= dropDetails.rando %>"
+                                    class="form-control" 
+                                    placeholder="e.g. Sanhok: Bootcamp / Vikendi: Villa" 
+                                    maxlength="100"
+                                    autocomplete="off"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Miramar Map Field -->
+                        <div class="form-group">
+                            <label for="miramar" class="form-label">
+                                Miramar Drop Location
+                            </label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-mountain input-icon"></i>
+                                <input 
+                                    type="text" 
+                                    id="miramar" 
+                                    name="miramar" 
+                                    value="<%= dropDetails.miramar %>"
+                                    class="form-control" 
+                                    placeholder="e.g. Pecado, Hacienda Del Patron" 
+                                    maxlength="100"
+                                    autocomplete="off"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="submit-btn" id="submitBtn">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Drop Details
+                        </button>
+                    </form>
+                </section>
+            </div>
+        </main>
+
+        <%- include("../partials/footer") %>
+    </div>
+
+    <!-- Success/Error Toast Notification -->
+    <div class="toast-msg" id="statusToast">
+        <div class="toast-icon" id="toastIcon">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <span id="toastMessage">Drop details saved successfully!</span>
+    </div>
+
+    <script>
+        const erangleInput = document.getElementById('erangle');
+        const randoInput = document.getElementById('rando');
+        const miramarInput = document.getElementById('miramar');
+        const statusToast = document.getElementById('statusToast');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastMessage = document.getElementById('toastMessage');
+        const submitBtn = document.getElementById('submitBtn');
+
+        async function handleDropSubmit(e) {
+            e.preventDefault();
+            
+            const payload = {
+                erangle: erangleInput.value.trim(),
+                rando: randoInput.value.trim(),
+                miramar: miramarInput.value.trim()
+            };
+
+            const originalBtnHtml = submitBtn.innerHTML;
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+                const res = await fetch('http://localhost:3000/drop-details', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await res.json();
+
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+
+                if (res.ok) {
+                    // Show success toast
+                    toastIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    toastIcon.style.color = '#22c55e';
+                    toastIcon.style.background = 'rgba(34, 197, 94, 0.2)';
+                    statusToast.style.borderColor = '#22c55e';
+                    toastMessage.textContent = typeof result === 'string' ? result : 'Drop details saved successfully!';
+                    
+                    statusToast.classList.add('show');
+                    setTimeout(() => {
+                        statusToast.classList.remove('show');
+                    }, 3500);
+                } else {
+                    // Show error toast
+                    toastIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    toastIcon.style.color = '#d7263d';
+                    toastIcon.style.background = 'rgba(215, 38, 61, 0.2)';
+                    statusToast.style.borderColor = '#d7263d';
+                    toastMessage.textContent = result.msg || 'Failed to save drop details. Please try again.';
+                    
+                    statusToast.classList.add('show');
+                    setTimeout(() => {
+                        statusToast.classList.remove('show');
+                    }, 3500);
+                }
+            } catch (err) {
+                console.error("Submit error:", err);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+                
+                toastIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                toastIcon.style.color = '#d7263d';
+                toastIcon.style.background = 'rgba(215, 38, 61, 0.2)';
+                statusToast.style.borderColor = '#d7263d';
+                toastMessage.textContent = 'Network error. Please try again.';
+                
+                statusToast.classList.add('show');
+                setTimeout(() => {
+                    statusToast.classList.remove('show');
+                    window.location.reload();
+                }, 3500);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -50,40 +50,56 @@
             <!-- Tournament Grid -->
             <section class="tournament-grid" id="tournamentGrid">
                 <!-- Tournament 1: Today -->
-                <article class="tournament-card" data-date="2026-08-11" data-period="today">
-                    
-                    <h3 class="tournament-title">BGMI Daily Pro Scrims</h3>
-                    <div class="tournament-meta">
-                        <div class="meta-item">
-                            <span class="meta-label"><i class="fa-regular fa-calendar"></i> Match Date</span>
-                            <span class="meta-val highlight-date">11 Aug 2026</span>
+
+            <% const hasMatches = Array.isArray(matches) && matches.length > 0; %>
+
+            <div class="no-tournaments-card" id="noTournamentsMsg" style="display: <%= hasMatches ? 'none' : 'block' %>;">
+                <div class="empty-icon"><i class="fa-regular fa-calendar-xmark"></i></div>
+                <h3>No Tournaments Found for this category </h3>
+                <p>There are no matches scheduled for the selected Category. Choose another Category.</p>
+                <button type="button" onclick="window.location.href='/'" class="reset-filter-btn" id="resetDateFilter">
+                    <i class="fa-solid fa-rotate-left"></i> View All Categories
+                </button>
+            </div>
+
+            <% if (hasMatches) { %>
+                <% for (const match of matches) { %>
+                    <article class="tournament-card" data-date="<%= match.date %>" data-period="today">
+                        <h3 class="tournament-title"><%= match.title %></h3>
+                        <div class="tournament-meta">
+                            <div class="meta-item">
+                                <span class="meta-label"><i class="fa-regular fa-calendar"></i> Match Date</span>
+                                <span class="meta-val highlight-date"><%= match.date %></span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label"><i class="fa-solid fa-sack-dollar"></i> Prize Pool</span>
+                                <span class="meta-val prize">₹ <%= match.prizePool %></span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label"><i class="fa-solid fa-users"></i> Slots Left</span>
+                                <span class="meta-val slot-highlight"> <%= match.teams.length %> / <%= match.slots %> Slots</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label"><i class="fa-solid fa-rupee-sign"></i> Entry Fee</span>
+                                <span class="meta-val slot-highlight"> ₹<%= match.entryFee %> </span>
+                            </div>
                         </div>
-                        <div class="meta-item">
-                            <span class="meta-label"><i class="fa-solid fa-sack-dollar"></i> Prize Pool</span>
-                            <span class="meta-val prize">₹ 5,000</span>
+                        <div class="idp-timing">
+                            <span class="meta-label"><i class="fa-regular fa-clock"></i> IDP Timing</span>
+                            <div class="timings">
+                                <% const timings = match.idpTimings.split(","); %>
+                                <% for (const time of timings) { %>
+                                    <span><%= time %></span>
+                                <% } %>
+                            </div>
                         </div>
-                        <div class="meta-item">
-                            <span class="meta-label"><i class="fa-solid fa-users"></i> Slots Left</span>
-                            <span class="meta-val slot-highlight">4 / 20 Slots</span>
+                        <br>
+                        <div class="card-actions">
+                            <button class="slot-btn" onclick="book('<%= id %>', '<%= match.title %>', '<%= match.entryFee %>')"><i class="fa-solid fa-ticket"></i> Book Slot</button>
                         </div>
-                        <div class="meta-item">
-                            <span class="meta-label"><i class="fa-solid fa-rupee-sign"></i></i> Entry Fee</span>
-                            <span class="meta-val slot-highlight"> ₹60 </span>
-                        </div>
-                    </div>
-                      <div class="idp-timing">
-                        <span class="meta-label"><i class="fa-regular fa-clock"></i> IDP Timing</span>
-                        <div class="timings">
-                           <span>07:00 pm</span>
-                           <span>09:00 pm</span>
-                           <span>11:00 pm</span>
-                        </div>
-                      </div>
-                      <br>
-                    <div class="card-actions">
-                        <button class="slot-btn"><i class="fa-solid fa-ticket"></i> Book Slot</button>
-                    </div>
-                </article>
+                    </article>
+                <% } %>
+            <% } %>
 
             <!-- Empty State if no tournaments match selected date -->
             <div class="no-tournaments-card" id="noTournamentsMsg" style="display: none;">
@@ -180,6 +196,33 @@
                 });
             }
         })();
+
+
+       async function book(id, title, entryFee){
+            console.log(id, title, entryFee);
+
+            const res = await fetch("http://localhost:3000/book", {
+                method:'POST',
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify({id, title, entryFee})
+            });
+
+            const result = await res.json();
+
+            console.log(result);
+
+            if(res.status === 401 ){
+                window.location.href="/signin"
+            } else{
+                if(res.status){
+                alert(result.msg);
+            }
+            }
+
+
+        }
     </script>
 </body>
 </html>

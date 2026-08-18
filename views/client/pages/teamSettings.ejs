@@ -18,7 +18,7 @@
         <main class="team-settings-page">
             
             <div class="settings-container">
-                <%- include("../partials/wallet") %>
+                <%- include("../partials/wallet", { wallet:user.balance}) %>
                 <!-- Squad Information Card -->
                 <section class="settings-card">
                     <div class="card-heading">
@@ -43,6 +43,7 @@
                                     type="text" 
                                     id="teamName" 
                                     name="teamName" 
+                                    value="<%= team.teamName %>"
                                     class="form-control" 
                                     placeholder="Enter your team name" 
                                     required 
@@ -78,7 +79,7 @@
 
                                 <div class="upload-preview-container" id="uploadPreviewContainer">
                                     <div class="logo-preview-wrapper">
-                                        <img id="logoPreviewImg" class="logo-preview-img" src="" alt="Team Logo Preview">
+                                        <img id="logoPreviewImg" class="logo-preview-img" src="<%= team.teamLogo %>" alt="Team Logo Preview">
                                     </div>
                                     <button type="button" class="remove-logo-btn" id="removeLogoBtn">
                                         <i class="fa-solid fa-trash-can"></i> Change Logo
@@ -99,6 +100,7 @@
                                     type="tel" 
                                     id="whatsappNumber" 
                                     name="whatsappNumber" 
+                                    value="<%= team.whatsappNumber %>"
                                     class="form-control whatsapp-input" 
                                     placeholder="Enter 10 digit number" 
                                     pattern="[0-9]{10}"
@@ -154,10 +156,10 @@
                 return;
             }
 
-            if (file.size > 2 * 1024 * 1024) {
-                alert('Image size should not exceed 2MB.');
-                return;
-            }
+            // if (file.size > 2 * 1024 * 1024) {
+            //     alert('Image size should not exceed 2MB.');
+            //     return;
+            // }
 
             const reader = new FileReader();
             reader.onload = function(e) {
