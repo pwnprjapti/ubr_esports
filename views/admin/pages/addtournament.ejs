@@ -152,6 +152,7 @@
         const prizePool = document.getElementById("prizePool");
         const idpTiming = document.getElementById("idpTiming");
         const submitbtn = document.getElementById("submitbtn");
+        const baseurl = "<%= baseurl %>";
 
         async function submitData(e) {
             e.preventDefault();
@@ -170,7 +171,7 @@
            try{
                 console.log(data);
 
-            const res = await fetch("http://localhost:3000/admin/addtournament", {
+            const res = await fetch(`${baseurl}/admin/addtournament`, {
                 method:"POST",
                 headers:{
                     "Content-Type":"application/json"

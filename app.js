@@ -338,7 +338,7 @@ app.get("/admin/category", (req, res)=>{
 })
 
 app.get("/admin/addcategory", (req, res)=>{
-    res.render("admin/pages/addcategory");
+    res.render("admin/pages/addcategory", { baseurl });
 })
 
 app.post("/admin/addcategory", async (req, res)=>{
@@ -361,7 +361,7 @@ app.post("/admin/addcategory", async (req, res)=>{
 app.get("/admin/addtournament", async (req, res)=>{
     const categories = await categoryModel.find().select("title -_id");
     console.log(categories);
-    res.render("admin/pages/addtournament", { categories });
+    res.render("admin/pages/addtournament", { categories, baseurl });
 })
 
 app.post("/admin/addtournament", async (req, res)=>{

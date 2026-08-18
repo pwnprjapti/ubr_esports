@@ -79,6 +79,7 @@
         const categoryPicture = document.getElementById("categoryPicture");
         const categoryDescription = document.getElementById("categoryDescription");
         const submitButton = document.getElementById("submitButton");
+        const baseurl = "<%= baseurl %>";
 
         async function submitData(e){
             e.preventDefault();
@@ -91,7 +92,7 @@
             }
 
             console.log(data);
-            const res = await fetch("http://localhost:3000/admin/addcategory", {  
+            const res = await fetch(`${baseurl}/admin/addcategory`, {  
                 method:'POST',
                 headers:{
                     "Content-Type":"application/json"
