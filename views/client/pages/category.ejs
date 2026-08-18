@@ -117,6 +117,8 @@
 
     <!-- Date Filter Script -->
     <script>
+        const baseurl = "<%= baseurl %>";
+
         (function() {
             const datePills = document.querySelectorAll('.date-pill');
             const customDatePicker = document.getElementById('customDatePicker');
@@ -201,7 +203,7 @@
        async function book(id, title, entryFee){
             console.log(id, title, entryFee);
 
-            const res = await fetch("http://localhost:3000/book", {
+            const res = await fetch(`${baseurl}/book`, {
                 method:'POST',
                 headers:{
                     "Content-Type":"application/json"

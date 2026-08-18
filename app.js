@@ -53,6 +53,9 @@ function authCheck(req, res, next){
     res.redirect("/signin")
 }
 
+
+const baseurl = process.env.BASE_URL;
+
 /* Client Routes */
 
 app.get("/checksignin", (req, res)=>{
@@ -113,7 +116,7 @@ app.get("/withdrawal", authCheck, async (req, res)=>{
 
         const withdrawalHistory = await withdrawalModel.find({id:req.user.id});
         console.log(withdrawalHistory);
-        res.render("pages/withdrawal", {user, withdrawalHistory});
+        res.render("pages/withdrawal", {user, withdrawalHistory, baseurl});
      } catch (err) {
          console.error("Withdrawal error:", err);
          res.status(500).send("Internal Server Error");
@@ -151,7 +154,7 @@ app.get("/category/:id", async (req, res)=>{
                 console.log(matches[0].idpTimings.split(","));
             }
         }
-        res.render("pages/category", { matches, id });
+        res.render("pages/category", { matches, id, baseurl });
     } catch (err) {
         console.error("Error fetching category matches:", err);
         res.status(500).send("Internal Server Error");
@@ -199,7 +202,7 @@ app.get("/team-settings", authCheck, async (req, res)=>{
 
          const teamSettings = await userModel.findOne({gglId:req.user.id}).select("team");
          const team = teamSettings.team;
-         res.render("pages/teamSettings", {user, team});
+         res.render("pages/teamSettings", {user, team, baseurl});
      } catch (err) {
          console.error("Team settings error:", err);
          res.status(500).send("Internal Server Error");
@@ -221,7 +224,7 @@ app.post("/team-settings", authCheck, async (req, res)=>{
         return res.json({msg:"something went wrong in adding team please try again later"});
     }
     console.log(addteam);
-    return res.status(200).json("team Created Successfully");
+    return res.status(200).json({ msg:"team Created Successfully" });
 })
 
 app.get("/drop-details", authCheck, async (req, res)=>{
@@ -237,7 +240,7 @@ app.get("/drop-details", authCheck, async (req, res)=>{
          }
 
          const dropDetails = isExist.dropDetails || { erangle: "", rando: "", miramar: "" };
-         res.render("pages/dropDetails", {user, dropDetails});
+         res.render("pages/dropDetails", {user, dropDetails, baseurl});
      } catch (err) {
          console.error("Drop details error:", err);
          res.status(500).send("Internal Server Error");
@@ -300,6 +303,9 @@ app.post("/book", async (req, res)=>{
          return res.status(409).json({msg:"You have already booked"});
        }
 
+       const dropDetails = await userModel.findOne({gglId:req.user.id}).select("dropDetails");
+       const fullteam = {...getTeam.team, dropDetails}
+       console.log(fullteam);
        const saveTeam = await categoryModel.findOneAndUpdate({ _id: id, "matches.title": title }, { $push: { "matches.$.teams": getTeam.team } },  { new: true } );
        if(saveTeam){
          const updateWallet = await userModel.findOneAndUpdate({gglId:req.user.id},  { $inc: { "wallet.balance.availableBalance": -entryFee }}, {returnDocument:'after'});

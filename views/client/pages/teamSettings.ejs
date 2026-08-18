@@ -142,6 +142,7 @@
         const removeLogoBtn = document.getElementById('removeLogoBtn');
         const successToast = document.getElementById('successToast');
         const submitBtn = document.getElementById('submitBtn');
+        const baseurl = "<%= baseurl %>";
 
         // File upload change handler
         teamLogoInput.addEventListener('change', function(e) {
@@ -198,7 +199,7 @@
                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
 
                console.log("hello")
-               const res = await fetch(`http://localhost:3000/team-settings`, {
+               const res = await fetch(`${baseurl}/team-settings`, {
                 method:'POST',
                 headers:{
                     "Content-Type":"application/json"
@@ -208,6 +209,9 @@
 
                const result = await res.json();
 
+               if(res.status){
+                 alert(result.msg);
+               }
                console.log(result);
 
                submitBtn.disabled = false;
