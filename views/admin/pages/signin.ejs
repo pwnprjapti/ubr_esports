@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Admin Sign In | UBR Esports</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <link rel="stylesheet" href="/css/admin/login.css">
 </head>
@@ -18,7 +19,7 @@
                 <p class="auth-sub">Sign in to manage tournaments and payouts</p>
             </div>
 
-            <form class="auth-form" onsubmit="event.preventDefault(); window.location.href='/admin/dashboard';">
+            <form class="auth-form" onsubmit="event.preventDefault(); signIn();">
                 <!-- 1. Email Field -->
                 <div class="form-group">
                     <label for="signInEmail">Email Address</label>
@@ -26,7 +27,7 @@
                         <i class="fa-solid fa-envelope input-icon"></i>
                         <input 
                             type="email" 
-                            id="signInEmail" 
+                            id="adminEmail" 
                             name="signInEmail" 
                             class="form-input" 
                             placeholder="admin@ubresport.com" 
@@ -42,7 +43,7 @@
                         <i class="fa-solid fa-lock input-icon"></i>
                         <input 
                             type="password" 
-                            id="signInPassword" 
+                            id="adminPassword" 
                             name="signInPassword" 
                             class="form-input" 
                             placeholder="••••••••" 
@@ -62,5 +63,47 @@
             </div>
         </div>
     </div>
+    <script>
+        const email = document.getElementById("adminEmail");
+        const password = document.getElementById("adminPassword");
+
+        async function signIn(){
+           const signinBtn = document.querySelector(".auth-submit-btn");
+           const payload = {
+            email:email.value,
+            password:password.value
+           }
+
+           const originalBtnHtml = signinBtn.innerHTML;
+           signinBtn.disabled = true;
+           signinBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing in...';
+
+           try {
+              const res = await fetch(`<%= baseurl %>/admin/signin`, {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify(payload)
+              });
+
+              const result = await res.json();
+              alert(result.msg)
+              
+              if(result.status === true || result.msg === "Sign In successfull."){
+                window.location.href="/admin/login"
+              } else {
+                signinBtn.disabled = false;
+                signinBtn.innerHTML = originalBtnHtml;
+              }
+           } catch(err) {
+              console.error(err);
+              if (typeof signinBtn !== 'undefined' && originalBtnHtml) {
+                  signinBtn.disabled = false;
+                  signinBtn.innerHTML = originalBtnHtml;
+              }
+           }
+        }
+    </script>
 </body>
 </html>

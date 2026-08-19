@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Categories | UBR Esports Admin</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <link rel="stylesheet" href="/css/admin/adminLayout.css">
     <link rel="stylesheet" href="/css/home.css">
@@ -40,6 +41,13 @@
             color: #ff455e;
             font-size: 2.5rem;
             border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .category-card-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         .category-card h3 {
@@ -101,6 +109,33 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(215, 38, 61, 0.5);
         }
+
+        .delete-category-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(215, 38, 61, 0.85);
+            border: none;
+            border-radius: 50% !important;
+            width: 34px !important;
+            height: 34px !important;
+            padding: 0 !important;
+            box-sizing: border-box !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .delete-category-btn:hover {
+            transform: scale(1.1);
+            background-color: #ff455e;
+            box-shadow: 0 4px 12px rgba(215, 38, 61, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -124,49 +159,27 @@
                     </div>
 
                     <div class="categories">
-                        <div class="category-card">
-                            <div class="category-card-img">
-                                <i class="fa-solid fa-gamepad"></i>
-                            </div>
-                            <h3>Daily BGMI Scrims</h3>
-                            <p>Compete in daily scrims against top tier teams, practice rotations, and climb the competitive ladder.</p>
-                            <button class="card-btn" onclick="window.location.href='/admin/category'">
-                                <i class="fa-solid fa-eye"></i> View Details
-                            </button>
-                        </div>
 
-                        <div class="category-card">
+                      <% for(element of categories ) { %>
+                         <div class="category-card" style="position: relative;">
+                             <button class="delete-category-btn" onclick="deleteCategory(event, this, '<%= element._id %>')" title="Delete Category">
+                                 <i class="fa-solid fa-trash-can"></i>
+                             </button>
                             <div class="category-card-img">
-                                <i class="fa-solid fa-trophy"></i>
+                                <% if(element.img) { %>
+                                    <img src="/images/<%= element.img %>" alt="<%= element.title %>">
+                                <% } else { %>
+                                    <i class="fa-solid fa-gamepad"></i>
+                                <% } %>
                             </div>
-                            <h3>Paid Cash Tournaments</h3>
-                            <p>Enter high-stakes squad & solo tournaments with instant prize pool payouts directly to your wallet.</p>
-                            <button class="card-btn" onclick="window.location.href='/admin/category'">
+                            <h3><%= element.title %></h3>
+                            <p><%= element.description %></p>
+                            <button class="card-btn" onclick="window.location.href='/admin/category/<%= element._id %>'">
                                 <i class="fa-solid fa-eye"></i> View Details
                             </button>
                         </div>
+                     <% } %>
 
-                        <div class="category-card">
-                            <div class="category-card-img">
-                                <i class="fa-solid fa-users"></i>
-                            </div>
-                            <h3>Squad Custom Rooms</h3>
-                            <p>Organize custom room matches, challenge rival clans, and showcase your team's tactical gameplay.</p>
-                            <button class="card-btn" onclick="alert('Viewing Squad Custom Rooms details')">
-                                <i class="fa-solid fa-eye"></i> View Details
-                            </button>
-                        </div>
-
-                        <div class="category-card">
-                            <div class="category-card-img">
-                                <i class="fa-solid fa-shield-halved"></i>
-                            </div>
-                            <h3>Anti-Cheat Verified Events</h3>
-                            <p>100% fair gameplay guaranteed with strict anti-hack verification and dedicated live tournament marshals.</p>
-                            <button class="card-btn" onclick="alert('Viewing Anti-Cheat Verified Events details')">
-                                <i class="fa-solid fa-eye"></i> View Details
-                            </button>
-                        </div>
                     </div>
                 </div>
             </main>
@@ -174,5 +187,37 @@
             <%- include("../partials/footer") %>
         </div>
     </div>
+
+    <script>
+        async function deleteCategory(event, btn, id) {
+            event.stopPropagation();
+            if (confirm("Are you sure you want to delete this category? This will permanently delete the category and all its tournaments.")) {
+                try {
+                    const originalBtnHtml = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+                    const res = await fetch(`/admin/category/delete/${id}`, {
+                        method: 'POST'
+                    });
+                    const result = await res.json();
+                    alert(result.msg);
+                    if (res.status === 200 || result.success) {
+                        window.location.reload();
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = originalBtnHtml;
+                    }
+                } catch(err) {
+                    console.error("Error deleting category:", err);
+                    alert("Something went wrong. Please try again.");
+                    if (typeof btn !== 'undefined' && originalBtnHtml) {
+                        btn.disabled = false;
+                        btn.innerHTML = originalBtnHtml;
+                    }
+                }
+            }
+        }
+    </script>
 </body>
 </html>

@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>UBR Esports | Supporting Upcoming BGMI Talent</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
     <meta name="description" content="UBR Esports is a premier platform for rising BGMI talent, daily competitive scrims, custom tournaments, and fast prize withdrawals.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <link rel="stylesheet" href="/css/home.css">
@@ -13,7 +14,7 @@
 </head>
 <body>
     <div class="page-shell">
-        <%- include("partials/nav") %>
+        <%- include("partials/nav", ) %>
 
         <main class="main-content">
             <section class="hero">
@@ -34,7 +35,11 @@
                 <% for(category of categories) { %>
                 <div class="category-card">
                     <div class="category-card-img">
-                        <i class="fa-solid fa-gamepad"></i>
+                        <% if(category.img) { %>
+                            <img src="/images/<%= category.img %>" alt="<%= category.title %>">
+                        <% } else { %>
+                            <i class="fa-solid fa-gamepad"></i>
+                        <% } %>
                     </div>
                     <h3><%= category.title %></h3>
                     <p><%= category.description %></p>

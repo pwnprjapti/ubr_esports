@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Admin Dashboard | UBR Esports</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <link rel="stylesheet" href="/css/admin/adminLayout.css">
     <link rel="stylesheet" href="/css/admin/dashboard.css">
@@ -30,8 +31,8 @@
                             <i class="fa-solid fa-trophy"></i>
                         </div>
                         <div class="stat-content">
-                            <span class="stat-label">Tournaments</span>
-                            <span class="stat-num">8</span>
+                            <span class="stat-label">Categories</span>
+                            <span class="stat-num"><%= categories.length %></span>
                         </div>
                     </div>
 
@@ -40,8 +41,8 @@
                             <i class="fa-solid fa-shield-halved"></i>
                         </div>
                         <div class="stat-content">
-                            <span class="stat-label">Registered Teams</span>
-                            <span class="stat-num">24</span>
+                            <span class="stat-label"> Users</span>
+                            <span class="stat-num"><%= users.length %></span>
                         </div>
                     </div>
 
@@ -51,7 +52,7 @@
                         </div>
                         <div class="stat-content">
                             <span class="stat-label">Pending Withdrawals</span>
-                            <span class="stat-num">3</span>
+                            <span class="stat-num"><%= withdrawal.length %></span>
                         </div>
                     </div>
                 </div>
@@ -60,7 +61,7 @@
                 <div class="content-card">
                     <div class="card-header-flex">
                         <h2 class="card-title"><i class="fa-solid fa-gamepad"></i> Active Categories</h2>
-                        <a href="/admin/category" class="btn-link">View All</a>
+                        <a href="/admin/categories" class="btn-link">View All</a>
                     </div>
 
                     <div class="table-wrap">
@@ -68,21 +69,24 @@
                             <thead>
                                 <tr>
                                     <th>Tournament Name</th>
-                                    <th>Map</th>
+                                    <th>Date</th>
                                     <th>Slots</th>
                                     <th>Prize Pool</th>
-                                    <th>Status</th>
+                                    <th>IDP timings</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                  <% for ( category of categories.slice(0, 6) ){ if( category.matches.length > 0){ %>
                                 <tr>
-                                    <td><strong>BGMI Daily Pro Scrims</strong></td>
-                                    <td>Erangel</td>
-                                    <td>18 / 20</td>
-                                    <td><span class="text-green">₹5,000</span></td>
-                                    <td><span class="badge badge-green">Live</span></td>
+                                    <td><strong><%= category.matches[0]?.title %></strong></td>
+                                    <td><%= category.matches[0]?.date %></td>
+                                    <td><%= category.matches[0].teams.length %> / <%= category.matches[0]?.slots %></td>
+                                    <td><span class="text-green">₹<%= category.matches[0]?.prizePool %></span></td>
+                                    <td><span class="badge badge-blue"><%= category.matches[0]?.idpTimings %></span></td>
                                 </tr>
-                                <tr>
+                                <% }} %>
+
+                                <!-- <tr>
                                     <td><strong>Daily Cash Cup</strong></td>
                                     <td>Miramar</td>
                                     <td>12 / 20</td>
@@ -95,7 +99,7 @@
                                     <td>8 / 20</td>
                                     <td><span class="text-green">₹2,500</span></td>
                                     <td><span class="badge badge-blue">Upcoming</span></td>
-                                </tr>
+                                </tr> -->
                             </tbody>
                         </table>
                     </div>
@@ -115,26 +119,24 @@
                                     <th>Player / Team</th>
                                     <th>Amount</th>
                                     <th>UPI ID</th>
-                                    <th>Action</th>
+                                    <th>Note</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                <% if(withdrawal.length > 0 ) { for (request of withdrawal.slice(0, 5) ){ %>
                                 <tr>
-                                    <td><strong>Pawan</strong></td>
-                                    <td><strong class="text-green">₹1,500</strong></td>
-                                    <td><code>pawan@oksbi</code></td>
+                                    <td><strong><%= request.playerName %></strong></td>
+                                    <td><strong class="text-green">₹<%= request.amount %></strong></td>
+                                    <td><code><%= request.payoutDetail %></code></td>
+                                    <td><%= request.note %></td>
                                     <td>
-                                        <button class="btn-action btn-approve" onclick="this.closest('tr').remove(); alert('Withdrawal Approved!');"><i class="fa-solid fa-check"></i> Approve</button>
+                                        <button class="btn-action btn-approve"> <%= request.status %> </button>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td><strong>Aman</strong></td>
-                                    <td><strong class="text-green">₹2,000</strong></td>
-                                    <td><code>aman@okaxis</code></td>
-                                    <td>
-                                        <button class="btn-action btn-approve" onclick="this.closest('tr').remove(); alert('Withdrawal Approved!');"><i class="fa-solid fa-check"></i> Approve</button>
-                                    </td>
-                                </tr>
+                               <% }} %>
+
+                
                             </tbody>
                         </table>
                     </div>

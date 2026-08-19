@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Tournaments & Categories | UBR Esports</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
     <meta name="description" content="Browse and filter upcoming BGMI tournaments by date. Book your squad slots and compete for cash prize pools.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <link rel="stylesheet" href="/css/home.css">
@@ -95,7 +96,7 @@
                         </div>
                         <br>
                         <div class="card-actions">
-                            <button class="slot-btn" onclick="book('<%= id %>', '<%= match.title %>', '<%= match.entryFee %>')"><i class="fa-solid fa-ticket"></i> Book Slot</button>
+                             <button class="slot-btn" onclick="book(this, '<%= id %>', '<%= match.title %>', '<%= match.entryFee %>')"><i class="fa-solid fa-ticket"></i> Book Slot</button>
                         </div>
                     </article>
                 <% } %>
@@ -200,31 +201,44 @@
         })();
 
 
-       async function book(id, title, entryFee){
+       async function book(btn, id, title, entryFee){
             console.log(id, title, entryFee);
+            const originalBtnHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Booking...';
 
-            const res = await fetch(`${baseurl}/book`, {
-                method:'POST',
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify({id, title, entryFee})
-            });
+            try {
+                const res = await fetch(`${baseurl}/book`, {
+                    method:'POST',
+                    headers:{
+                        "Content-Type":"application/json"
+                    },
+                    body:JSON.stringify({id, title, entryFee})
+                });
 
-            const result = await res.json();
+                const result = await res.json();
+                console.log(result);
 
-            console.log(result);
-
-            if(res.status === 401 ){
-                window.location.href="/signin"
-            } else{
-                if(res.status){
-                alert(result.msg);
+                if(res.status === 401 ){
+                    window.location.href="/signin"
+                } else{
+                    alert(result.msg);
+                    if (res.status === 200) {
+                        window.location.reload();
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = originalBtnHtml;
+                    }
+                }
+            } catch(err) {
+                console.error("Booking error:", err);
+                alert("Something went wrong");
+                if (typeof btn !== 'undefined' && originalBtnHtml) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtnHtml;
+                }
             }
-            }
-
-
-        }
+       }
     </script>
 </body>
 </html>

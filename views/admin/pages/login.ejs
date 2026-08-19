@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Admin Login | UBR Esports</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <link rel="stylesheet" href="/css/admin/login.css">
 </head>
@@ -18,7 +19,7 @@
                 <p class="auth-sub">Enter your credentials to access the admin portal</p>
             </div>
 
-            <form class="auth-form" onsubmit="event.preventDefault(); window.location.href='/admin/dashboard';">
+            <form class="auth-form" onsubmit="event.preventDefault(); Login()">
                 <!-- 1. Email Field -->
                 <div class="form-group">
                     <label for="adminEmail">Email Address</label>
@@ -62,5 +63,49 @@
             </div>
         </div>
     </div>
+
+    <script>
+        const email = document.getElementById("adminEmail");
+        const password = document.getElementById("adminPassword");
+        const baseurl = "<%= baseurl %>";
+
+        async function Login(){
+           const loginBtn = document.querySelector(".auth-submit-btn");
+           const payload = {
+            email:email.value,
+            password:password.value
+           }
+
+           const originalBtnHtml = loginBtn.innerHTML;
+           loginBtn.disabled = true;
+           loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in...';
+
+           try {
+              const res = await fetch(`<%= baseurl %>/admin/login`, {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify(payload)
+              });
+
+              const result = await res.json();
+              alert(result.msg);
+              console.log(result);
+              if(result.status === true){
+                window.location.href="/admin"
+              } else {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = originalBtnHtml;
+              }
+           } catch(err) {
+              console.error(err);
+              if (typeof loginBtn !== 'undefined' && originalBtnHtml) {
+                  loginBtn.disabled = false;
+                  loginBtn.innerHTML = originalBtnHtml;
+              }
+           }
+        }
+    </script>
 </body>
 </html>

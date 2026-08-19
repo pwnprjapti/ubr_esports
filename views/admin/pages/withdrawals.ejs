@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Withdrawals | UBR Esports Admin</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <link rel="stylesheet" href="/css/admin/adminLayout.css">
     <link rel="stylesheet" href="/css/admin/dashboard.css">
@@ -31,51 +32,39 @@
                                     <th>Player</th>
                                     <th>Amount</th>
                                     <th>UPI ID</th>
-                                    <th>Requested At</th>
+                                    <!-- <th>Requested At</th> -->
                                     <th>Status</th>
                                     <th>Actions</th>
+                                    <th>Note</th>
                                 </tr>
                             </thead>
                             <tbody>
+
+                                <% for ( withdrawal of withdrawals ) { %>
                                 <tr>
-                                    <td><strong>Pawan</strong></td>
-                                    <td><strong class="text-green" style="font-size: 1.05rem;">₹1,500</strong></td>
-                                    <td><code>pawan@oksbi</code></td>
-                                    <td>10 mins ago</td>
-                                    <td><span class="badge badge-yellow">Pending</span></td>
+                                    <td><strong><%= withdrawal.playerName %></strong></td>
+                                    <td><strong class="text-green" style="font-size: 1.05rem;">₹<%= withdrawal.amount %></strong></td>
+                                    <td><code><%= withdrawal.payoutDetail %></code></td>
+                                    <!-- <td>10 mins ago</td> -->
+                                    <td><span class="badge badge-yellow"><%= withdrawal.status %></span></td>
                                     <td>
-                                        <div style="display: flex; gap: 0.4rem;">
-                                            <button class="btn-action btn-approve" onclick="this.closest('tr').remove(); alert('Approved!');"><i class="fa-solid fa-check"></i> Approve</button>
-                                            <button class="btn-action btn-delete" onclick="this.closest('tr').remove(); alert('Rejected!');"><i class="fa-solid fa-xmark"></i> Reject</button>
-                                        </div>
+                                         <% if(withdrawal.status === "approved" || withdrawal.status === "rejected") { %>
+                                         <div style="display: none; gap: 0.4rem;">
+                                             <button class="btn-action btn-approve"><i class="fa-solid fa-check"></i> Approve</button>
+                                             <button class="btn-action btn-delete"><i class="fa-solid fa-xmark"></i> Reject</button>
+                                         </div>
+                                         <% } else { %>
+                                          <div style="display: flex; gap: 0.4rem;">
+                                             <button class="btn-action btn-approve" onclick="selectOption(this, 'approved', '<%= withdrawal._id %>');"><i class="fa-solid fa-check"></i> Approve</button>
+                                             <button class="btn-action btn-delete" onclick="selectOption(this, 'rejected', '<%= withdrawal._id %>')"><i class="fa-solid fa-xmark"></i> Reject</button>
+                                         </div>
+                                         <% } %>
                                     </td>
+
+                                    <td><code><%= withdrawal.note %></code></td>
                                 </tr>
-                                <tr>
-                                    <td><strong>Aman</strong></td>
-                                    <td><strong class="text-green" style="font-size: 1.05rem;">₹2,000</strong></td>
-                                    <td><code>aman@okaxis</code></td>
-                                    <td>35 mins ago</td>
-                                    <td><span class="badge badge-yellow">Pending</span></td>
-                                    <td>
-                                        <div style="display: flex; gap: 0.4rem;">
-                                            <button class="btn-action btn-approve" onclick="this.closest('tr').remove(); alert('Approved!');"><i class="fa-solid fa-check"></i> Approve</button>
-                                            <button class="btn-action btn-delete" onclick="this.closest('tr').remove(); alert('Rejected!');"><i class="fa-solid fa-xmark"></i> Reject</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Rahul Sharma</strong></td>
-                                    <td><strong class="text-green" style="font-size: 1.05rem;">₹750</strong></td>
-                                    <td><code>rahul@paytm</code></td>
-                                    <td>1 hour ago</td>
-                                    <td><span class="badge badge-yellow">Pending</span></td>
-                                    <td>
-                                        <div style="display: flex; gap: 0.4rem;">
-                                            <button class="btn-action btn-approve" onclick="this.closest('tr').remove(); alert('Approved!');"><i class="fa-solid fa-check"></i> Approve</button>
-                                            <button class="btn-action btn-delete" onclick="this.closest('tr').remove(); alert('Rejected!');"><i class="fa-solid fa-xmark"></i> Reject</button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <% } %>
+
                             </tbody>
                         </table>
                     </div>
@@ -85,5 +74,38 @@
             <%- include("../partials/footer") %>
         </div>
     </div>
+
+    <script>
+        // const baseurl = 
+        async function selectOption(btn, option, id) {
+            const actionText = option === 'approved' ? 'approve' : 'reject';
+            if (confirm(`Are you sure you want to ${actionText} this withdrawal request?`)) {
+                const originalHtml = btn.innerHTML;
+                const siblings = btn.parentElement.querySelectorAll('button');
+                siblings.forEach(s => s.disabled = true);
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+                try {
+                    const res = await fetch("<%= baseurl %>/admin/withdrawalReq", {
+                        method:'POST',
+                        headers:{
+                            "Content-Type":"application/json"
+                        },
+                        body:JSON.stringify({option, id})
+                    });
+
+                    const result = await res.json();
+                    alert(result.msg);
+                    console.log(result);
+                    window.location.reload();
+                } catch(err) {
+                    console.error("Error processing withdrawal:", err);
+                    alert("Something went wrong");
+                    siblings.forEach(s => s.disabled = false);
+                    btn.innerHTML = originalHtml;
+                }
+            }
+        }
+    </script>
 </body>
 </html>

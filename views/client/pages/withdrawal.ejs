@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Withdrawal | UBR Esports</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
     <meta name="description" content="Fast, reliable tournament winning withdrawals via UPI or QR barcode scanner.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <link rel="stylesheet" href="/css/home.css">
@@ -141,7 +142,7 @@
 
 
         async function withdrawal() {
-
+            const submitBtn = document.querySelector(".submit-btn");
             const payload = {
                 amount:amount.value,
                 payoutMethod:methodSelect.value,
@@ -150,19 +151,34 @@
             }
 
             console.log(payload);
+            const originalBtnHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
 
-            const res = await fetch(`${baseurl}/withdrawal`, {
-                method:'POST',
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify(payload)
-            })
+            try {
+                const res = await fetch(`${baseurl}/withdrawal`, {
+                    method:'POST',
+                    headers:{
+                        "Content-Type":"application/json"
+                    },
+                    body:JSON.stringify(payload)
+                });
 
-            const result = await res.json();
-            console.log(result);
-            if(res.status){
-               alert(result.msg);
+                const result = await res.json();
+                console.log(result);
+                alert(result.msg);
+                
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+                if (res.status === 200) {
+                    window.location.reload();
+                }
+            } catch(err) {
+                console.error("Error submitting withdrawal:", err);
+                if (typeof submitBtn !== 'undefined' && originalBtnHtml) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
+                }
             }
         }
     </script>

@@ -14,7 +14,7 @@ const categorySchema = new mongoose.Schema({
             idpTimings:{type:String},
             teams:[
                 {
-                    teamName:{type:String}, teamLogo:{type:String}, whatsappNumber:{type:Number}, dropDetails:{type:Object} 
+                    teamName:{type:String}, teamLogo:{type:String}, whatsappNumber:{type:Number}, dropDetails:{ erangle:{type:String}, rando:{type:String}, miramar:{type:String}} 
                 }
             ]
         }

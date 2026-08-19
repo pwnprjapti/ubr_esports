@@ -6,7 +6,6 @@ const withdrawalSchema = new mongoose.Schema({
     amount:{type:Number},
     payoutMethod:{type:String},
     payoutDetail:{type:String},
-    note:{type:String},
     status:{type:String},
     note:{type:String}
 })

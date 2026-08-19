@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Add Category | UBR Esports Admin</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <link rel="stylesheet" href="/css/admin/adminLayout.css">
     <link rel="stylesheet" href="/css/addcategory.css">
@@ -83,28 +84,45 @@
 
         async function submitData(e){
             e.preventDefault();
-          try{
+            try {
+                if (!categoryName.value || !categoryDescription.value) {
+                    alert("Please fill all fields");
+                    return;
+                }
+                const formData = new FormData();
+                formData.append("title", categoryName.value);
+                formData.append("description", categoryDescription.value);
+                if (categoryPicture.files[0]) {
+                    formData.append("categoryPicture", categoryPicture.files[0]);
+                } else {
+                    alert("Please upload a category picture");
+                    return;
+                }
 
-            const data = {
-                 title:categoryName.value,
-                 description:categoryDescription.value,
-                 img:categoryPicture.files[0] ? categoryPicture.files[0].name : ''
+                const originalBtnHtml = submitButton.innerHTML;
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+
+                const res = await fetch(`${baseurl}/admin/addcategory`, {  
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await res.json();
+                alert(result.msg);
+                if (res.status === 200 || result.msg === "Category created successfully") {
+                    window.location.href = "/admin/categories";
+                } else {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalBtnHtml;
+                }
+            } catch(err) {
+                console.log(err);
+                if (typeof submitButton !== 'undefined') {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalBtnHtml;
+                }
             }
-
-            console.log(data);
-            const res = await fetch(`${baseurl}/admin/addcategory`, {  
-                method:'POST',
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify(data)
-            });
-
-            const result = await res.json();
-            console.log(result);
-          }catch(err){
-                console.log(err)
-          }
         }
 
         submitButton.addEventListener("click", submitData);

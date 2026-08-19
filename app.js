@@ -2,17 +2,21 @@ import express from "express"
 import dotenv from "dotenv"
 import ejs from "ejs"
 import path from "path"
+import fs from "fs"
 import { fileURLToPath } from "url"
 import passport from "passport"
 import session from "express-session"
 import mongoose from "mongoose"
+import bcrypt from "bcrypt"
 import './views/client/auth/google.js';
+import multer from "multer"
 
 //models
 
 import userModel from "./models/user.model.js"
 import categoryModel from "./models/category.model.js"
 import withdrawalModel from "./models/withdrawal.model.js"
+import adminModel from "./models/admin.model.js"
 
 
 const app = express();
@@ -23,9 +27,14 @@ mongoose.connect(process.env.MONGO_URI).then(()=> console.log("database connecte
 
 
 app.use(session({
-    secret:"mysecret",
+    secret:process.env.SESSION_SECRET,
     resave:false,
-    saveUninitialized:true
+    saveUninitialized:true,
+    cookie:{
+        httpOnly:true,
+        secure:process.env.NODE_ENV === "production",
+        maxAge: 1000*60*60*24 // 1 day
+    }
 }));
 
 app.use(passport.initialize());
@@ -34,6 +43,17 @@ app.use(passport.session());
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, path.join(__dirname, 'public', 'images'));
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage: storage });
+
 app.set('view engine', 'ejs');
 app.set('views', [
     path.join(__dirname, 'views', 'client'),
@@ -41,6 +61,7 @@ app.set('views', [
     path.join(__dirname, 'views')
 ]);
 app.use(express.static(path.join(__dirname, 'assets')));
+app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 app.use(express.json());
 
 //middleware
@@ -53,6 +74,13 @@ function authCheck(req, res, next){
     res.redirect("/signin")
 }
 
+function adminAuthCheck(req, res, next){
+    if(!req.session.userId){
+        return res.redirect("/admin/login");
+    }
+
+    next();
+}
 
 const baseurl = process.env.BASE_URL;
 
@@ -124,18 +152,48 @@ app.get("/withdrawal", authCheck, async (req, res)=>{
 })
 
 app.post("/withdrawal", authCheck, async (req, res)=>{
-    console.log(req.body);
-    const details = req.body;
-    const fulldetail = {...details, status:"pending", playerName:req.user.displayName, id:req.user.id};
-    const checkWallet = await userModel.findOne({gglId:req.user.id}).select("wallet");
-    if(checkWallet.wallet.balance.availableBalance <= 0 || checkWallet.wallet.balance.availableBalance < details.amount){
-        return res.status(409).json({msg:"You Dont have sufficient balance in Your wallet"})
-    };
+    try {
+        console.log(req.body);
+        const details = req.body;
+        const amount = Number(details.amount);
+        if (isNaN(amount) || amount <= 0) {
+            return res.status(400).json({msg:"Invalid amount."});
+        }
 
-    const addRequest = await withdrawalModel.create(fulldetail);
-    const result = await addRequest.save();
-    if(result){
-        return res.status(200).json({msg:"Request submited successfully, wait for approvel."});
+        // Atomically check balance and deduct immediately on request creation
+        const updateWallet = await userModel.findOneAndUpdate(
+            { gglId: req.user.id, "wallet.balance.availableBalance": { $gte: amount } },
+            { $inc: { "wallet.balance.availableBalance": -amount } },
+            { new: true }
+        );
+
+        if(!updateWallet){
+            return res.status(409).json({msg:"You Dont have sufficient balance in Your wallet"})
+        };
+
+        const fulldetail = {
+            ...details,
+            amount: amount,
+            status: "pending",
+            playerName: req.user.displayName,
+            id: req.user.id
+        };
+
+        const addRequest = await withdrawalModel.create(fulldetail);
+        const result = await addRequest.save();
+        if(result){
+            return res.status(200).json({msg:"Request submited successfully, wait for approvel."});
+        } else {
+            // Refund if DB creation fails
+            await userModel.findOneAndUpdate(
+                { gglId: req.user.id },
+                { $inc: { "wallet.balance.availableBalance": amount } }
+            );
+            return res.status(500).json({msg:"Failed to submit request. Money has been refunded."});
+        }
+    } catch (err) {
+        console.error("Withdrawal error:", err);
+        return res.status(500).json({msg:"Internal server error"});
     }
 })
 
@@ -209,22 +267,53 @@ app.get("/team-settings", authCheck, async (req, res)=>{
      }
 })
 
-app.post("/team-settings", authCheck, async (req, res)=>{
-    console.log(req.user.id);
+app.post("/team-settings", authCheck, upload.single('teamLogo'), async (req, res)=>{
+    try {
+        console.log(req.user.id);
+        const user = await userModel.findOne({gglId: req.user.id});
+        if(!user){
+            return res.status(404).json({msg:"User does not exist"});
+        }
 
-    const isExist = await userModel.find({gglId:req.user.id});
-    if(!isExist){
-        return res.status(404).json({msg:"User does not exist"});
+        const { teamName, whatsappNumber } = req.body;
+        if (!teamName || !whatsappNumber) {
+            return res.status(400).json({ msg: "Please fill all required fields." });
+        }
+
+        // Preserve existing logo if no new file is uploaded
+        let logoName = user.team && user.team.teamLogo ? user.team.teamLogo : "";
+        if (req.file) {
+            // Delete old logo file if it exists
+            if (logoName) {
+                const oldLogoPath = path.join(__dirname, 'public', 'images', logoName);
+                if (fs.existsSync(oldLogoPath)) {
+                    fs.unlinkSync(oldLogoPath);
+                }
+            }
+            logoName = req.file.filename;
+        }
+
+        const teamData = {
+            teamName: teamName.trim(),
+            whatsappNumber: Number(whatsappNumber),
+            teamLogo: logoName
+        };
+
+        const updatedUser = await userModel.findOneAndUpdate(
+            { gglId: req.user.id },
+            { team: teamData },
+            { new: true }
+        );
+
+        if(!updatedUser){
+            return res.status(500).json({msg:"something went wrong in adding team please try again later"});
+        }
+        console.log(updatedUser);
+        return res.status(200).json({ msg:"team Created Successfully" });
+    } catch(err) {
+        console.error("Error setting team details:", err);
+        return res.status(500).json({ msg: "Internal server error" });
     }
-
-    console.log(req.body);
-
-    const addteam = await userModel.findOneAndUpdate({gglId:req.user.id}, { team:req.body}, {returnDocument: 'after'});
-    if(!addteam){
-        return res.json({msg:"something went wrong in adding team please try again later"});
-    }
-    console.log(addteam);
-    return res.status(200).json({ msg:"team Created Successfully" });
 })
 
 app.get("/drop-details", authCheck, async (req, res)=>{
@@ -283,37 +372,74 @@ app.post("/book", async (req, res)=>{
            return res.status(400).json({msg:"Please set up your team settings first."});
        }
        console.log(getTeam.team.teamName);
-       const { id, title, entryFee } = req.body;
-       
-       const checkBalance = await userModel.findOne({gglId:req.user.id}).select("wallet");
-       if (!checkBalance || !checkBalance.wallet || !checkBalance.wallet.balance) {
-           return res.status(500).json({msg:"Internal server error: wallet balance not found."});
-       }
-       if(checkBalance.wallet.balance.availableBalance < entryFee ){
-         return res.status(400).json({msg:"You dont have sufficient balance in Your wallet"});
-       };
+       const { id, title } = req.body;
 
-       const isExist = await categoryModel.findOne({_id:id});
-       if(!isExist){
+       // Fetch category and match details from DB to prevent client-side entryFee tampering
+       const category = await categoryModel.findOne({_id:id});
+       if(!category){
          return res.status(404).json({msg:"This category does not exist."})
        }
+       const match = category.matches.find(m => m.title === title);
+       if(!match){
+         return res.status(404).json({msg:"This match does not exist."})
+       }
+       const entryFee = Number(match.entryFee) || 0;
+
+       const drop = await userModel.findOne({gglId:req.user.id}).select("dropDetails");
+       console.log(drop)
+       if(!drop || !drop.dropDetails){
+         return res.status(400).json({msg:"Please add Drop Details "});
+       };
 
        const isAlreadyRegistered = await categoryModel.findOne({_id:id, matches:{$elemMatch:{title, teams:{ $elemMatch:{teamName:getTeam.team.teamName}}}}});
        if(isAlreadyRegistered){
          return res.status(409).json({msg:"You have already booked"});
        }
 
-       const dropDetails = await userModel.findOne({gglId:req.user.id}).select("dropDetails");
-       const fullteam = {...getTeam.team, dropDetails}
+       // Atomically deduct the balance first to prevent double-booking race conditions
+       const updateWallet = await userModel.findOneAndUpdate(
+           { gglId: req.user.id, "wallet.balance.availableBalance": { $gte: entryFee } },
+           { $inc: { "wallet.balance.availableBalance": -entryFee } },
+           { new: true }
+       );
+       if(!updateWallet){
+         return res.status(400).json({msg:"You dont have sufficient balance in Your wallet"});
+       };
+
+       const erangle = drop.dropDetails.erangle;
+       const rando = drop.dropDetails.rando;
+       const miramar = drop.dropDetails.miramar;
+
+       const teamObj = getTeam.team.toObject ? getTeam.team.toObject() : getTeam.team;
+       const fullteam = {
+           teamName: teamObj.teamName,
+           teamLogo: teamObj.teamLogo,
+           whatsappNumber: teamObj.whatsappNumber,
+           dropDetails: {
+               erangle: erangle || "",
+               rando: rando || "",
+               miramar: miramar || ""
+           }
+       };
        console.log(fullteam);
-       const saveTeam = await categoryModel.findOneAndUpdate({ _id: id, "matches.title": title }, { $push: { "matches.$.teams": getTeam.team } },  { new: true } );
+
+       // Save the team. Ensure we only push if the team is not already in the teams array
+       const saveTeam = await categoryModel.findOneAndUpdate(
+           { _id: id, "matches.title": title, "matches.teams.teamName": { $ne: fullteam.teamName } },
+           { $push: { "matches.$.teams": fullteam } },
+           { new: true }
+       );
+
        if(saveTeam){
-         const updateWallet = await userModel.findOneAndUpdate({gglId:req.user.id},  { $inc: { "wallet.balance.availableBalance": -entryFee }}, {returnDocument:'after'});
-         if(updateWallet){
-             return res.status(200).json({msg:"Slot booked successfully. "})
-         };
+           return res.status(200).json({msg:"Slot booked successfully. "});
+       } else {
+           // Refund the balance if booking failed/prevented by double-booking filter
+           await userModel.findOneAndUpdate(
+               { gglId: req.user.id },
+               { $inc: { "wallet.balance.availableBalance": entryFee } }
+           );
+           return res.status(500).json({msg:"Failed to book slot. Money has been refunded."});
        }
-       return res.status(500).json({msg:"Failed to book slot. Please try again."});
    } catch (err) {
        console.error("Booking error:", err);
        return res.status(500).json({msg:"Internal server error during booking."});
@@ -321,50 +447,120 @@ app.post("/book", async (req, res)=>{
 })
 
 /* Admin Control Panel Routes */
-app.get("/admin", (req, res)=>{
+app.get("/admin", adminAuthCheck, (req, res)=>{
     res.redirect("/admin/dashboard");
 })
 
-app.get("/admin/dashboard", (req, res)=>{
-    res.render("admin/pages/dashboard");
+app.get("/admin/dashboard", adminAuthCheck,  async (req, res)=>{
+    try{
+        const users = await userModel.find();
+        const categories = await categoryModel.find();
+        const withdrawal = await withdrawalModel.find({status:"pending"});
+
+        res.render("admin/pages/dashboard", { users, categories, withdrawal });
+    }catch(err){
+        console.log(err)
+    }
 })
 
-app.get("/admin/categories", (req, res)=>{
-    res.render("admin/pages/categories");
+app.get("/admin/categories", adminAuthCheck, async (req, res)=>{
+    const categories = await categoryModel.find();
+    res.render("admin/pages/categories", { categories });
 })
 
-app.get("/admin/category", (req, res)=>{
-    res.render("admin/pages/category");
+app.get("/admin/category/:id", adminAuthCheck, async (req, res)=>{
+    try {
+        const {id} = req.params;
+        console.log(id);
+        const getMatch = await categoryModel.find({_id:id}).select("matches -_id");
+        if (!getMatch || getMatch.length === 0) {
+            return res.status(404).send("Category not found");
+        }
+        const matches = getMatch[0].matches || [];
+        if (matches.length > 0) {
+            console.log(matches[0].date);
+            if (matches[0].idpTimings) {
+                console.log(matches[0].idpTimings.split(","));
+            }
+        }
+        console.log(matches);
+        res.render("admin/pages/category", { matches, id, baseurl });
+    } catch (err) {
+        console.error("Error fetching category matches:", err);
+        res.status(500).send("Internal Server Error");
+    }
+    
 })
 
-app.get("/admin/addcategory", (req, res)=>{
+app.get("/admin/addcategory", adminAuthCheck, (req, res)=>{
     res.render("admin/pages/addcategory", { baseurl });
 })
 
-app.post("/admin/addcategory", async (req, res)=>{
-    console.log(req.body);
-    const isExist = await categoryModel.findOne({title:req.body.title});
-    let msg;
-    if(!isExist){
-        const category = await categoryModel.create(req.body);
-        const result = await category.save();
-        if(result){
-             msg = "Category created successfully"
+app.post("/admin/addcategory", adminAuthCheck, upload.single('categoryPicture'), async (req, res)=>{
+    try {
+        console.log(req.body);
+        console.log(req.file);
+        const { title, description } = req.body;
+        if (!title || !description) {
+            return res.status(400).json({ msg: "Please fill all fields." });
         }
-    } else {
-        msg = "Category already exist with this name."
+        const isExist = await categoryModel.findOne({ title: title });
+        let msg;
+        if(!isExist){
+            const imgName = req.file ? req.file.filename : "";
+            const category = await categoryModel.create({
+                title,
+                description,
+                img: imgName
+            });
+            const result = await category.save();
+            if(result){
+                 msg = "Category created successfully"
+            } else {
+                 msg = "Failed to create category."
+            }
+        } else {
+            msg = "Category already exist with this name."
+        }
+        
+        res.json({msg});
+    } catch (err) {
+        console.error("Error creating category:", err);
+        res.status(500).json({ msg: "Internal server error" });
     }
-    
-    res.json({msg});
 })
 
-app.get("/admin/addtournament", async (req, res)=>{
+app.post("/admin/category/delete/:id", adminAuthCheck, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const category = await categoryModel.findById(id);
+        if (!category) {
+            return res.status(404).json({ success: false, msg: "Category not found." });
+        }
+        
+        // Delete image if exists
+        if (category.img) {
+            const imgPath = path.join(__dirname, 'public', 'images', category.img);
+            if (fs.existsSync(imgPath)) {
+                fs.unlinkSync(imgPath);
+            }
+        }
+        
+        await categoryModel.findByIdAndDelete(id);
+        return res.status(200).json({ success: true, msg: "Category deleted successfully" });
+    } catch (err) {
+        console.error("Error deleting category:", err);
+        return res.status(500).json({ success: false, msg: "Internal server error" });
+    }
+})
+
+app.get("/admin/addtournament", adminAuthCheck, async (req, res)=>{
     const categories = await categoryModel.find().select("title -_id");
     console.log(categories);
     res.render("admin/pages/addtournament", { categories, baseurl });
 })
 
-app.post("/admin/addtournament", async (req, res)=>{
+app.post("/admin/addtournament", adminAuthCheck, async (req, res)=>{
     console.log(req.body);
     const match = req.body.data;
     let msg;
@@ -381,20 +577,179 @@ app.post("/admin/addtournament", async (req, res)=>{
     res.json({msg});
 })
 
-app.get("/admin/teams", (req, res)=>{
-    res.render("admin/pages/teams");
+app.post("/admin/category/:id/tournament/delete/:mid", adminAuthCheck, async (req, res) => {
+    try {
+        const { id, mid } = req.params;
+        const result = await categoryModel.findByIdAndUpdate(
+            id,
+            { $pull: { matches: { _id: mid } } },
+            { new: true }
+        );
+        if (result) {
+            return res.status(200).json({ success: true, msg: "Tournament deleted successfully" });
+        } else {
+            return res.status(404).json({ success: false, msg: "Category or Tournament not found" });
+        }
+    } catch (err) {
+        console.error("Error deleting tournament:", err);
+        return res.status(500).json({ success: false, msg: "Internal server error" });
+    }
 })
 
-app.get("/admin/withdrawals", (req, res)=>{
-    res.render("admin/pages/withdrawals");
+app.get("/admin/teams/:id/:mid", adminAuthCheck, async (req, res)=>{
+    try {
+        const {id, mid} = req.params;
+        console.log(id)
+        const category = await categoryModel.findOne({ _id: id, "matches._id": mid }, { "matches.$": 1 });
+        if (!category || !category.matches || category.matches.length === 0) {
+            return res.status(404).send("Category or Match not found");
+        }
+        
+        const matchesTeams = category.matches[0].teams || [];
+        
+        // Fetch current logos from the users collection for all these teams
+        const teamNames = matchesTeams.map(t => t.teamName);
+        const users = await userModel.find({ "team.teamName": { $in: teamNames } }).select("team");
+        
+        // Create a map of teamName -> teamLogo
+        const logoMap = {};
+        users.forEach(u => {
+            if (u.team && u.team.teamName) {
+                logoMap[u.team.teamName] = u.team.teamLogo;
+            }
+        });
+        
+        // Construct teams array with the latest logo
+        const teams = matchesTeams.map(t => {
+            const teamObj = t.toObject ? t.toObject() : t;
+            return {
+                ...teamObj,
+                teamLogo: logoMap[t.teamName] || t.teamLogo || ""
+            };
+        });
+
+        console.log(teams);
+        res.render("admin/pages/teams", { teams });
+    } catch (err) {
+        console.error("Error fetching teams:", err);
+        res.status(500).send("Internal Server Error");
+    }
+})
+
+app.get("/admin/withdrawals", adminAuthCheck, async (req, res)=>{
+    const withdrawals = await withdrawalModel.find();
+    console.log(withdrawals);
+    res.render("admin/pages/withdrawals", { withdrawals, baseurl });
+})
+
+app.post("/admin/withdrawalReq", adminAuthCheck, async (req, res)=>{
+    try {
+        const { option, id } = req.body;
+        
+        // Find the request and verify it is still pending
+        const withdrawalReq = await withdrawalModel.findOne({ _id: id });
+        if (!withdrawalReq) {
+            return res.status(404).json({ msg: "Withdrawal request not found." });
+        }
+        
+        if (withdrawalReq.status !== "pending") {
+            return res.status(400).json({ msg: "This withdrawal request has already been processed." });
+        }
+
+        if (option === "rejected") {
+            // Update status to rejected
+            withdrawalReq.status = "rejected";
+            await withdrawalReq.save();
+            
+            // Refund the balance to the user
+            await userModel.findOneAndUpdate(
+                { gglId: withdrawalReq.id },
+                { $inc: { "wallet.balance.availableBalance": withdrawalReq.amount } }
+            );
+            
+            return res.status(200).json({ msg: "Withdrawal rejected and funds refunded to user." });
+        } else if (option === "approved") {
+            // Update status to approved
+            withdrawalReq.status = "approved";
+            await withdrawalReq.save();
+            
+            return res.status(200).json({ msg: "Withdrawal approved successfully." });
+        } else {
+            return res.status(400).json({ msg: "Invalid status option." });
+        }
+    } catch (err) {
+        console.error("Admin withdrawal processing error:", err);
+        return res.status(500).json({ msg: "Internal server error." });
+    }
 })
 
 app.get("/admin/login", (req, res)=>{
-    res.render("admin/pages/login");
+    console.log(baseurl);
+    res.render("admin/pages/login", {baseurl});
+})
+
+app.post("/admin/login", async (req, res)=>{
+    try{
+        const { email, password } = req.body;
+    if(!email || !password){
+        return res.status(400).json({msg:"Please enter both fields."})
+    }
+
+    const getCredientials = await adminModel.find();
+    const verify = await bcrypt.compare(password, getCredientials[0].password);
+    if(!verify){
+       return res.status(401).json({msg:'Invalid credientials'});
+    };
+
+    req.session.userId = getCredientials[0]._id.toString();
+    res.json({status:true, msg:"Login successfull"})
+  }catch(err){
+    console.log(err);
+  }
 })
 
 app.get("/admin/signin", (req, res)=>{
-    res.render("admin/pages/signin");
+    res.render("admin/pages/signin", {baseurl});
+})
+
+app.post("/admin/signin", async (req, res)=>{
+    try{
+        const { email, password } = req.body;
+    if(!email || !password){
+        return res.status(400).json({msg:"Please enter both fields."})
+    }
+
+    const get = await adminModel.find();
+    if(get.length >= 1){
+        return res.json({msg:"Admin account already Exist please Login to Your Admin panel."})
+    }
+    const hashedpass = await bcrypt.hash(password, 10);
+    console.log(hashedpass);
+
+    const saveCre = await adminModel.create({email:email, password:hashedpass});
+    const check = await saveCre.save();
+    
+    if(!check){
+        return res.json({msg:"Something went wrong in Signing in"})
+    }
+
+    return res.json({status:true, msg:"Sign In successfull."});
+    
+  }catch(err){
+    console.log(err);
+  }
+});
+
+app.get("/admin/logout", (req, res)=>{
+  req.session.destroy((err)=>{
+    if(err){
+        return res.status(500).json({msg:"Logout failed"})
+    }
+
+    res.clearCookie("connect.sid");
+
+    res.redirect("/admin/login")
+  })
 })
 
 const port = process.env.PORT || 3000;

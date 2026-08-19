@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Team Settings | UBR Esports</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
     <meta name="description" content="Manage your esports squad profile, team logo, and WhatsApp contact details for UBR tournaments and scrims.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <link rel="stylesheet" href="/css/home.css">
@@ -66,10 +67,10 @@
                                     name="teamLogo" 
                                     class="file-input" 
                                     accept="image/png, image/jpeg, image/webp"
-                                    required
+                                    <%= (team && team.teamLogo) ? '' : 'required' %>
                                 >
                                 
-                                <div class="upload-placeholder" id="uploadPlaceholder">
+                                <div class="upload-placeholder" id="uploadPlaceholder" style="<%= (team && team.teamLogo) ? 'display: none;' : '' %>">
                                     <div class="upload-icon">
                                         <i class="fa-solid fa-cloud-arrow-up"></i>
                                     </div>
@@ -77,9 +78,9 @@
                                     <p class="upload-hint">PNG, JPG or WebP (Max 2MB)</p>
                                 </div>
 
-                                <div class="upload-preview-container" id="uploadPreviewContainer">
+                                <div class="upload-preview-container <%= (team && team.teamLogo) ? 'active' : '' %>" id="uploadPreviewContainer">
                                     <div class="logo-preview-wrapper">
-                                        <img id="logoPreviewImg" class="logo-preview-img" src="<%= team.teamLogo %>" alt="Team Logo Preview">
+                                        <img id="logoPreviewImg" class="logo-preview-img" src="<%= (team && team.teamLogo) ? '/images/' + team.teamLogo : '' %>" alt="Team Logo Preview">
                                     </div>
                                     <button type="button" class="remove-logo-btn" id="removeLogoBtn">
                                         <i class="fa-solid fa-trash-can"></i> Change Logo
@@ -185,40 +186,44 @@
        async function handleTeamSubmit(e) {
             e.preventDefault();
             
-           const payload = {
-    teamName: teamName.value.trim(),
-    whatsappNumber: whatsappNumber.value.trim(),
-    teamLogo: teamLogoInput.files[0] ? teamLogoInput.files[0].name : ''
-  };
+            if (!teamName.value.trim() || !whatsappNumber.value.trim()) {
+                alert("Please fill all required fields.");
+                return;
+            }
 
-  console.log(payload);
+            const formData = new FormData();
+            formData.append("teamName", teamName.value.trim());
+            formData.append("whatsappNumber", whatsappNumber.value.trim());
+            if (teamLogoInput.files[0]) {
+                formData.append("teamLogo", teamLogoInput.files[0]);
+            }
 
             try{
-               const originalBtnHtml = submitBtn.innerHTML;
+               const originalBtnHtml = '<i class="fa-solid fa-floppy-disk"></i> Submit';
                submitBtn.disabled = true;
                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
 
                console.log("hello")
                const res = await fetch(`${baseurl}/team-settings`, {
                 method:'POST',
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify(payload)
+                body: formData
                });
 
                const result = await res.json();
-
-               if(res.status){
-                 alert(result.msg);
-               }
+               alert(result.msg);
                console.log(result);
 
                submitBtn.disabled = false;
-               submitBtn.innerHTML = 'Team added';
-
+               submitBtn.innerHTML = originalBtnHtml;
+               if (res.status === 200) {
+                   window.location.reload();
+               }
             } catch (err){
                 console.log(err);
+                if (typeof submitBtn !== 'undefined') {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Submit';
+                }
             }
             // setTimeout(() => {
             //     submitBtn.disabled = false;
