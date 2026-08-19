@@ -25,7 +25,7 @@ dotenv.config();
 // database connection 
 mongoose.connect(process.env.MONGO_URI).then(()=> console.log("database connected successfully..")).catch(err=>console.log(err));
 
-
+app.set('trust proxy', 1);
 app.use(session({
     secret:process.env.SESSION_SECRET,
     resave:false,
