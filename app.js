@@ -86,9 +86,16 @@ const baseurl = process.env.BASE_URL;
 
 /* Client Routes */
 
-app.get("/checksignin", (req, res)=>{
+app.get("/checksignin", async (req, res)=>{
     if (req.isAuthenticated()) {
-        return res.status(200).json({ authenticated: true });
+        const user = await userModel.findOne({ gglId: req.user.id });
+        const hasTeam = !!(user && user.team && user.team.teamName);
+        const hasDrop = !!(user && user.dropDetails && (user.dropDetails.erangle || user.dropDetails.miramar || user.dropDetails.rando));
+        return res.status(200).json({ 
+            authenticated: true, 
+            hasTeam, 
+            hasDrop 
+        });
     }
     return res.status(401).json({ authenticated: false });
 });
@@ -360,7 +367,7 @@ app.get("/logout", (req, res)=>{
     })
 })
 
-app.post("/book", async (req, res)=>{
+app.post("/book", upload.single('screenshot'), async (req, res)=>{
      if (!req.isAuthenticated()) {
         return res.status(401).json({ authenticated: false });
     }
@@ -373,43 +380,49 @@ app.post("/book", async (req, res)=>{
        }
        console.log(getTeam.team.teamName);
        const { id, title } = req.body;
-
+ 
        // Fetch category and match details from DB to prevent client-side entryFee tampering
        const category = await categoryModel.findOne({_id:id});
        if(!category){
+         if (req.file) fs.unlinkSync(req.file.path);
          return res.status(404).json({msg:"This category does not exist."})
        }
        const match = category.matches.find(m => m.title === title);
        if(!match){
+         if (req.file) fs.unlinkSync(req.file.path);
          return res.status(404).json({msg:"This match does not exist."})
        }
        const entryFee = Number(match.entryFee) || 0;
 
+       // Require payment screenshot if there is an entry fee
+       if (entryFee > 0 && !req.file) {
+           return res.status(400).json({msg:"Payment screenshot is required."});
+       }
+
+       // Check if slots are full
+       const approvedTeamsCount = match.teams.filter(t => t.status === "approved").length;
+       if (approvedTeamsCount >= match.slots) {
+           if (req.file) fs.unlinkSync(req.file.path);
+           return res.status(400).json({msg:"Tournament slots are already full!"});
+       }
+ 
        const drop = await userModel.findOne({gglId:req.user.id}).select("dropDetails");
        console.log(drop)
        if(!drop || !drop.dropDetails){
+         if (req.file) fs.unlinkSync(req.file.path);
          return res.status(400).json({msg:"Please add Drop Details "});
        };
-
+ 
        const isAlreadyRegistered = await categoryModel.findOne({_id:id, matches:{$elemMatch:{title, teams:{ $elemMatch:{teamName:getTeam.team.teamName}}}}});
        if(isAlreadyRegistered){
+         if (req.file) fs.unlinkSync(req.file.path);
          return res.status(409).json({msg:"You have already booked"});
        }
-
-       // Atomically deduct the balance first to prevent double-booking race conditions
-       const updateWallet = await userModel.findOneAndUpdate(
-           { gglId: req.user.id, "wallet.balance.availableBalance": { $gte: entryFee } },
-           { $inc: { "wallet.balance.availableBalance": -entryFee } },
-           { new: true }
-       );
-       if(!updateWallet){
-         return res.status(400).json({msg:"You dont have sufficient balance in Your wallet"});
-       };
-
+ 
        const erangle = drop.dropDetails.erangle;
        const rando = drop.dropDetails.rando;
        const miramar = drop.dropDetails.miramar;
-
+ 
        const teamObj = getTeam.team.toObject ? getTeam.team.toObject() : getTeam.team;
        const fullteam = {
            teamName: teamObj.teamName,
@@ -419,29 +432,30 @@ app.post("/book", async (req, res)=>{
                erangle: erangle || "",
                rando: rando || "",
                miramar: miramar || ""
-           }
+           },
+           paymentScreenshot: req.file ? req.file.filename : "",
+           status: entryFee === 0 ? "approved" : "pending"
        };
        console.log(fullteam);
-
+ 
        // Save the team. Ensure we only push if the team is not already in the teams array
        const saveTeam = await categoryModel.findOneAndUpdate(
            { _id: id, "matches.title": title, "matches.teams.teamName": { $ne: fullteam.teamName } },
            { $push: { "matches.$.teams": fullteam } },
            { new: true }
        );
-
+ 
        if(saveTeam){
-           return res.status(200).json({msg:"Slot booked successfully. "});
+           return res.status(200).json({msg: entryFee === 0 ? "Slot booked successfully." : "Booking request submitted. Waiting for admin approval."});
        } else {
-           // Refund the balance if booking failed/prevented by double-booking filter
-           await userModel.findOneAndUpdate(
-               { gglId: req.user.id },
-               { $inc: { "wallet.balance.availableBalance": entryFee } }
-           );
-           return res.status(500).json({msg:"Failed to book slot. Money has been refunded."});
+           if (req.file) fs.unlinkSync(req.file.path);
+           return res.status(500).json({msg:"Failed to book slot."});
        }
    } catch (err) {
        console.error("Booking error:", err);
+       if (req.file) {
+           try { fs.unlinkSync(req.file.path); } catch(e) {}
+       }
        return res.status(500).json({msg:"Internal server error during booking."});
    }
 })
@@ -629,10 +643,55 @@ app.get("/admin/teams/:id/:mid", adminAuthCheck, async (req, res)=>{
         });
 
         console.log(teams);
-        res.render("admin/pages/teams", { teams });
+        res.render("admin/pages/teams", { teams, categoryId: id, matchId: mid });
     } catch (err) {
         console.error("Error fetching teams:", err);
         res.status(500).send("Internal Server Error");
+    }
+})
+
+app.post("/admin/category/:id/match/:mid/team/:tid/status", adminAuthCheck, async (req, res) => {
+    try {
+        const { id, mid, tid } = req.params;
+        const { status } = req.body;
+        
+        if (status !== "approved" && status !== "rejected") {
+            return res.status(400).json({ msg: "Invalid status option." });
+        }
+
+        const category = await categoryModel.findOne({ _id: id });
+        if (!category) {
+            return res.status(404).json({ msg: "Category not found." });
+        }
+
+        const match = category.matches.id(mid);
+        if (!match) {
+            return res.status(404).json({ msg: "Match not found." });
+        }
+
+        const team = match.teams.id(tid);
+        if (!team) {
+            return res.status(404).json({ msg: "Team not found." });
+        }
+
+        if (status === "approved") {
+            team.status = "approved";
+            await category.save();
+            return res.status(200).json({ msg: "Team approved successfully." });
+        } else if (status === "rejected") {
+            if (team.paymentScreenshot) {
+                const screenshotPath = path.join(__dirname, 'public', 'images', team.paymentScreenshot);
+                if (fs.existsSync(screenshotPath)) {
+                    try { fs.unlinkSync(screenshotPath); } catch(e) {}
+                }
+            }
+            match.teams.pull(tid);
+            await category.save();
+            return res.status(200).json({ msg: "Team request rejected and deleted." });
+        }
+    } catch (err) {
+        console.error("Error processing team status:", err);
+        return res.status(500).json({ msg: "Internal server error." });
     }
 })
 

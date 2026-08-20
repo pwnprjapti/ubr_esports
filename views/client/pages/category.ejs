@@ -256,6 +256,7 @@
 
             <% if (hasMatches) { %>
                 <% for (const match of matches) { %>
+                    <% const approvedTeams = (match.teams || []).filter(t => t.status === "approved" || !t.status); %>
                     <article class="tournament-card" data-date="<%= match.date %>" data-period="today">
                         <h3 class="tournament-title"><%= match.title %></h3>
                         <div class="tournament-meta">
@@ -270,9 +271,9 @@
                             <div class="meta-item" style="flex-direction: column; align-items: flex-start; gap: 0.4rem; width: 100%;">
                                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                     <span class="meta-label"><i class="fa-solid fa-users"></i> Slots Booked</span>
-                                    <span class="meta-val slot-highlight"> <%= match.teams.length %> / <%= match.slots %> </span>
+                                    <span class="meta-val slot-highlight"> <%= approvedTeams.length %> / <%= match.slots %> </span>
                                 </div>
-                                <% const filledPercentage = Math.min(100, Math.round((match.teams.length / (match.slots || 1)) * 100)); %>
+                                <% const filledPercentage = Math.min(100, Math.round((approvedTeams.length / (match.slots || 1)) * 100)); %>
                                 <div class="progress-bar-container" style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.08); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.04);">
                                     <div class="progress-bar-fill" style="width: <%= filledPercentage %>%; height: 100%; background: linear-gradient(90deg, #ff455e, #d7263d); border-radius: 999px; transition: width 0.3s ease;"></div>
                                 </div>
@@ -303,11 +304,11 @@
                         </div>
                        
                         <div class="card-actions-grid" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; width: 100%;">
-                             <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;" onclick="book(this, '<%= id %>', '<%= match.title %>', '<%= match.entryFee %>')"><i class="fa-solid fa-ticket"></i> Book Slot</button>
+                             <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;" onclick="openBookingModal(this, '<%= id %>', '<%= match.title %>', '<%= match.entryFee %>')"><i class="fa-solid fa-ticket"></i> Book Slot</button>
                              <div class="secondary-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%;">
                                  <button type="button" class="pay-btn" style="min-height: 38px; padding: 0.5rem; font-size: 0.85rem; width: 100%;" onclick="showTeams(this)">
                                      <i class="fa-solid fa-users"></i> View Teams
-                                     <span class="teams-data" style="display: none;"><%= JSON.stringify(match.teams || []) %></span>
+                                     <span class="teams-data" style="display: none;"><%= JSON.stringify(approvedTeams) %></span>
                                  </button>
                                  <button type="button" class="pay-btn" style="min-height: 38px; padding: 0.5rem; font-size: 0.85rem; width: 100%;" onclick="showDetails(this)">
                                      <i class="fa-solid fa-circle-info"></i> View Details
@@ -316,7 +317,7 @@
                                            data-date="<%= match.date %>"
                                            data-prize="<%= match.prizePool %>"
                                            data-slots="<%= match.slots %>"
-                                           data-registered="<%= match.teams.length %>"
+                                           data-registered="<%= approvedTeams.length %>"
                                            data-fee="<%= match.entryFee %>"
                                            data-timings="<%= match.idpTimings %>"
                                            data-maps="<%= match.maps || '' %>"
@@ -460,44 +461,99 @@
         })();
 
 
-       async function book(btn, id, title, entryFee){
-            console.log(id, title, entryFee);
-            const originalBtnHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Booking...';
+        let activeBookingBtn = null;
 
+        function openBookingModal(btn, id, title, entryFee) {
+            fetch('/checksignin')
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.authenticated) {
+                        window.location.href = '/signin';
+                        return;
+                    }
+
+                    if (!data.hasTeam) {
+                        alert("Please set up your team settings first!");
+                        window.location.href = '/team-settings';
+                        return;
+                    }
+
+                    if (!data.hasDrop) {
+                        alert("Please add your Drop Details first!");
+                        window.location.href = '/drop-details';
+                        return;
+                    }
+                    
+                    activeBookingBtn = btn;
+                    document.getElementById('bookingCatId').value = id;
+                    document.getElementById('bookingMatchTitle').value = title;
+                    document.getElementById('bookingModalTitle').textContent = title;
+                    document.getElementById('bookingModalFeeContainer').textContent = `Entry Fee: ₹${entryFee}`;
+                    
+                    const qrContainer = document.getElementById('qrContainer');
+                    const screenshotInput = document.getElementById('paymentScreenshot');
+                    
+                    if (Number(entryFee) === 0) {
+                        qrContainer.style.display = 'none';
+                        screenshotInput.removeAttribute('required');
+                        document.getElementById('screenshotUploadContainer').style.display = 'none';
+                    } else {
+                        qrContainer.style.display = 'flex';
+                        screenshotInput.setAttribute('required', 'required');
+                        document.getElementById('screenshotUploadContainer').style.display = 'flex';
+                    }
+                    
+                    document.getElementById('bookingModal').style.display = 'flex';
+                })
+                .catch(err => {
+                    console.error("Auth check error:", err);
+                    window.location.href = '/signin';
+                });
+        }
+
+        function closeBookingModal() {
+            document.getElementById('bookingModal').style.display = 'none';
+            document.getElementById('bookingForm').reset();
+        }
+
+        async function submitBooking(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitBtn = document.getElementById('bookingSubmitBtn');
+            const originalHtml = submitBtn.innerHTML;
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            
+            const formData = new FormData(form);
+            
             try {
                 const res = await fetch(`${baseurl}/book`, {
-                    method:'POST',
-                    headers:{
-                        "Content-Type":"application/json"
-                    },
-                    body:JSON.stringify({id, title, entryFee})
+                    method: 'POST',
+                    body: formData
                 });
-
+                
                 const result = await res.json();
-                console.log(result);
-
-                if(res.status === 401 ){
-                    window.location.href="/signin"
-                } else{
-                    alert(result.msg);
-                    if (res.status === 200) {
-                        window.location.reload();
-                    } else {
-                        btn.disabled = false;
-                        btn.innerHTML = originalBtnHtml;
-                    }
+                
+                if (res.status === 401) {
+                    window.location.href = '/signin';
+                    return;
                 }
-            } catch(err) {
+                
+                alert(result.msg);
+                if (res.status === 200) {
+                    window.location.reload();
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHtml;
+                }
+            } catch (err) {
                 console.error("Booking error:", err);
-                alert("Something went wrong");
-                if (typeof btn !== 'undefined' && originalBtnHtml) {
-                    btn.disabled = false;
-                    btn.innerHTML = originalBtnHtml;
-                }
+                alert("Something went wrong. Please try again.");
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHtml;
             }
-       }
+        }
 
         function showTeams(btn) {
             const teamsJsonEl = btn.querySelector('.teams-data');
@@ -575,8 +631,12 @@
         // Close modal when clicking outside content
         window.addEventListener('click', function(event) {
             const modal = document.getElementById('infoModal');
+            const bookingModal = document.getElementById('bookingModal');
             if (event.target === modal) {
                 closeModal();
+            }
+            if (event.target === bookingModal) {
+                closeBookingModal();
             }
         });
 
@@ -600,6 +660,45 @@
             </div>
             <div class="modal-body" id="modalBody">
                 <!-- Dynamic content loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Book Slot Modal -->
+    <div id="bookingModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>Confirm Slot Booking</h3>
+                <button type="button" class="modal-close-btn" onclick="closeBookingModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; align-items: center; text-align: center;">
+                <h4 id="bookingModalTitle" style="color: #ffffff; margin: 0; font-size: 1.15rem; font-weight: 700;">BGMI Tournament</h4>
+                <div id="bookingModalFeeContainer" style="font-size: 0.95rem; color: #ff455e; font-weight: 800; background: rgba(215, 38, 61, 0.1); border: 1px solid rgba(215, 38, 61, 0.2); padding: 0.25rem 1rem; border-radius: 999px;">
+                    Entry Fee: ₹60
+                </div>
+
+                <!-- QR Code Display (Only if fee > 0) -->
+                <div id="qrContainer" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%; margin-top: 0.5rem;">
+                    <p style="font-size: 0.85rem; color: #9e9ea7; margin: 0;">Scan QR code to pay using any UPI app:</p>
+                    <div style="background: white; padding: 0.5rem; border-radius: 12px; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.25);">
+                        <img src="/images/qr.jpg" alt="UPI Payment QR Code" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.src='/images/photo.jpg.jpeg'">
+                    </div>
+                </div>
+
+                <!-- Screenshot Upload -->
+                <form id="bookingForm" onsubmit="submitBooking(event)" style="width: 100%; display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+                    <input type="hidden" id="bookingCatId" name="id">
+                    <input type="hidden" id="bookingMatchTitle" name="title">
+                    
+                    <div id="screenshotUploadContainer" style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
+                        <label for="paymentScreenshot" style="font-size: 0.88rem; color: #9e9ea7; font-weight: 700;">Upload Payment Screenshot <span style="color: #ff455e;">*</span></label>
+                        <input type="file" id="paymentScreenshot" name="screenshot" accept="image/*" required style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.5rem; color: #ffffff; box-sizing: border-box; cursor: pointer;">
+                    </div>
+
+                    <button type="submit" id="bookingSubmitBtn" class="slot-btn" style="width: 100%; margin: 0.5rem 0 0 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800;">
+                        <i class="fa-solid fa-paper-plane"></i> Submit & Book Slot
+                    </button>
+                </form>
             </div>
         </div>
     </div>
