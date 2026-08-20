@@ -131,6 +131,33 @@
                                 >
                             </div>
 
+                            <!-- Maps -->
+                            <div class="form-group">
+                                <label for="maps">Maps</label>
+                                <input 
+                                    type="text" 
+                                    id="maps" 
+                                    name="maps" 
+                                    class="form-input" 
+                                    placeholder="e.g. Erangle, Miramar, Sanhok" 
+                                    required
+                                >
+                            </div>
+
+                            <!-- Details -->
+                            <div class="form-group">
+                                <label for="details">Tournament Details</label>
+                                <textarea 
+                                    id="details" 
+                                    name="details" 
+                                    class="form-input" 
+                                    placeholder="Enter tournament details, rules, or descriptions..." 
+                                    rows="4"
+                                    style="resize: vertical; font-family: inherit; width: 100%;"
+                                    required
+                                ></textarea>
+                            </div>
+
                             <!-- Submit Button -->
                             <button type="submit" id="submitbtn" class="submit-btn">
                                 Submit Tournament
@@ -152,6 +179,8 @@
         const entryFee = document.getElementById("entryFee");
         const prizePool = document.getElementById("prizePool");
         const idpTiming = document.getElementById("idpTiming");
+        const maps = document.getElementById("maps");
+        const details = document.getElementById("details");
         const submitbtn = document.getElementById("submitbtn");
         const baseurl = "<%= baseurl %>";
 
@@ -165,6 +194,8 @@
                 slots:slots.value,
                 entryFee:entryFee.value,
                 idpTimings:idpTiming.value,
+                maps:maps.value,
+                details:details.value,
             }
 
             const category_ = category.value;

@@ -35,6 +35,36 @@
             background-color: #ff455e;
             box-shadow: 0 4px 12px rgba(215, 38, 61, 0.5);
         }
+
+        /* Date Banner styling */
+        .selected-date-banner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.25rem auto;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .selected-date-banner .line {
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 69, 94, 0.4);
+        }
+
+        .selected-date-banner .date-text {
+            color: #ff455e;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: transparent;
+            border: none;
+            padding: 0 0.5rem;
+            text-shadow: none;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -81,15 +111,22 @@
                         </div>
                     </section>
 
+                    <!-- Selected Date Display Banner -->
+                    <div class="selected-date-banner">
+                        <span class="line"></span>
+                        <span class="date-text" id="selectedDateDisplay">Loading Date...</span>
+                        <span class="line"></span>
+                    </div>
+
                     <!-- Tournament / Category Grid -->
                     <section class="tournament-grid" id="tournamentGrid">
 
                         <!-- Card 1 -->
-                         <% for(match of matches) { %>
+                          <% for (const match of matches) { %>
                         <article class="tournament-card" data-date="<%= match.date %>" style="position: relative;">
                              <button class="delete-tournament-btn" onclick="deleteTournament(event, this, '<%= id %>', '<%= match._id %>')" title="Delete Tournament">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
+                                 <i class="fa-solid fa-trash-can"></i>
+                             </button>
                             <h3 class="tournament-title"><%= match.title %></h3>
                             <div class="tournament-meta">
                                 <div class="meta-item">
@@ -100,9 +137,15 @@
                                     <span class="meta-label"><i class="fa-solid fa-sack-dollar"></i> Prize Pool</span>
                                     <span class="meta-val prize">₹ <%= match.prizePool %></span>
                                 </div>
-                                <div class="meta-item">
-                                    <span class="meta-label"><i class="fa-solid fa-users"></i> Slots Left</span>
-                                    <span class="meta-val slot-highlight"><%= match.teams?.length %> / <%= match.slots %></span>
+                                <div class="meta-item" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; width: 100%;">
+                                    <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                        <span class="meta-label"><i class="fa-solid fa-users"></i> Slots Booked</span>
+                                        <span class="meta-val slot-highlight"><%= (match.teams ? match.teams.length : 0) %> / <%= match.slots %></span>
+                                    </div>
+                                    <% const filledPercentage = Math.min(100, Math.round(((match.teams ? match.teams.length : 0) / (match.slots || 1)) * 100)); %>
+                                    <div class="progress-bar-container" style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.08); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.04); box-sizing: border-box;">
+                                        <div class="progress-bar-fill" style="width: <%= filledPercentage %>%; height: 100%; background: linear-gradient(90deg, #ff455e, #d7263d); border-radius: 999px; transition: width 0.3s ease;"></div>
+                                    </div>
                                 </div>
                                 <div class="meta-item">
                                     <span class="meta-label"><i class="fa-solid fa-rupee-sign"></i> Entry Fee</span>
@@ -117,6 +160,16 @@
                                     <% } %>
                                 </div>
                             </div>
+                            <% if (match.maps) { %>
+                            <div class="idp-timing" style="margin-top: 10px;">
+                                <span class="meta-label"><i class="fa-solid fa-map"></i> Maps</span>
+                                <div class="timings">
+                                    <% for( mapName of match.maps.split(",") ) { %>
+                                    <span><%= mapName.trim() %></span>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <% } %>
                             <div class="card-actions-single">
                                 <button class="slot-btn-full" onclick="window.location.href='/admin/teams/<%= id %>/<%= match._id %>'">
                                     <i class="fa-solid fa-eye"></i> View Details
@@ -168,6 +221,23 @@
                 } else {
                     emptyMsg.style.display = 'none';
                 }
+
+                // Update selected date display banner
+                const dateDisplay = document.getElementById('selectedDateDisplay');
+                if (dateDisplay) {
+                    if (customDateValue) {
+                        try {
+                            const dateParts = customDateValue.split('-');
+                            const formattedDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                            const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+                            dateDisplay.textContent = formattedDate.toLocaleDateString('en-US', options);
+                        } catch(e) {
+                            dateDisplay.textContent = customDateValue;
+                        }
+                    } else {
+                        dateDisplay.textContent = "All Upcoming Matches";
+                    }
+                }
             }
 
             if (customDatePicker) {
@@ -181,6 +251,18 @@
                     if (customDatePicker) customDatePicker.value = '';
                     applyFilter(null);
                 });
+            }
+
+            // Pre-fill current date (today) in YYYY-MM-DD format and apply filter
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const todayString = `${year}-${month}-${day}`;
+
+            if (customDatePicker) {
+                customDatePicker.value = todayString;
+                applyFilter(todayString);
             }
         })();
     </script>

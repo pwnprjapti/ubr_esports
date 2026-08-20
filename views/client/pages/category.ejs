@@ -11,6 +11,190 @@
     <link rel="stylesheet" href="/css/nav.css">
     <link rel="stylesheet" href="/css/category.css">
     <link rel="stylesheet" href="/css/footer.css">
+    <style>
+        /* Modal overlay styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        /* Modal Content Box */
+        .modal-content {
+            background-color: #151720;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Modal Header */
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.8rem;
+            color: #9e9ea7;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            line-height: 1;
+        }
+
+        .modal-close-btn:hover {
+            color: #ff455e;
+        }
+
+        /* Modal Body */
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            color: #f5f5f7;
+            font-size: 0.95rem;
+        }
+
+        /* Teams List inside Modal */
+        .modal-teams-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .modal-team-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+        }
+
+        .modal-team-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(215, 38, 61, 0.15);
+            color: #ff455e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-size: 1.2rem;
+        }
+
+        .modal-team-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .modal-team-name {
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        /* Details inside Modal */
+        .modal-details-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .modal-detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .modal-detail-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .modal-detail-label {
+            color: #9e9ea7;
+            font-size: 0.88rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-detail-value {
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .modal-detail-value.highlight {
+            color: #ff455e;
+        }
+
+        /* Date Banner styling */
+        .selected-date-banner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.25rem auto;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .selected-date-banner .line {
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 69, 94, 0.4);
+        }
+
+        .selected-date-banner .date-text {
+            color: #ff455e;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: transparent;
+            border: none;
+            padding: 0 0.5rem;
+            text-shadow: none;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 <body>
     <div class="page-shell">
@@ -48,6 +232,13 @@
                 </div>
             </section>
 
+            <!-- Selected Date Display Banner -->
+            <div class="selected-date-banner">
+                <span class="line"></span>
+                <span class="date-text" id="selectedDateDisplay">Loading Date...</span>
+                <span class="line"></span>
+            </div>
+
             <!-- Tournament Grid -->
             <section class="tournament-grid" id="tournamentGrid">
                 <!-- Tournament 1: Today -->
@@ -76,9 +267,15 @@
                                 <span class="meta-label"><i class="fa-solid fa-sack-dollar"></i> Prize Pool</span>
                                 <span class="meta-val prize">₹ <%= match.prizePool %></span>
                             </div>
-                            <div class="meta-item">
-                                <span class="meta-label"><i class="fa-solid fa-users"></i> Slots Left</span>
-                                <span class="meta-val slot-highlight"> <%= match.teams.length %> / <%= match.slots %> Slots</span>
+                            <div class="meta-item" style="flex-direction: column; align-items: flex-start; gap: 0.4rem; width: 100%;">
+                                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                    <span class="meta-label"><i class="fa-solid fa-users"></i> Slots Booked</span>
+                                    <span class="meta-val slot-highlight"> <%= match.teams.length %> / <%= match.slots %> </span>
+                                </div>
+                                <% const filledPercentage = Math.min(100, Math.round((match.teams.length / (match.slots || 1)) * 100)); %>
+                                <div class="progress-bar-container" style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.08); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.04);">
+                                    <div class="progress-bar-fill" style="width: <%= filledPercentage %>%; height: 100%; background: linear-gradient(90deg, #ff455e, #d7263d); border-radius: 999px; transition: width 0.3s ease;"></div>
+                                </div>
                             </div>
                             <div class="meta-item">
                                 <span class="meta-label"><i class="fa-solid fa-rupee-sign"></i> Entry Fee</span>
@@ -93,10 +290,39 @@
                                     <span><%= time %></span>
                                 <% } %>
                             </div>
+                               <br>
+                             <% if (match.maps) { %>
+                            <span class="meta-label"><i class="fa-solid fa-map"></i> Maps</span>
+                            <div class="timings">
+                                <% const mapsList = match.maps.split(","); %>
+                                <% for (const mapName of mapsList) { %>
+                                    <span><%= mapName.trim() %></span>
+                                <% } %>
+                            </div>
+                        <% } %>
                         </div>
-                        <br>
-                        <div class="card-actions">
-                             <button class="slot-btn" onclick="book(this, '<%= id %>', '<%= match.title %>', '<%= match.entryFee %>')"><i class="fa-solid fa-ticket"></i> Book Slot</button>
+                       
+                        <div class="card-actions-grid" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; width: 100%;">
+                             <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;" onclick="book(this, '<%= id %>', '<%= match.title %>', '<%= match.entryFee %>')"><i class="fa-solid fa-ticket"></i> Book Slot</button>
+                             <div class="secondary-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%;">
+                                 <button type="button" class="pay-btn" style="min-height: 38px; padding: 0.5rem; font-size: 0.85rem; width: 100%;" onclick="showTeams(this)">
+                                     <i class="fa-solid fa-users"></i> View Teams
+                                     <span class="teams-data" style="display: none;"><%= JSON.stringify(match.teams || []) %></span>
+                                 </button>
+                                 <button type="button" class="pay-btn" style="min-height: 38px; padding: 0.5rem; font-size: 0.85rem; width: 100%;" onclick="showDetails(this)">
+                                     <i class="fa-solid fa-circle-info"></i> View Details
+                                     <span class="match-data" style="display: none;" 
+                                           data-title="<%= match.title %>"
+                                           data-date="<%= match.date %>"
+                                           data-prize="<%= match.prizePool %>"
+                                           data-slots="<%= match.slots %>"
+                                           data-registered="<%= match.teams.length %>"
+                                           data-fee="<%= match.entryFee %>"
+                                           data-timings="<%= match.idpTimings %>"
+                                           data-maps="<%= match.maps || '' %>"
+                                           data-details="<%= match.details || '' %>"></span>
+                                 </button>
+                             </div>
                         </div>
                     </article>
                 <% } %>
@@ -159,11 +385,32 @@
                 });
 
                 // Update counter and empty state
-                countDisplay.textContent = `Showing ${visibleCount} of ${tournamentCards.length} Tournaments`;
+                if (countDisplay) {
+                    countDisplay.textContent = `Showing ${visibleCount} of ${tournamentCards.length} Tournaments`;
+                }
                 if (visibleCount === 0) {
                     emptyMsg.style.display = 'block';
                 } else {
                     emptyMsg.style.display = 'none';
+                }
+
+                // Update selected date display banner
+                const dateDisplay = document.getElementById('selectedDateDisplay');
+                if (dateDisplay) {
+                    if (customDateValue) {
+                        try {
+                            const dateParts = customDateValue.split('-');
+                            const formattedDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                            const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+                            dateDisplay.textContent = formattedDate.toLocaleDateString('en-US', options);
+                        } catch(e) {
+                            dateDisplay.textContent = customDateValue;
+                        }
+                    } else if (filterType === 'all') {
+                        dateDisplay.textContent = "All Upcoming Matches";
+                    } else {
+                        dateDisplay.textContent = filterType.charAt(0).toUpperCase() + filterType.slice(1) + "'s Matches";
+                    }
                 }
             }
 
@@ -197,6 +444,18 @@
                     if (customDatePicker) customDatePicker.value = '';
                     applyFilter('all');
                 });
+            }
+
+            // Pre-fill current date (today) in YYYY-MM-DD format and apply filter
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const todayString = `${year}-${month}-${day}`;
+            
+            if (customDatePicker) {
+                customDatePicker.value = todayString;
+                applyFilter('custom', todayString);
             }
         })();
 
@@ -239,6 +498,110 @@
                 }
             }
        }
+
+        function showTeams(btn) {
+            const teamsJsonEl = btn.querySelector('.teams-data');
+            let teams = [];
+            try {
+                teams = JSON.parse(teamsJsonEl.textContent);
+            } catch(e) {
+                console.error("Error parsing teams data", e);
+            }
+
+            const modal = document.getElementById('infoModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            modalTitle.textContent = "Registered Teams";
+            
+            if (teams.length === 0) {
+                modalBody.innerHTML = `
+                    <div style="text-align: center; padding: 2rem 1rem; color: #9e9ea7;">
+                        <i class="fa-solid fa-users-slash" style="font-size: 2.5rem; color: #ff455e; margin-bottom: 1rem; display: block;"></i>
+                        <p style="margin: 0; font-weight: 600;">No teams registered yet.</p>
+                        <p style="margin: 0.25rem 0 0; font-size: 0.85rem;">Be the first squad to sign up!</p>
+                    </div>
+                `;
+            } else {
+                let listHtml = '<div class="modal-teams-list">';
+                teams.forEach(team => {
+                    const logoHtml = team.teamLogo 
+                        ? `<img src="/images/${team.teamLogo}" alt="${team.teamName}">`
+                        : `<i class="fa-solid fa-shield-halved"></i>`;
+                    
+                    listHtml += `
+                        <div class="modal-team-item">
+                            <div class="modal-team-logo">
+                                ${logoHtml}
+                            </div>
+                            <div class="modal-team-name">${escapeHtml(team.teamName)}</div>
+                        </div>
+                    `;
+                });
+                listHtml += '</div>';
+                modalBody.innerHTML = listHtml;
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function showDetails(btn) {
+            const dataEl = btn.querySelector('.match-data');
+            const title = dataEl.getAttribute('data-title');
+            const detailsText = dataEl.getAttribute('data-details');
+
+            const modal = document.getElementById('infoModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            modalTitle.textContent = "Tournament Details";
+
+            modalBody.innerHTML = `
+                <div style="font-size: 1.1rem; font-weight: 800; color: #ffffff; margin-bottom: 1rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.75rem;">
+                    ${escapeHtml(title)}
+                </div>
+                <div style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6; color: #c4c4cc; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem; text-align: left; box-sizing: border-box; width: 100%;">
+                    ${escapeHtml(detailsText || 'No details provided.')}
+                </div>
+            `;
+
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('infoModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside content
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('infoModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Simple HTML Escaping helper
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
     </script>
+
+    <!-- Global Modal -->
+    <div id="infoModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Info Modal</h3>
+                <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamic content loaded here -->
+            </div>
+        </div>
+    </div>
 </body>
 </html>
