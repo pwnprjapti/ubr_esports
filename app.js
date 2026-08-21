@@ -10,6 +10,7 @@ import mongoose from "mongoose"
 import bcrypt from "bcrypt"
 import './views/client/auth/google.js';
 import multer from "multer"
+import cors from "cors"
 
 //models
 
@@ -20,6 +21,12 @@ import adminModel from "./models/admin.model.js"
 
 
 const app = express();
+
+app.use(cors({
+  origin: "https://ubresports.in",
+  credentials: true
+}));
+
 dotenv.config();
 
 // database connection 
