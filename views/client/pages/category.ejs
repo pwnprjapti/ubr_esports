@@ -464,7 +464,7 @@
         let activeBookingBtn = null;
 
         function openBookingModal(btn, id, title, entryFee) {
-            fetch('/checksignin')
+            fetch(`/checksignin?categoryId=${id}&matchTitle=${encodeURIComponent(title)}`)
                 .then(res => res.json())
                 .then(data => {
                     if (!data.authenticated) {
@@ -481,6 +481,11 @@
                     if (!data.hasDrop) {
                         alert("Please add your Drop Details first!");
                         window.location.href = '/drop-details';
+                        return;
+                    }
+
+                    if (data.isAlreadyRegistered) {
+                        alert("You have already registered/booked for this tournament!");
                         return;
                     }
                     

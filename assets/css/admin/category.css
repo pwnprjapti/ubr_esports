@@ -93,7 +93,8 @@
 /* Category Grid */
 .tournament-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 350px));
+    justify-content: center;
     gap: 1.25rem;
     width: 100%;
 }

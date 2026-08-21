@@ -91,10 +91,28 @@ app.get("/checksignin", async (req, res)=>{
         const user = await userModel.findOne({ gglId: req.user.id });
         const hasTeam = !!(user && user.team && user.team.teamName);
         const hasDrop = !!(user && user.dropDetails && (user.dropDetails.erangle || user.dropDetails.miramar || user.dropDetails.rando));
+        
+        let isAlreadyRegistered = false;
+        const { categoryId, matchTitle } = req.query;
+        if (categoryId && matchTitle && hasTeam) {
+            try {
+                const category = await categoryModel.findOne({ _id: categoryId });
+                if (category) {
+                    const match = category.matches.find(m => m.title === matchTitle);
+                    if (match && match.teams) {
+                        isAlreadyRegistered = match.teams.some(t => t.teamName === user.team.teamName);
+                    }
+                }
+            } catch(err) {
+                console.error("Error checking pre-registration:", err);
+            }
+        }
+
         return res.status(200).json({ 
             authenticated: true, 
             hasTeam, 
-            hasDrop 
+            hasDrop,
+            isAlreadyRegistered
         });
     }
     return res.status(401).json({ authenticated: false });
@@ -116,6 +134,10 @@ app.get("/contactus", (req, res)=>{
 
 app.get("/privacy-policy", (req, res)=>{
     res.render("pages/privacyPolicy");
+})
+
+app.get("/refund-policy", (req, res)=>{
+    res.render("pages/refundPolicy");
 })
 
 app.get("/aboutus", (req, res)=>{
