@@ -14,6 +14,7 @@ const categorySchema = new mongoose.Schema({
             idpTimings:{type:String},
             maps:{type:String},
             details:{type:String},
+            whatsappGroupLink:{type:String},
             teams:[
                 {
                     teamName:{type:String}, 

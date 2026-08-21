@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Point Tables | UBR Esports Admin</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <style>
+        .admin-categories-page {
+            width: 100%;
+        }
+
+        .category-card {
+            background: #151720;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.25s ease, border-color 0.25s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(215, 38, 61, 0.4);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .category-card-img {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #1e2029, #13141b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            color: #ff455e;
+            font-size: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .category-card-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .category-card h3 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 0 0 0.5rem;
+        }
+
+        .category-card p {
+            color: #a0a0aa;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            margin: 0 0 1.25rem;
+            flex: 1;
+        }
+
+        .add-category-top-btn {
+            padding: 0.65rem 1.25rem;
+            background: linear-gradient(135deg, #d7263d, #ff455e);
+            color: #ffffff !important;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 14px rgba(215, 38, 61, 0.35);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .add-category-top-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(215, 38, 61, 0.5);
+        }
+
+        .delete-category-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(215, 38, 61, 0.85);
+            border: none;
+            border-radius: 50% !important;
+            width: 34px !important;
+            height: 34px !important;
+            padding: 0 !important;
+            box-sizing: border-box !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .delete-category-btn:hover {
+            transform: scale(1.1);
+            background-color: #ff455e;
+            box-shadow: 0 4px 12px rgba(215, 38, 61, 0.5);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="admin-categories-page">
+                    <!-- Top Title Bar with Add Point Table Button -->
+                    <div class="page-title-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h1 class="page-heading" style="font-size: 1.6rem; font-weight: 800; color: #fff; margin: 0;">Point Tables</h1>
+                            <p class="page-sub" style="color: #a0a0aa; font-size: 0.9rem; margin-top: 0.25rem;">Browse and manage tournament standings and point tables.</p>
+                        </div>
+                        <div style="display: flex; gap: 0.75rem;">
+                            <a href="/admin/add-point-table" class="add-category-top-btn">
+                                <i class="fa-solid fa-plus"></i> Add Point Table
+                            </a>
+                            <a href="/admin/add-point-table-cover" class="add-category-top-btn" style="background: linear-gradient(135deg, #1e2029, #2d303f); border: 1px solid rgba(255,255,255,0.08); box-shadow: none;">
+                                <i class="fa-solid fa-image"></i> Add Point Table Image
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="categories" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+                      <% if (pointTables.length === 0) { %>
+                         <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem; color: #9e9ea7;">
+                             <i class="fa-solid fa-table-list" style="font-size: 3.5rem; color: #ff455e; margin-bottom: 1.5rem; display: block;"></i>
+                             <h3 style="margin: 0; color: #ffffff; font-size: 1.3rem;">No Point Tables Uploaded</h3>
+                             <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem;">Click "Add Point Table" to upload one.</p>
+                         </div>
+                      <% } else { %>
+                          <% for(pt of pointTables ) { %>
+                             <div class="category-card" style="position: relative;">
+                                 <button class="delete-category-btn" onclick="deletePointTable(event, this, '<%= pt._id %>')" title="Delete Point Table">
+                                     <i class="fa-solid fa-trash-can"></i>
+                                 </button>
+                                <div class="category-card-img" onclick="showLightbox('/images/<%= pt.pointTableImage %>')">
+                                    <img src="/images/<%= pt.pointTableImage %>" alt="<%= pt.matchTitle %>">
+                                </div>
+                                <h3><%= pt.matchTitle %></h3>
+                                <p><%= pt.categoryTitle %></p>
+                            </div>
+                          <% } %>
+                      <% } %>
+                    </div>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="lightboxModal" class="modal-overlay" onclick="closeLightbox()">
+        <button onclick="closeLightbox()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: transparent; border: none; color: white; font-size: 2.5rem; cursor: pointer;">&times;</button>
+        <img id="lightboxImg" src="" alt="Standings Preview" style="max-width: 90%; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    </div>
+
+    <script>
+        function showLightbox(src) {
+            const modal = document.getElementById('lightboxModal');
+            const img = document.getElementById('lightboxImg');
+            img.src = src;
+            modal.style.display = 'flex';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightboxModal').style.display = 'none';
+        }
+
+        async function deletePointTable(event, btn, id) {
+            event.stopPropagation();
+            if (confirm("Are you sure you want to delete this point table?")) {
+                try {
+                    const originalBtnHtml = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+                    const res = await fetch(`/admin/point-table/delete/${id}`, {
+                        method: 'POST'
+                    });
+                    const result = await res.json();
+                    alert(result.msg);
+                    if (res.status === 200 || result.success) {
+                        window.location.reload();
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = originalBtnHtml;
+                    }
+                } catch(err) {
+                    console.error("Error deleting point table:", err);
+                    alert("Something went wrong. Please try again.");
+                    if (typeof btn !== 'undefined' && originalBtnHtml) {
+                        btn.disabled = false;
+                        btn.innerHTML = originalBtnHtml;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

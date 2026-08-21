@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Upload Point Table Category Image | UBR Esports Admin</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css">
+    <link rel="stylesheet" href="/css/addcategory.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="add-category-wrapper">
+                    <div class="add-category-card">
+                        <h1>Upload Point Table Category Image</h1>
+                        <p style="color: #a0a0aa; font-size: 0.88rem; margin-bottom: 1.5rem;">This image will be displayed on the client-side homepage for the Point Table category card.</p>
+
+                        <form class="category-form" onsubmit="submitData(event)">
+                            <!-- 1. Category Cover Image Field -->
+                            <div class="form-group">
+                                <label for="coverImage">Select Cover Image</label>
+                                <input 
+                                    type="file" 
+                                    id="coverImage" 
+                                    name="coverImage" 
+                                    class="form-file-input" 
+                                    accept="image/*" 
+                                    required
+                                >
+                            </div>
+
+                            <!-- 2. Submit Button -->
+                            <button type="submit" id="submitButton" class="submit-btn" style="margin-top: 1rem;">
+                                Upload Cover Image
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+
+
+    <script>
+        const coverImage = document.getElementById("coverImage");
+        const submitButton = document.getElementById("submitButton");
+        const baseurl = "<%= baseurl %>";
+
+        async function submitData(e){
+            e.preventDefault();
+            try {
+                if (!coverImage.files[0]) {
+                    alert("Please select an image file to upload.");
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append("coverImage", coverImage.files[0]);
+
+                const originalBtnHtml = submitButton.innerHTML;
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+
+                const res = await fetch(`${baseurl}/admin/add-point-table-cover`, {  
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await res.json();
+                alert(result.msg);
+                if (res.status === 200 || result.success) {
+                    window.location.href = "/admin/point-table";
+                } else {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalBtnHtml;
+                }
+            } catch(err) {
+                console.error("Error uploading cover image:", err);
+                if (typeof submitButton !== 'undefined') {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = "Upload Cover Image";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

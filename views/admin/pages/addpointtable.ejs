@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Add Point Table | UBR Esports Admin</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css">
+    <link rel="stylesheet" href="/css/addcategory.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="add-category-wrapper">
+                    <div class="add-category-card">
+                        <h1>Add Point Table</h1>
+
+                        <form class="category-form" onsubmit="submitData(event)">
+                            <!-- 1. Match Dropdown Field -->
+                            <div class="form-group">
+                                <label for="matchSelector">Select Tournament / Match</label>
+                                <select id="matchSelector" name="matchSelector" class="form-input" style="background-color: #1a1c26; color: #fff; border: 1px solid rgba(255,255,255,0.08); padding: 0.75rem; border-radius: 8px; width: 100%; cursor: pointer;" required>
+                                    <option value="" disabled selected>Select a match...</option>
+                                    <% categories.forEach(cat => { %>
+                                        <% cat.matches.forEach(match => { %>
+                                            <option value="<%= cat._id %>|<%= cat.title %>|<%= match.title %>"><%= cat.title %> - <%= match.title %></option>
+                                        <% }) %>
+                                    <% }) %>
+                                </select>
+                            </div>
+
+                            <!-- 2. Point Table Image Field -->
+                            <div class="form-group">
+                                <label for="pointTableImage">Upload Point Table Image</label>
+                                <input 
+                                    type="file" 
+                                    id="pointTableImage" 
+                                    name="pointTableImage" 
+                                    class="form-file-input" 
+                                    accept="image/*" 
+                                    required
+                                >
+                            </div>
+
+                            <!-- 3. Submit Button -->
+                            <button type="submit" id="submitButton" class="submit-btn" style="margin-top: 1rem;">
+                                Submit
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+
+
+    <script>
+        const matchSelector = document.getElementById("matchSelector");
+        const pointTableImage = document.getElementById("pointTableImage");
+        const submitButton = document.getElementById("submitButton");
+        const baseurl = "<%= baseurl %>";
+
+        async function submitData(e){
+            e.preventDefault();
+            try {
+                if (!matchSelector.value) {
+                    alert("Please select a match");
+                    return;
+                }
+                if (!pointTableImage.files[0]) {
+                    alert("Please upload a point table image");
+                    return;
+                }
+
+                const [categoryId, categoryTitle, matchTitle] = matchSelector.value.split('|');
+
+                const formData = new FormData();
+                formData.append("categoryId", categoryId);
+                formData.append("categoryTitle", categoryTitle);
+                formData.append("matchTitle", matchTitle);
+                formData.append("pointTableImage", pointTableImage.files[0]);
+
+                const originalBtnHtml = submitButton.innerHTML;
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+
+                const res = await fetch(`${baseurl}/admin/add-point-table`, {  
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await res.json();
+                alert(result.msg);
+                if (res.status === 200 || result.success) {
+                    window.location.href = "/admin/point-table";
+                } else {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalBtnHtml;
+                }
+            } catch(err) {
+                console.error("Error submitting point table:", err);
+                if (typeof submitButton !== 'undefined') {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = "Submit";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

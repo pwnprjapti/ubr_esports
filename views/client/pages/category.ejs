@@ -257,6 +257,7 @@
             <% if (hasMatches) { %>
                 <% for (const match of matches) { %>
                     <% const approvedTeams = (match.teams || []).filter(t => t.status === "approved" || !t.status); %>
+                    <% const registeredTeam = (typeof userTeamName !== 'undefined' && userTeamName) ? match.teams.find(t => t.teamName === userTeamName) : null; %>
                     <article class="tournament-card" data-date="<%= match.date %>" data-period="today">
                         <h3 class="tournament-title"><%= match.title %></h3>
                         <div class="tournament-meta">
@@ -271,7 +272,7 @@
                             <div class="meta-item" style="flex-direction: column; align-items: flex-start; gap: 0.4rem; width: 100%;">
                                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                                     <span class="meta-label"><i class="fa-solid fa-users"></i> Slots Booked</span>
-                                    <span class="meta-val slot-highlight"> <%= approvedTeams.length %> / <%= match.slots %> </span>
+                                    <span class="meta-val slot-highlight"> <%= match.teams.length %> / <%= match.slots %> </span>
                                 </div>
                                 <% const filledPercentage = Math.min(100, Math.round((approvedTeams.length / (match.slots || 1)) * 100)); %>
                                 <div class="progress-bar-container" style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.08); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.04);">
@@ -304,7 +305,19 @@
                         </div>
                        
                         <div class="card-actions-grid" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; width: 100%;">
-                             <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;" onclick="openBookingModal(this, '<%= id %>', '<%= match.title %>', '<%= match.entryFee %>')"><i class="fa-solid fa-ticket"></i> Book Slot</button>
+                             <% if (registeredTeam) { %>
+                                 <% if (match.whatsappGroupLink) { %>
+                                     <a href="<%= match.whatsappGroupLink %>" target="_blank" class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #25d366; color: white; text-decoration: none; font-weight: 800; border-radius: 8px; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#128c7e'" onmouseout="this.style.backgroundColor='#25d366'">
+                                         <i class="fa-brands fa-whatsapp" style="margin-right: 0.5rem;"></i> idp ke liye whatsapp group join kre
+                                     </a>
+                                 <% } else { %>
+                                     <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #28a745; color: white;" disabled>
+                                         <i class="fa-solid fa-circle-check"></i> Booked Successfully
+                                     </button>
+                                 <% } %>
+                             <% } else { %>
+                                 <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;" onclick="bookSlotDirectly(this, '<%= id %>', '<%= match.title %>', '<%= match.entryFee %>')"><i class="fa-solid fa-ticket"></i> Book Slot</button>
+                             <% } %>
                              <div class="secondary-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%;">
                                  <button type="button" class="pay-btn" style="min-height: 38px; padding: 0.5rem; font-size: 0.85rem; width: 100%;" onclick="showTeams(this)">
                                      <i class="fa-solid fa-users"></i> View Teams
@@ -461,9 +474,17 @@
         })();
 
 
-        let activeBookingBtn = null;
+        let pendingBookingId = null;
+        let pendingBookingTitle = null;
+        let pendingBookingEntryFee = null;
+        let pendingBookingBtn = null;
 
-        function openBookingModal(btn, id, title, entryFee) {
+        function bookSlotDirectly(btn, id, title, entryFee) {
+            pendingBookingId = id;
+            pendingBookingTitle = title;
+            pendingBookingEntryFee = entryFee;
+            pendingBookingBtn = btn;
+
             fetch(`/checksignin?categoryId=${id}&matchTitle=${encodeURIComponent(title)}`)
                 .then(res => res.json())
                 .then(data => {
@@ -473,14 +494,12 @@
                     }
 
                     if (!data.hasTeam) {
-                        alert("Please set up your team settings first!");
-                        window.location.href = '/team-settings';
+                        openTeamSettingsModal();
                         return;
                     }
 
                     if (!data.hasDrop) {
-                        alert("Please add your Drop Details first!");
-                        window.location.href = '/drop-details';
+                        openDropDetailsModal();
                         return;
                     }
 
@@ -488,27 +507,44 @@
                         alert("You have already registered/booked for this tournament!");
                         return;
                     }
-                    
-                    activeBookingBtn = btn;
-                    document.getElementById('bookingCatId').value = id;
-                    document.getElementById('bookingMatchTitle').value = title;
-                    document.getElementById('bookingModalTitle').textContent = title;
-                    document.getElementById('bookingModalFeeContainer').textContent = `Entry Fee: ₹${entryFee}`;
-                    
-                    const qrContainer = document.getElementById('qrContainer');
-                    const screenshotInput = document.getElementById('paymentScreenshot');
-                    
-                    if (Number(entryFee) === 0) {
-                        qrContainer.style.display = 'none';
-                        screenshotInput.removeAttribute('required');
-                        document.getElementById('screenshotUploadContainer').style.display = 'none';
-                    } else {
-                        qrContainer.style.display = 'flex';
-                        screenshotInput.setAttribute('required', 'required');
-                        document.getElementById('screenshotUploadContainer').style.display = 'flex';
-                    }
-                    
-                    document.getElementById('bookingModal').style.display = 'flex';
+
+                    const originalHtml = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Booking...';
+
+                    const formData = new FormData();
+                    formData.append('id', id);
+                    formData.append('title', title);
+
+                    fetch(`${baseurl}/book`, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => {
+                        if (res.status === 401) {
+                            window.location.href = '/signin';
+                            return;
+                        }
+                        return res.json().then(result => {
+                            if (result.whatsappGroupLink) {
+                                alert(result.msg + "\n\nidp ke liye whatsapp group join kre: " + result.whatsappGroupLink);
+                            } else {
+                                alert(result.msg);
+                            }
+                            if (res.status === 200) {
+                                window.location.reload();
+                            } else {
+                                btn.disabled = false;
+                                btn.innerHTML = originalHtml;
+                            }
+                        });
+                    })
+                    .catch(err => {
+                        console.error("Booking error:", err);
+                        alert("Something went wrong. Please try again.");
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    });
                 })
                 .catch(err => {
                     console.error("Auth check error:", err);
@@ -516,44 +552,100 @@
                 });
         }
 
-        function closeBookingModal() {
-            document.getElementById('bookingModal').style.display = 'none';
-            document.getElementById('bookingForm').reset();
+        function openTeamSettingsModal() {
+            document.getElementById('teamSettingsModal').style.display = 'flex';
         }
 
-        async function submitBooking(event) {
+        function closeTeamSettingsModal() {
+            document.getElementById('teamSettingsModal').style.display = 'none';
+            document.getElementById('popTeamSettingsForm').reset();
+        }
+
+        function openDropDetailsModal() {
+            document.getElementById('dropDetailsModal').style.display = 'flex';
+        }
+
+        function closeDropDetailsModal() {
+            document.getElementById('dropDetailsModal').style.display = 'none';
+            document.getElementById('popDropDetailsForm').reset();
+        }
+
+        async function submitPopTeamSettings(event) {
             event.preventDefault();
             const form = event.target;
-            const submitBtn = document.getElementById('bookingSubmitBtn');
+            const submitBtn = document.getElementById('popTeamSubmitBtn');
             const originalHtml = submitBtn.innerHTML;
-            
+
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
-            
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
             const formData = new FormData(form);
-            
+
             try {
-                const res = await fetch(`${baseurl}/book`, {
+                const res = await fetch(`${baseurl}/team-settings`, {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const result = await res.json();
-                
-                if (res.status === 401) {
-                    window.location.href = '/signin';
-                    return;
-                }
-                
                 alert(result.msg);
+
                 if (res.status === 200) {
-                    window.location.reload();
+                    closeTeamSettingsModal();
+                    if (pendingBookingId && pendingBookingTitle) {
+                        bookSlotDirectly(pendingBookingBtn, pendingBookingId, pendingBookingTitle, pendingBookingEntryFee);
+                    }
                 } else {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalHtml;
                 }
             } catch (err) {
-                console.error("Booking error:", err);
+                console.error("Save team error:", err);
+                alert("Something went wrong. Please try again.");
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHtml;
+            }
+        }
+
+        async function submitPopDropDetails(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitBtn = document.getElementById('popDropSubmitBtn');
+            const originalHtml = submitBtn.innerHTML;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+            const payload = {
+                erangle: document.getElementById('popErangle').value.trim(),
+                rando: document.getElementById('popRando').value.trim(),
+                miramar: document.getElementById('popMiramar').value.trim()
+            };
+
+            try {
+                const res = await fetch(`${baseurl}/drop-details`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await res.json();
+
+                if (res.ok) {
+                    alert(typeof result === 'string' ? result : 'Drop details saved successfully!');
+                    closeDropDetailsModal();
+                    if (pendingBookingId && pendingBookingTitle) {
+                        bookSlotDirectly(pendingBookingBtn, pendingBookingId, pendingBookingTitle, pendingBookingEntryFee);
+                    }
+                } else {
+                    alert(result.msg || 'Failed to save drop details.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHtml;
+                }
+            } catch (err) {
+                console.error("Save drop error:", err);
                 alert("Something went wrong. Please try again.");
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalHtml;
@@ -636,12 +728,16 @@
         // Close modal when clicking outside content
         window.addEventListener('click', function(event) {
             const modal = document.getElementById('infoModal');
-            const bookingModal = document.getElementById('bookingModal');
+            const teamModal = document.getElementById('teamSettingsModal');
+            const dropModal = document.getElementById('dropDetailsModal');
             if (event.target === modal) {
                 closeModal();
             }
-            if (event.target === bookingModal) {
-                closeBookingModal();
+            if (event.target === teamModal) {
+                closeTeamSettingsModal();
+            }
+            if (event.target === dropModal) {
+                closeDropDetailsModal();
             }
         });
 
@@ -669,43 +765,78 @@
         </div>
     </div>
 
-    <!-- Book Slot Modal -->
-    <div id="bookingModal" class="modal-overlay">
+    <!-- Team Settings Modal -->
+    <div id="teamSettingsModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 450px;">
             <div class="modal-header">
-                <h3>Confirm Slot Booking</h3>
-                <button type="button" class="modal-close-btn" onclick="closeBookingModal()">&times;</button>
+                <h3 style="color: #ffffff; font-weight: 800; margin: 0; font-size: 1.25rem;">Add Team Details</h3>
+                <button type="button" class="modal-close-btn" onclick="closeTeamSettingsModal()">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; align-items: center; text-align: center;">
-                <h4 id="bookingModalTitle" style="color: #ffffff; margin: 0; font-size: 1.15rem; font-weight: 700;">BGMI Tournament</h4>
-                <div id="bookingModalFeeContainer" style="font-size: 0.95rem; color: #ff455e; font-weight: 800; background: rgba(215, 38, 61, 0.1); border: 1px solid rgba(215, 38, 61, 0.2); padding: 0.25rem 1rem; border-radius: 999px;">
-                    Entry Fee: ₹60
-                </div>
-
-                <!-- QR Code Display (Only if fee > 0) -->
-                <div id="qrContainer" style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 100%; margin-top: 0.5rem;">
-                    <p style="font-size: 0.85rem; color: #9e9ea7; margin: 0;">Scan QR code to pay using any UPI app:</p>
-                    <div style="background: white; padding: 0.5rem; border-radius: 12px; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.25);">
-                        <img src="/images/qr.jpg" alt="UPI Payment QR Code" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.src='/images/photo.jpg.jpeg'">
+            <div class="modal-body" style="padding: 1.5rem;">
+                <form id="popTeamSettingsForm" onsubmit="submitPopTeamSettings(event)" style="width: 100%; display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+                    <!-- Team Name -->
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
+                        <label for="popTeamName" style="font-size: 0.88rem; color: #9e9ea7; font-weight: 700;">Team Name <span style="color: #ff455e;">*</span></label>
+                        <input type="text" id="popTeamName" name="teamName" required placeholder="Enter team name" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.75rem; color: #ffffff; box-sizing: border-box;">
                     </div>
-                </div>
-
-                <!-- Screenshot Upload -->
-                <form id="bookingForm" onsubmit="submitBooking(event)" style="width: 100%; display: flex; flex-direction: column; gap: 1rem; text-align: left;">
-                    <input type="hidden" id="bookingCatId" name="id">
-                    <input type="hidden" id="bookingMatchTitle" name="title">
                     
-                    <div id="screenshotUploadContainer" style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
-                        <label for="paymentScreenshot" style="font-size: 0.88rem; color: #9e9ea7; font-weight: 700;">Upload Payment Screenshot <span style="color: #ff455e;">*</span></label>
-                        <input type="file" id="paymentScreenshot" name="screenshot" accept="image/*" required style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.5rem; color: #ffffff; box-sizing: border-box; cursor: pointer;">
+                    <!-- Team Logo -->
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
+                        <label for="popTeamLogo" style="font-size: 0.88rem; color: #9e9ea7; font-weight: 700;">Team Logo <span style="color: #ff455e;">*</span></label>
+                        <input type="file" id="popTeamLogo" name="teamLogo" accept="image/*" required style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.5rem; color: #ffffff; box-sizing: border-box; cursor: pointer;">
                     </div>
 
-                    <button type="submit" id="bookingSubmitBtn" class="slot-btn" style="width: 100%; margin: 0.5rem 0 0 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800;">
-                        <i class="fa-solid fa-paper-plane"></i> Submit & Book Slot
+                    <!-- WhatsApp Number -->
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
+                        <label for="popWhatsappNumber" style="font-size: 0.88rem; color: #9e9ea7; font-weight: 700;">WhatsApp Mobile Number <span style="color: #ff455e;">*</span></label>
+                        <div style="display: flex; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; width: 100%; box-sizing: border-box; overflow: hidden;">
+                            <span style="padding: 0.75rem; background: rgba(255,255,255,0.05); color: #9e9ea7; font-weight: 700; font-size: 0.9rem; border-right: 1px solid rgba(255,255,255,0.08);">+91</span>
+                            <input type="tel" id="popWhatsappNumber" name="whatsappNumber" pattern="[0-9]{10}" maxlength="10" required placeholder="Enter 10 digit number" style="width: 100%; background: transparent; border: none; padding: 0.75rem; color: #ffffff; outline: none; box-sizing: border-box;">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="popTeamSubmitBtn" class="slot-btn" style="width: 100%; margin: 0.5rem 0 0 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800;">
+                        <i class="fa-solid fa-paper-plane"></i> Save Team Details
                     </button>
                 </form>
             </div>
         </div>
     </div>
+
+    <!-- Drop Details Modal -->
+    <div id="dropDetailsModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3 style="color: #ffffff; font-weight: 800; margin: 0; font-size: 1.25rem;">Add Drop Details</h3>
+                <button type="button" class="modal-close-btn" onclick="closeDropDetailsModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <form id="popDropDetailsForm" onsubmit="submitPopDropDetails(event)" style="width: 100%; display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+                    <!-- Erangle Map Field -->
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
+                        <label for="popErangle" style="font-size: 0.88rem; color: #9e9ea7; font-weight: 700;">Erangle Drop Location</label>
+                        <input type="text" id="popErangle" name="erangle" placeholder="e.g. Pochinki, School" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.75rem; color: #ffffff; box-sizing: border-box;">
+                    </div>
+
+                    <!-- Rando Map Field -->
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
+                        <label for="popRando" style="font-size: 0.88rem; color: #9e9ea7; font-weight: 700;">Rando Drop Location</label>
+                        <input type="text" id="popRando" name="rando" placeholder="e.g. Bootcamp" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.75rem; color: #ffffff; box-sizing: border-box;">
+                    </div>
+
+                    <!-- Miramar Map Field -->
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
+                        <label for="popMiramar" style="font-size: 0.88rem; color: #9e9ea7; font-weight: 700;">Miramar Drop Location</label>
+                        <input type="text" id="popMiramar" name="miramar" placeholder="e.g. Pecado" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 0.75rem; color: #ffffff; box-sizing: border-box;">
+                    </div>
+
+                    <button type="submit" id="popDropSubmitBtn" class="slot-btn" style="width: 100%; margin: 0.5rem 0 0 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800;">
+                        <i class="fa-solid fa-paper-plane"></i> Save Drop Details
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

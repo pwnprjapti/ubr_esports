@@ -18,6 +18,8 @@ import userModel from "./models/user.model.js"
 import categoryModel from "./models/category.model.js"
 import withdrawalModel from "./models/withdrawal.model.js"
 import adminModel from "./models/admin.model.js"
+import pointTableModel from "./models/pointtable.model.js"
+import pointTableCoverModel from "./models/pointtablecover.model.js"
 
 
 const app = express();
@@ -125,10 +127,15 @@ app.get("/checksignin", async (req, res)=>{
     return res.status(401).json({ authenticated: false });
 });
 app.get("/", async (req, res)=>{
-
-    const categories = await categoryModel.find().select("title description img _id");
-    console.log(categories);
-    res.render("index", { categories });
+    try {
+        const categories = await categoryModel.find().select("title description img _id");
+        const coverDoc = await pointTableCoverModel.findOne();
+        const pointTableCover = coverDoc ? coverDoc.image : null;
+        res.render("index", { categories, pointTableCover });
+    } catch (err) {
+        console.error("Error in home route:", err);
+        res.status(500).send("Internal Server Error");
+    }
 })
 
 app.get("/terms", (req, res)=>{
@@ -248,7 +255,16 @@ app.get("/category/:id", async (req, res)=>{
                 console.log(matches[0].idpTimings.split(","));
             }
         }
-        res.render("pages/category", { matches, id, baseurl });
+        
+        let userTeamName = null;
+        if (req.isAuthenticated()) {
+            const user = await userModel.findOne({gglId:req.user.id}).select("team");
+            if (user && user.team) {
+                userTeamName = user.team.teamName;
+            }
+        }
+
+        res.render("pages/category", { matches, id, baseurl, userTeamName });
     } catch (err) {
         console.error("Error fetching category matches:", err);
         res.status(500).send("Internal Server Error");
@@ -421,14 +437,9 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
          if (req.file) fs.unlinkSync(req.file.path);
          return res.status(404).json({msg:"This match does not exist."})
        }
-       const entryFee = Number(match.entryFee) || 0;
+        const entryFee = Number(match.entryFee) || 0;
 
-       // Require payment screenshot if there is an entry fee
-       if (entryFee > 0 && !req.file) {
-           return res.status(400).json({msg:"Payment screenshot is required."});
-       }
-
-       // Check if slots are full
+        // Check if slots are full
        const approvedTeamsCount = match.teams.filter(t => t.status === "approved").length;
        if (approvedTeamsCount >= match.slots) {
            if (req.file) fs.unlinkSync(req.file.path);
@@ -463,7 +474,7 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
                miramar: miramar || ""
            },
            paymentScreenshot: req.file ? req.file.filename : "",
-           status: entryFee === 0 ? "approved" : "pending"
+           status: "approved"
        };
        console.log(fullteam);
  
@@ -474,8 +485,8 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
            { new: true }
        );
  
-       if(saveTeam){
-           return res.status(200).json({msg: entryFee === 0 ? "Slot booked successfully." : "Booking request submitted. Waiting for admin approval."});
+        if(saveTeam){
+            return res.status(200).json({msg: "Slot booked successfully.", whatsappGroupLink: match.whatsappGroupLink || ""});
        } else {
            if (req.file) fs.unlinkSync(req.file.path);
            return res.status(500).json({msg:"Failed to book slot."});
@@ -488,6 +499,16 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
        return res.status(500).json({msg:"Internal server error during booking."});
    }
 })
+
+app.get("/point-table", async (req, res) => {
+    try {
+        const pointTables = await pointTableModel.find();
+        res.render("client/pages/pointtable", { pointTables, baseurl });
+    } catch (err) {
+        console.error("Error rendering point table page:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
 
 /* Admin Control Panel Routes */
 app.get("/admin", adminAuthCheck, (req, res)=>{
@@ -716,7 +737,7 @@ app.post("/admin/category/:id/match/:mid/team/:tid/status", adminAuthCheck, asyn
             }
             match.teams.pull(tid);
             await category.save();
-            return res.status(200).json({ msg: "Team request rejected and deleted." });
+            return res.status(200).json({ msg: "Team removed successfully." });
         }
     } catch (err) {
         console.error("Error processing team status:", err);
@@ -770,6 +791,122 @@ app.post("/admin/withdrawalReq", adminAuthCheck, async (req, res)=>{
         return res.status(500).json({ msg: "Internal server error." });
     }
 })
+
+app.get("/admin/point-table", adminAuthCheck, async (req, res)=>{
+    try {
+        const pointTables = await pointTableModel.find();
+        res.render("admin/pages/pointtable", { pointTables, baseurl });
+    } catch (err) {
+        console.error("Error fetching point tables:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.get("/admin/add-point-table", adminAuthCheck, async (req, res)=>{
+    try {
+        const categories = await categoryModel.find();
+        res.render("admin/pages/addpointtable", { categories, baseurl });
+    } catch (err) {
+        console.error("Error rendering add point table:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.post("/admin/add-point-table", adminAuthCheck, upload.single('pointTableImage'), async (req, res)=>{
+    try {
+        const { categoryId, categoryTitle, matchTitle } = req.body;
+        if (!categoryId || !categoryTitle || !matchTitle || !req.file) {
+            if (req.file) fs.unlinkSync(req.file.path);
+            return res.status(400).json({ msg: "Please fill all fields and upload an image." });
+        }
+
+        // Upsert logic: if point table already exists for this match, delete old image and update entry
+        const existingTable = await pointTableModel.findOne({ categoryId, matchTitle });
+        if (existingTable) {
+            const oldPath = path.join(__dirname, 'public', 'images', existingTable.pointTableImage);
+            if (fs.existsSync(oldPath)) {
+                try { fs.unlinkSync(oldPath); } catch (e) { console.error("Error deleting old point table image:", e); }
+            }
+            existingTable.pointTableImage = req.file.filename;
+            existingTable.categoryTitle = categoryTitle;
+            await existingTable.save();
+        } else {
+            const newTable = new pointTableModel({
+                categoryId,
+                categoryTitle,
+                matchTitle,
+                pointTableImage: req.file.filename
+            });
+            await newTable.save();
+        }
+
+        return res.status(200).json({ msg: "Point table submitted successfully.", success: true });
+    } catch (err) {
+        console.error("Error creating/updating point table:", err);
+        if (req.file) {
+            try { fs.unlinkSync(req.file.path); } catch (e) {}
+        }
+        return res.status(500).json({ msg: "Internal server error." });
+    }
+});
+
+app.post("/admin/point-table/delete/:id", adminAuthCheck, async (req, res)=>{
+    try {
+        const { id } = req.params;
+        const pt = await pointTableModel.findById(id);
+        if (!pt) {
+            return res.status(404).json({ msg: "Point table not found." });
+        }
+
+        // Delete the image file
+        const imagePath = path.join(__dirname, 'public', 'images', pt.pointTableImage);
+        if (fs.existsSync(imagePath)) {
+            try { fs.unlinkSync(imagePath); } catch (e) { console.error("Error deleting point table image file:", e); }
+        }
+
+        await pointTableModel.findByIdAndDelete(id);
+        return res.status(200).json({ msg: "Point table deleted successfully.", success: true });
+    } catch (err) {
+        console.error("Error deleting point table:", err);
+        return res.status(500).json({ msg: "Internal server error." });
+    }
+});
+
+app.get("/admin/add-point-table-cover", adminAuthCheck, (req, res)=>{
+    res.render("admin/pages/addpointtablecover", { baseurl });
+});
+
+app.post("/admin/add-point-table-cover", adminAuthCheck, upload.single('coverImage'), async (req, res)=>{
+    try {
+        if (!req.file) {
+            return res.status(400).json({ msg: "Please select an image file to upload." });
+        }
+
+        const existingCover = await pointTableCoverModel.findOne();
+        if (existingCover) {
+            // Delete old image file
+            const oldPath = path.join(__dirname, 'public', 'images', existingCover.image);
+            if (fs.existsSync(oldPath)) {
+                try { fs.unlinkSync(oldPath); } catch (e) { console.error("Error deleting old cover image:", e); }
+            }
+            existingCover.image = req.file.filename;
+            await existingCover.save();
+        } else {
+            const newCover = new pointTableCoverModel({
+                image: req.file.filename
+            });
+            await newCover.save();
+        }
+
+        return res.status(200).json({ msg: "Cover image uploaded successfully.", success: true });
+    } catch (err) {
+        console.error("Error uploading point table cover:", err);
+        if (req.file) {
+            try { fs.unlinkSync(req.file.path); } catch (e) {}
+        }
+        return res.status(500).json({ msg: "Internal server error." });
+    }
+});
 
 app.get("/admin/login", (req, res)=>{
     console.log(baseurl);
