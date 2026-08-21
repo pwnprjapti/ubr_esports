@@ -28,6 +28,7 @@
   justify-content: space-between;
   padding: 0.9rem 1.25rem;
   position: relative;
+  height: 70px;
 }
 
 .navbar .brand {
