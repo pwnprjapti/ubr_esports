@@ -201,17 +201,9 @@
         <%- include("../partials/nav") %>
 
         <main class="main-content category-page">
-            <!-- Hero Header -->
-            <section class="category-hero">
-                <div class="hero-text">
-                    <div class="hero-badge">
-                        <span class="pulse-dot"></span>
-                        <span>Date-Wise Tournament Schedule</span>
-                    </div>
-                    <h1>BGMI Tournaments & Scrims</h1>
-                    <p>Select a date to find live scrims, daily cash cups, and weekend custom matches.</p>
-                </div>
-            </section>
+        <% if(wallet && wallet.balance ) {  %>
+             <%- include("../partials/wallet", { wallet:wallet.balance }) %>
+        <% } %>
 
             <!-- Date-Based Filter Section -->
             <section class="date-filter-section">
@@ -292,8 +284,9 @@
                                     <span><%= time %></span>
                                 <% } %>
                             </div>
-                               <br>
-                             <% if (match.maps) { %>
+                        </div>
+                        <% if (match.maps) { %>
+                        <div class="idp-timing" style="margin-top: 10px;">
                             <span class="meta-label"><i class="fa-solid fa-map"></i> Maps</span>
                             <div class="timings">
                                 <% const mapsList = match.maps.split(","); %>
@@ -301,8 +294,8 @@
                                     <span><%= mapName.trim() %></span>
                                 <% } %>
                             </div>
-                        <% } %>
                         </div>
+                        <% } %>
                        
                         <div class="card-actions-grid" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; width: 100%;">
                              <% if (registeredTeam) { %>

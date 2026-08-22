@@ -242,6 +242,7 @@ app.post("/withdrawal", authCheck, async (req, res)=>{
 
 app.get("/category/:id", async (req, res)=>{
     try {
+         
         const {id} = req.params;
         console.log(id);
         const getMatch = await categoryModel.find({_id:id}).select("matches -_id");
@@ -257,14 +258,20 @@ app.get("/category/:id", async (req, res)=>{
         }
         
         let userTeamName = null;
-        if (req.isAuthenticated()) {
-            const user = await userModel.findOne({gglId:req.user.id}).select("team");
-            if (user && user.team) {
-                userTeamName = user.team.teamName;
-            }
-        }
+        let wallet = null;
 
-        res.render("pages/category", { matches, id, baseurl, userTeamName });
+        if (req.isAuthenticated()) {
+            
+            const details = await userModel.findOne({gglId:req.user.id});
+            console.log(details.wallet.balance);
+            if (details.team && details.team.teamName) {
+                userTeamName = details.team.teamName;
+            }
+
+             wallet = details.wallet;
+        }
+        console.log(wallet)
+        res.render("pages/category", { matches, id, baseurl, userTeamName, wallet });
     } catch (err) {
         console.error("Error fetching category matches:", err);
         res.status(500).send("Internal Server Error");
