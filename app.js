@@ -475,14 +475,15 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
            teamName: teamObj.teamName,
            teamLogo: teamObj.teamLogo,
            whatsappNumber: teamObj.whatsappNumber,
-           dropDetails: {
-               erangle: erangle || "",
-               rando: rando || "",
-               miramar: miramar || ""
-           },
-           paymentScreenshot: req.file ? req.file.filename : "",
-           status: "approved"
-       };
+           erangle: erangle || "",
+           rando: rando || "",
+           miramar: miramar || ""
+        //    dropDetails: {
+        //        erangle: erangle || "",
+        //        rando: rando || "",
+        //        miramar: miramar || ""
+           }
+
        console.log(fullteam);
  
        // Save the team. Ensure we only push if the team is not already in the teams array
@@ -695,7 +696,12 @@ app.get("/admin/teams/:id/:mid", adminAuthCheck, async (req, res)=>{
             const teamObj = t.toObject ? t.toObject() : t;
             return {
                 ...teamObj,
-                teamLogo: logoMap[t.teamName] || t.teamLogo || ""
+                teamLogo: logoMap[t.teamName] || t.teamLogo || "",
+                dropDetails: teamObj.dropDetails || {
+                    erangle: teamObj.erangle || "",
+                    rando: teamObj.rando || "",
+                    miramar: teamObj.miramar || ""
+                }
             };
         });
 
