@@ -169,11 +169,11 @@
                                  <button class="delete-category-btn" onclick="deletePointTable(event, this, '<%= pt._id %>')" title="Delete Point Table">
                                      <i class="fa-solid fa-trash-can"></i>
                                  </button>
-                                <div class="category-card-img" onclick="showLightbox('/images/<%= pt.pointTableImage %>')">
-                                    <img src="/images/<%= pt.pointTableImage %>" alt="<%= pt.matchTitle %>">
-                                </div>
+                                 <div class="category-card-img" onclick="showLightbox('<%= imageUrl(pt.pointTableImage) %>')">
+                                     <img src="<%= imageUrl(pt.pointTableImage) %>" alt="<%= pt.matchTitle %>">
+                                 </div>
                                 <h3><%= pt.matchTitle %></h3>
-                                <p><%= pt.categoryTitle %></p>
+                                <p><%= pt.categoryTitle %><% if (pt.date) { %> • <%= pt.date %><% } %></p>
                             </div>
                           <% } %>
                       <% } %>

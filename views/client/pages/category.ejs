@@ -671,9 +671,12 @@
             } else {
                 let listHtml = '<div class="modal-teams-list">';
                 teams.forEach(team => {
-                    const logoHtml = team.teamLogo 
-                        ? `<img src="/images/${team.teamLogo}" alt="${team.teamName}">`
-                        : `<i class="fa-solid fa-shield-halved"></i>`;
+                     const logoUrl = team.teamLogo 
+                         ? (team.teamLogo.startsWith('http://') || team.teamLogo.startsWith('https://') ? team.teamLogo : `/images/${team.teamLogo}`)
+                         : '';
+                     const logoHtml = logoUrl 
+                         ? `<img src="${logoUrl}" alt="${team.teamName}">`
+                         : `<i class="fa-solid fa-shield-halved"></i>`;
                     
                     listHtml += `
                         <div class="modal-team-item">

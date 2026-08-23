@@ -36,7 +36,7 @@
                 <div class="category-card">
                     <div class="category-card-img">
                         <% if(category.img) { %>
-                            <img src="/images/<%= category.img %>" alt="<%= category.title %>">
+                            <img src="<%= imageUrl(category.img) %>" alt="<%= category.title %>">
                         <% } else { %>
                             <i class="fa-solid fa-gamepad"></i>
                         <% } %>
@@ -53,7 +53,7 @@
                 <div class="category-card">
                     <div class="category-card-img" style="background: linear-gradient(135deg, #1e2029, #13141b); display: flex; align-items: center; justify-content: center; color: #ff455e; font-size: 3rem; overflow: hidden;">
                         <% if (typeof pointTableCover !== 'undefined' && pointTableCover) { %>
-                            <img src="/images/<%= pointTableCover %>" alt="Point Table" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                            <img src="<%= imageUrl(pointTableCover) %>" alt="Point Table" style="width: 100%; height: 100%; object-fit: cover; display: block;">
                         <% } else { %>
                             <i class="fa-solid fa-ranking-star"></i>
                         <% } %>

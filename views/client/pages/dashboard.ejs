@@ -39,7 +39,7 @@
                 <div class="category-card">
                     <div class="category-card-img">
                         <% if(category.img) { %>
-                            <img src="/images/<%= category.img %>" alt="<%= category.title %>">
+                            <img src="<%= imageUrl(category.img) %>" alt="<%= category.title %>">
                         <% } else { %>
                             <i class="fa-solid fa-gamepad"></i>
                         <% } %>

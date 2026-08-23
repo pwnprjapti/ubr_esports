@@ -80,7 +80,7 @@
 
                                 <div class="upload-preview-container <%= (team && team.teamLogo) ? 'active' : '' %>" id="uploadPreviewContainer">
                                     <div class="logo-preview-wrapper">
-                                        <img id="logoPreviewImg" class="logo-preview-img" src="<%= (team && team.teamLogo) ? '/images/' + team.teamLogo : '' %>" alt="Team Logo Preview">
+                                        <img id="logoPreviewImg" class="logo-preview-img" src="<%= (team && team.teamLogo) ? imageUrl(team.teamLogo) : '' %>" alt="Team Logo Preview">
                                     </div>
                                     <button type="button" class="remove-logo-btn" id="removeLogoBtn">
                                         <i class="fa-solid fa-trash-can"></i> Change Logo

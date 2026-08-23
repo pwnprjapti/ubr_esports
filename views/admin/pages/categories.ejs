@@ -167,7 +167,7 @@
                              </button>
                             <div class="category-card-img">
                                 <% if(element.img) { %>
-                                    <img src="/images/<%= element.img %>" alt="<%= element.title %>">
+                                    <img src="<%= imageUrl(element.img) %>" alt="<%= element.title %>">
                                 <% } else { %>
                                     <i class="fa-solid fa-gamepad"></i>
                                 <% } %>

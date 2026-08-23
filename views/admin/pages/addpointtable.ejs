@@ -35,8 +35,21 @@
                                 </select>
                             </div>
 
+                            <!-- Tournament Date Field -->
+                            <div class="form-group" style="margin-top: 1rem;">
+                                <label for="tournamentDate">Enter Tournament Date</label>
+                                <input 
+                                    type="date" 
+                                    id="tournamentDate" 
+                                    name="tournamentDate" 
+                                    class="form-input" 
+                                    style="background-color: #1a1c26; color: #fff; border: 1px solid rgba(255,255,255,0.08); padding: 0.75rem; border-radius: 8px; width: 100%; box-sizing: border-box;"
+                                    required
+                                >
+                            </div>
+
                             <!-- 2. Point Table Image Field -->
-                            <div class="form-group">
+                            <div class="form-group" style="margin-top: 1rem;">
                                 <label for="pointTableImage">Upload Point Table Image</label>
                                 <input 
                                     type="file" 
@@ -64,6 +77,7 @@
 
     <script>
         const matchSelector = document.getElementById("matchSelector");
+        const tournamentDate = document.getElementById("tournamentDate");
         const pointTableImage = document.getElementById("pointTableImage");
         const submitButton = document.getElementById("submitButton");
         const baseurl = "<%= baseurl %>";
@@ -73,6 +87,10 @@
             try {
                 if (!matchSelector.value) {
                     alert("Please select a match");
+                    return;
+                }
+                if (!tournamentDate.value) {
+                    alert("Please select a tournament date");
                     return;
                 }
                 if (!pointTableImage.files[0]) {
@@ -86,6 +104,7 @@
                 formData.append("categoryId", categoryId);
                 formData.append("categoryTitle", categoryTitle);
                 formData.append("matchTitle", matchTitle);
+                formData.append("date", tournamentDate.value);
                 formData.append("pointTableImage", pointTableImage.files[0]);
 
                 const originalBtnHtml = submitButton.innerHTML;

@@ -20,6 +20,7 @@ import withdrawalModel from "./models/withdrawal.model.js"
 import adminModel from "./models/admin.model.js"
 import pointTableModel from "./models/pointtable.model.js"
 import pointTableCoverModel from "./models/pointtablecover.model.js"
+import { uploadToCloudinary, deleteFromCloudinary } from "./utils/cloudinary.js"
 
 
 const app = express();
@@ -69,6 +70,15 @@ app.set('views', [
     path.join(__dirname, 'views', 'admin'),
     path.join(__dirname, 'views')
 ]);
+
+app.locals.imageUrl = function(img) {
+    if (!img) return '/images/photo.jpg.jpeg';
+    if (img.startsWith('http://') || img.startsWith('https://')) {
+        return img;
+    }
+    return `/images/${img}`;
+};
+
 app.use(express.static(path.join(__dirname, 'assets')));
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 app.use(express.json());
@@ -331,25 +341,37 @@ app.post("/team-settings", authCheck, upload.single('teamLogo'), async (req, res
         console.log(req.user.id);
         const user = await userModel.findOne({gglId: req.user.id});
         if(!user){
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch(e) {}
+            }
             return res.status(404).json({msg:"User does not exist"});
         }
 
         const { teamName, whatsappNumber } = req.body;
         if (!teamName || !whatsappNumber) {
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch(e) {}
+            }
             return res.status(400).json({ msg: "Please fill all required fields." });
         }
 
         // Preserve existing logo if no new file is uploaded
         let logoName = user.team && user.team.teamLogo ? user.team.teamLogo : "";
         if (req.file) {
-            // Delete old logo file if it exists
+            // Delete old logo file/URL if it exists
             if (logoName) {
-                const oldLogoPath = path.join(__dirname, 'public', 'images', logoName);
-                if (fs.existsSync(oldLogoPath)) {
-                    fs.unlinkSync(oldLogoPath);
+                if (logoName.startsWith("http://") || logoName.startsWith("https://")) {
+                    await deleteFromCloudinary(logoName);
+                } else {
+                    const oldLogoPath = path.join(__dirname, 'public', 'images', logoName);
+                    if (fs.existsSync(oldLogoPath)) {
+                        fs.unlinkSync(oldLogoPath);
+                    }
                 }
             }
-            logoName = req.file.filename;
+            // Upload new logo to Cloudinary
+            const uploadResult = await uploadToCloudinary(req.file.path, 'team_logos');
+            logoName = uploadResult.secure_url;
         }
 
         const teamData = {
@@ -371,6 +393,9 @@ app.post("/team-settings", authCheck, upload.single('teamLogo'), async (req, res
         return res.status(200).json({ msg:"team Created Successfully" });
     } catch(err) {
         console.error("Error setting team details:", err);
+        if (req.file && fs.existsSync(req.file.path)) {
+            try { fs.unlinkSync(req.file.path); } catch(e) {}
+        }
         return res.status(500).json({ msg: "Internal server error" });
     }
 })
@@ -574,12 +599,19 @@ app.post("/admin/addcategory", adminAuthCheck, upload.single('categoryPicture'),
         console.log(req.file);
         const { title, description } = req.body;
         if (!title || !description) {
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch(e) {}
+            }
             return res.status(400).json({ msg: "Please fill all fields." });
         }
         const isExist = await categoryModel.findOne({ title: title });
         let msg;
         if(!isExist){
-            const imgName = req.file ? req.file.filename : "";
+            let imgName = "";
+            if (req.file) {
+                const uploadResult = await uploadToCloudinary(req.file.path, 'categories');
+                imgName = uploadResult.secure_url;
+            }
             const category = await categoryModel.create({
                 title,
                 description,
@@ -592,12 +624,18 @@ app.post("/admin/addcategory", adminAuthCheck, upload.single('categoryPicture'),
                  msg = "Failed to create category."
             }
         } else {
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch(e) {}
+            }
             msg = "Category already exist with this name."
         }
         
         res.json({msg});
     } catch (err) {
         console.error("Error creating category:", err);
+        if (req.file && fs.existsSync(req.file.path)) {
+            try { fs.unlinkSync(req.file.path); } catch(e) {}
+        }
         res.status(500).json({ msg: "Internal server error" });
     }
 })
@@ -612,9 +650,13 @@ app.post("/admin/category/delete/:id", adminAuthCheck, async (req, res) => {
         
         // Delete image if exists
         if (category.img) {
-            const imgPath = path.join(__dirname, 'public', 'images', category.img);
-            if (fs.existsSync(imgPath)) {
-                fs.unlinkSync(imgPath);
+            if (category.img.startsWith("http://") || category.img.startsWith("https://")) {
+                await deleteFromCloudinary(category.img);
+            } else {
+                const imgPath = path.join(__dirname, 'public', 'images', category.img);
+                if (fs.existsSync(imgPath)) {
+                    fs.unlinkSync(imgPath);
+                }
             }
         }
         
@@ -827,28 +869,43 @@ app.get("/admin/add-point-table", adminAuthCheck, async (req, res)=>{
 
 app.post("/admin/add-point-table", adminAuthCheck, upload.single('pointTableImage'), async (req, res)=>{
     try {
-        const { categoryId, categoryTitle, matchTitle } = req.body;
-        if (!categoryId || !categoryTitle || !matchTitle || !req.file) {
-            if (req.file) fs.unlinkSync(req.file.path);
+        const { categoryId, categoryTitle, matchTitle, date } = req.body;
+        if (!categoryId || !categoryTitle || !matchTitle || !date || !req.file) {
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch (e) {}
+            }
             return res.status(400).json({ msg: "Please fill all fields and upload an image." });
         }
+
+        // Upload new image to Cloudinary
+        const uploadResult = await uploadToCloudinary(req.file.path, 'point_tables');
+        const imageUrl = uploadResult.secure_url;
 
         // Upsert logic: if point table already exists for this match, delete old image and update entry
         const existingTable = await pointTableModel.findOne({ categoryId, matchTitle });
         if (existingTable) {
-            const oldPath = path.join(__dirname, 'public', 'images', existingTable.pointTableImage);
-            if (fs.existsSync(oldPath)) {
-                try { fs.unlinkSync(oldPath); } catch (e) { console.error("Error deleting old point table image:", e); }
+            const oldPath = existingTable.pointTableImage;
+            if (oldPath) {
+                if (oldPath.startsWith("http://") || oldPath.startsWith("https://")) {
+                    await deleteFromCloudinary(oldPath);
+                } else {
+                    const oldLocalPath = path.join(__dirname, 'public', 'images', oldPath);
+                    if (fs.existsSync(oldLocalPath)) {
+                        try { fs.unlinkSync(oldLocalPath); } catch (e) { console.error("Error deleting old point table image:", e); }
+                    }
+                }
             }
-            existingTable.pointTableImage = req.file.filename;
+            existingTable.pointTableImage = imageUrl;
             existingTable.categoryTitle = categoryTitle;
+            existingTable.date = date;
             await existingTable.save();
         } else {
             const newTable = new pointTableModel({
                 categoryId,
                 categoryTitle,
                 matchTitle,
-                pointTableImage: req.file.filename
+                date,
+                pointTableImage: imageUrl
             });
             await newTable.save();
         }
@@ -856,7 +913,7 @@ app.post("/admin/add-point-table", adminAuthCheck, upload.single('pointTableImag
         return res.status(200).json({ msg: "Point table submitted successfully.", success: true });
     } catch (err) {
         console.error("Error creating/updating point table:", err);
-        if (req.file) {
+        if (req.file && fs.existsSync(req.file.path)) {
             try { fs.unlinkSync(req.file.path); } catch (e) {}
         }
         return res.status(500).json({ msg: "Internal server error." });
@@ -872,9 +929,16 @@ app.post("/admin/point-table/delete/:id", adminAuthCheck, async (req, res)=>{
         }
 
         // Delete the image file
-        const imagePath = path.join(__dirname, 'public', 'images', pt.pointTableImage);
-        if (fs.existsSync(imagePath)) {
-            try { fs.unlinkSync(imagePath); } catch (e) { console.error("Error deleting point table image file:", e); }
+        const imagePath = pt.pointTableImage;
+        if (imagePath) {
+            if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+                await deleteFromCloudinary(imagePath);
+            } else {
+                const oldLocalPath = path.join(__dirname, 'public', 'images', imagePath);
+                if (fs.existsSync(oldLocalPath)) {
+                    try { fs.unlinkSync(oldLocalPath); } catch (e) { console.error("Error deleting point table image file:", e); }
+                }
+            }
         }
 
         await pointTableModel.findByIdAndDelete(id);
@@ -895,18 +959,29 @@ app.post("/admin/add-point-table-cover", adminAuthCheck, upload.single('coverIma
             return res.status(400).json({ msg: "Please select an image file to upload." });
         }
 
+        // Upload new cover image to Cloudinary
+        const uploadResult = await uploadToCloudinary(req.file.path, 'covers');
+        const imageUrl = uploadResult.secure_url;
+
         const existingCover = await pointTableCoverModel.findOne();
         if (existingCover) {
             // Delete old image file
-            const oldPath = path.join(__dirname, 'public', 'images', existingCover.image);
-            if (fs.existsSync(oldPath)) {
-                try { fs.unlinkSync(oldPath); } catch (e) { console.error("Error deleting old cover image:", e); }
+            const oldPath = existingCover.image;
+            if (oldPath) {
+                if (oldPath.startsWith("http://") || oldPath.startsWith("https://")) {
+                    await deleteFromCloudinary(oldPath);
+                } else {
+                    const oldLocalPath = path.join(__dirname, 'public', 'images', oldPath);
+                    if (fs.existsSync(oldLocalPath)) {
+                        try { fs.unlinkSync(oldLocalPath); } catch (e) { console.error("Error deleting old cover image:", e); }
+                    }
+                }
             }
-            existingCover.image = req.file.filename;
+            existingCover.image = imageUrl;
             await existingCover.save();
         } else {
             const newCover = new pointTableCoverModel({
-                image: req.file.filename
+                image: imageUrl
             });
             await newCover.save();
         }
@@ -914,7 +989,7 @@ app.post("/admin/add-point-table-cover", adminAuthCheck, upload.single('coverIma
         return res.status(200).json({ msg: "Cover image uploaded successfully.", success: true });
     } catch (err) {
         console.error("Error uploading point table cover:", err);
-        if (req.file) {
+        if (req.file && fs.existsSync(req.file.path)) {
             try { fs.unlinkSync(req.file.path); } catch (e) {}
         }
         return res.status(500).json({ msg: "Internal server error." });

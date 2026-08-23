@@ -115,21 +115,39 @@
                         <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem;">Standings will be updated as soon as matches finish.</p>
                     </div>
                 <% } else { %>
+                    <!-- Date Filter Control -->
+                    <div class="date-filter-section" style="margin-top: 1.25rem; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: flex-start; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 0.75rem 1rem; border-radius: 10px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 250px;">
+                            <label for="ptDatePicker" style="color: #9e9ea7; font-size: 0.85rem; font-weight: 700; white-space: nowrap;"><i class="fa-regular fa-calendar" style="margin-right: 0.35rem;"></i> Filter by Date:</label>
+                            <input type="date" id="ptDatePicker" style="background-color: #1a1c26; color: #fff; border: 1px solid rgba(255,255,255,0.08); padding: 0.4rem 0.75rem; border-radius: 6px; font-size: 0.88rem; width: 100%; box-sizing: border-box; cursor: pointer;">
+                        </div>
+                        <button type="button" id="resetPtFilter" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.4rem 0.85rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+                            <i class="fa-solid fa-rotate-left"></i> Reset
+                        </button>
+                    </div>
+
                     <div class="pt-grid">
                         <% pointTables.forEach(pt => { %>
-                            <div class="pt-card" onclick="openPtModal('/images/<%= pt.pointTableImage %>')">
+                            <div class="pt-card" data-date="<%= pt.date || '' %>" onclick="openPtModal('<%= imageUrl(pt.pointTableImage) %>')">
                                 <div style="display: flex; align-items: center; gap: 1rem; text-align: left;">
                                     <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(215, 38, 61, 0.15); display: flex; align-items: center; justify-content: center; color: #ff455e;">
                                         <i class="fa-solid fa-ranking-star" style="font-size: 1.25rem;"></i>
                                     </div>
                                     <div>
                                         <h3><%= pt.matchTitle %></h3>
-                                        <p><%= pt.categoryTitle %></p>
+                                        <p><%= pt.categoryTitle %><% if (pt.date) { %> • <%= pt.date %><% } %></p>
                                     </div>
                                 </div>
                                 <i class="fa-solid fa-chevron-right" style="color: #a0a0aa; font-size: 1.1rem; margin-right: 0.5rem;"></i>
                             </div>
                         <% }) %>
+                        
+                        <!-- Empty State for Date Filter -->
+                        <div id="noPtMsg" style="display: none; text-align: center; padding: 3rem 1rem; color: #a0a0aa; width: 100%;">
+                            <i class="fa-regular fa-calendar-xmark" style="font-size: 3rem; color: #ff455e; margin-bottom: 1.25rem; display: block;"></i>
+                            <h3 style="margin: 0; color: #ffffff; font-size: 1.2rem;">No Point Tables for this Date</h3>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">There are no tournament standings matching the selected date.</p>
+                        </div>
                     </div>
                 <% } %>
             </div>
@@ -159,6 +177,43 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closePtModal();
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const ptDatePicker = document.getElementById('ptDatePicker');
+            const resetPtFilter = document.getElementById('resetPtFilter');
+            const ptCards = document.querySelectorAll('.pt-card');
+            const noPtMsg = document.getElementById('noPtMsg');
+
+            function filterPt(dateVal) {
+                let visibleCount = 0;
+                ptCards.forEach(card => {
+                    const cardDate = card.getAttribute('data-date');
+                    if (!dateVal || cardDate === dateVal) {
+                        card.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                if (noPtMsg) {
+                    noPtMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+                }
+            }
+
+            if (ptDatePicker) {
+                ptDatePicker.addEventListener('change', function() {
+                    filterPt(this.value);
+                });
+            }
+
+            if (resetPtFilter) {
+                resetPtFilter.addEventListener('click', function() {
+                    if (ptDatePicker) ptDatePicker.value = '';
+                    filterPt(null);
+                });
             }
         });
     </script>
