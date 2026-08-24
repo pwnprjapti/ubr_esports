@@ -17,6 +17,7 @@ import cors from "cors"
 import userModel from "./models/user.model.js"
 import categoryModel from "./models/category.model.js"
 import withdrawalModel from "./models/withdrawal.model.js"
+import depositModel from "./models/deposit.model.js"
 import adminModel from "./models/admin.model.js"
 import pointTableModel from "./models/pointtable.model.js"
 import pointTableCoverModel from "./models/pointtablecover.model.js"
@@ -250,6 +251,46 @@ app.post("/withdrawal", authCheck, async (req, res)=>{
     }
 })
 
+app.post("/addcash", authCheck, upload.single('screenshot'), async (req, res) => {
+    try {
+        const { amount } = req.body;
+        const amountNum = Number(amount);
+        if (isNaN(amountNum) || amountNum <= 0) {
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch(e) {}
+            }
+            return res.status(400).json({ msg: "Please enter a valid amount." });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ msg: "Please upload a payment screenshot." });
+        }
+
+        // Upload payment screenshot to Cloudinary
+        const uploadResult = await uploadToCloudinary(req.file.path, 'deposits');
+        const imageUrl = uploadResult.secure_url;
+
+        // Create deposit request document
+        const depositRequest = new depositModel({
+            playerName: req.user.displayName,
+            id: req.user.id,
+            amount: amountNum,
+            screenshot: imageUrl,
+            status: "pending"
+        });
+
+        await depositRequest.save();
+
+        res.status(200).json({ msg: "Add cash request submitted successfully. Waiting for admin approval.", success: true });
+    } catch (err) {
+        console.error("Add cash request error:", err);
+        if (req.file && fs.existsSync(req.file.path)) {
+            try { fs.unlinkSync(req.file.path); } catch(e) {}
+        }
+        res.status(500).json({ msg: "Internal server error." });
+    }
+});
+
 app.get("/category/:id", async (req, res)=>{
     try {
          
@@ -472,8 +513,7 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
         const entryFee = Number(match.entryFee) || 0;
 
         // Check if slots are full
-       const approvedTeamsCount = match.teams.filter(t => t.status === "approved").length;
-       if (approvedTeamsCount >= match.slots) {
+       if (match.teams && match.teams.length >= match.slots) {
            if (req.file) fs.unlinkSync(req.file.path);
            return res.status(400).json({msg:"Tournament slots are already full!"});
        }
@@ -510,20 +550,57 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
            }
 
        console.log(fullteam);
- 
-       // Save the team. Ensure we only push if the team is not already in the teams array
-       const saveTeam = await categoryModel.findOneAndUpdate(
-           { _id: id, "matches.title": title, "matches.teams.teamName": { $ne: fullteam.teamName } },
-           { $push: { "matches.$.teams": fullteam } },
-           { new: true }
-       );
- 
-        if(saveTeam){
-            return res.status(200).json({msg: "Slot booked successfully.", whatsappGroupLink: match.whatsappGroupLink || ""});
-       } else {
-           if (req.file) fs.unlinkSync(req.file.path);
-           return res.status(500).json({msg:"Failed to book slot."});
-       }
+
+        // Check if user has sufficient wallet balance and deduct atomically
+        if (entryFee > 0) {
+            const user = await userModel.findOne({ gglId: req.user.id });
+            const availableBalance = (user && user.wallet && user.wallet.balance && typeof user.wallet.balance.availableBalance !== 'undefined') ? Number(user.wallet.balance.availableBalance) : 0;
+            if (availableBalance < entryFee) {
+                if (req.file) fs.unlinkSync(req.file.path);
+                return res.status(400).json({ msg: "Insufficient balance in your wallet. Available: ₹" + availableBalance + ", Required: ₹" + entryFee });
+            }
+
+            // Deduct the entry fee atomically
+            const updateWallet = await userModel.findOneAndUpdate(
+                { gglId: req.user.id, "wallet.balance.availableBalance": { $gte: entryFee } },
+                { $inc: { "wallet.balance.availableBalance": -entryFee } },
+                { new: true }
+            );
+
+            if (!updateWallet) {
+                if (req.file) fs.unlinkSync(req.file.path);
+                return res.status(400).json({ msg: "Insufficient balance in your wallet." });
+            }
+        }
+  
+        // Save the team. Ensure we only push if the team is not already in the teams array of this specific match
+        const saveTeam = await categoryModel.findOneAndUpdate(
+            { 
+                _id: id, 
+                matches: { 
+                    $elemMatch: { 
+                        title: title, 
+                        "teams.teamName": { $ne: fullteam.teamName } 
+                    } 
+                } 
+            },
+            { $push: { "matches.$.teams": fullteam } },
+            { new: true }
+        );
+  
+         if(saveTeam){
+             return res.status(200).json({msg: "Slot booked successfully.", whatsappGroupLink: match.whatsappGroupLink || ""});
+        } else {
+            // Refund the entry fee if it was deducted
+            if (entryFee > 0) {
+                await userModel.findOneAndUpdate(
+                    { gglId: req.user.id },
+                    { $inc: { "wallet.balance.availableBalance": entryFee } }
+                );
+            }
+            if (req.file) fs.unlinkSync(req.file.path);
+            return res.status(500).json({msg:"Failed to book slot."});
+        }
    } catch (err) {
        console.error("Booking error:", err);
        if (req.file) {
@@ -668,6 +745,88 @@ app.post("/admin/category/delete/:id", adminAuthCheck, async (req, res) => {
     }
 })
 
+app.get("/admin/editcategory/:id", adminAuthCheck, async (req, res)=>{
+    try {
+        const category = await categoryModel.findById(req.params.id);
+        if(!category){
+            return res.status(404).send("Category not found");
+        }
+        res.render("admin/pages/editcategory", { category, baseurl });
+    } catch(err) {
+        console.error(err);
+        res.status(500).send("Internal Server Error");
+    }
+})
+
+app.post("/admin/editcategory/:id", adminAuthCheck, upload.single('categoryPicture'), async (req, res)=>{
+    try {
+        const { title, description } = req.body;
+        if (!title || !description) {
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch(e) {}
+            }
+            return res.status(400).json({ msg: "Please fill all fields." });
+        }
+        
+        const category = await categoryModel.findById(req.params.id);
+        if (!category) {
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch(e) {}
+            }
+            return res.status(404).json({ msg: "Category not found." });
+        }
+
+        const oldTitle = category.title;
+
+        // Check if another category with the same title already exists
+        const isExist = await categoryModel.findOne({ title: title, _id: { $ne: req.params.id } });
+        if (isExist) {
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch(e) {}
+            }
+            return res.status(400).json({ msg: "Category already exists with this name." });
+        }
+
+        category.title = title;
+        category.description = description;
+
+        if (req.file) {
+            // Delete old image if it exists
+            if (category.img) {
+                if (category.img.startsWith("http://") || category.img.startsWith("https://")) {
+                    await deleteFromCloudinary(category.img);
+                } else {
+                    const oldImgPath = path.join(__dirname, 'public', 'images', category.img);
+                    if (fs.existsSync(oldImgPath)) {
+                        fs.unlinkSync(oldImgPath);
+                    }
+                }
+            }
+            // Upload new image
+            const uploadResult = await uploadToCloudinary(req.file.path, 'categories');
+            category.img = uploadResult.secure_url;
+        }
+
+        await category.save();
+
+        // Update PointTable documents if title changed
+        if (oldTitle !== title) {
+            await pointTableModel.updateMany(
+                { categoryId: category._id },
+                { categoryTitle: title }
+            );
+        }
+
+        res.json({ msg: "Category updated successfully" });
+    } catch (err) {
+        console.error("Error updating category:", err);
+        if (req.file && fs.existsSync(req.file.path)) {
+            try { fs.unlinkSync(req.file.path); } catch(e) {}
+        }
+        res.status(500).json({ msg: "Internal server error" });
+    }
+})
+
 app.get("/admin/addtournament", adminAuthCheck, async (req, res)=>{
     const categories = await categoryModel.find().select("title -_id");
     console.log(categories);
@@ -707,6 +866,76 @@ app.post("/admin/category/:id/tournament/delete/:mid", adminAuthCheck, async (re
     } catch (err) {
         console.error("Error deleting tournament:", err);
         return res.status(500).json({ success: false, msg: "Internal server error" });
+    }
+})
+
+app.get("/admin/category/:id/tournament/edit/:mid", adminAuthCheck, async (req, res)=>{
+    try {
+        const { id, mid } = req.params;
+        const category = await categoryModel.findById(id);
+        if(!category){
+            return res.status(404).send("Category not found");
+        }
+        const match = category.matches.id(mid);
+        if(!match){
+            return res.status(404).send("Tournament not found");
+        }
+        res.render("admin/pages/edittournament", { category, match, baseurl });
+    } catch(err) {
+        console.error(err);
+        res.status(500).send("Internal Server Error");
+    }
+})
+
+app.post("/admin/category/:id/tournament/edit/:mid", adminAuthCheck, async (req, res)=>{
+    try {
+        const { id, mid } = req.params;
+        const matchData = req.body.data;
+        
+        const category = await categoryModel.findById(id);
+        if(!category){
+            return res.status(404).json({ msg: "Category not found" });
+        }
+        
+        const match = category.matches.id(mid);
+        if(!match){
+            return res.status(404).json({ msg: "Tournament not found" });
+        }
+
+        const oldTitle = match.title;
+        const newTitle = matchData.title;
+
+        // Check if another match in the same category has this new title
+        const isExist = category.matches.some(m => m.title === newTitle && m._id.toString() !== mid);
+        if (isExist) {
+            return res.status(400).json({ msg: "A tournament with this title already exists in this category." });
+        }
+
+        // Update match fields
+        match.date = matchData.date;
+        match.title = matchData.title;
+        match.prizePool = Number(matchData.prizePool);
+        match.slots = Number(matchData.slots);
+        match.entryFee = Number(matchData.entryFee);
+        match.idpTimings = matchData.idpTimings;
+        match.maps = matchData.maps;
+        match.details = matchData.details;
+        match.whatsappGroupLink = matchData.whatsappGroupLink;
+
+        await category.save();
+
+        // Also update any PointTable entries referencing this matchTitle
+        if (oldTitle !== newTitle) {
+            await pointTableModel.updateMany(
+                { categoryId: id, matchTitle: oldTitle },
+                { matchTitle: newTitle }
+            );
+        }
+
+        res.json({ msg: "Tournament updated successfully" });
+    } catch(err) {
+        console.error("Error updating tournament:", err);
+        res.status(500).json({ msg: "Internal server error" });
     }
 })
 
@@ -846,6 +1075,65 @@ app.post("/admin/withdrawalReq", adminAuthCheck, async (req, res)=>{
         return res.status(500).json({ msg: "Internal server error." });
     }
 })
+
+app.get("/admin/transactions", adminAuthCheck, async (req, res)=>{
+    try {
+        const transactions = await depositModel.find().sort({ date: -1 });
+        res.render("admin/pages/transactions", { transactions, baseurl });
+    } catch(err) {
+        console.error("Error fetching admin transactions:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.post("/admin/transactionReq", adminAuthCheck, async (req, res)=>{
+    try {
+        const { option, id } = req.body;
+        
+        // Find the transaction request and verify it is still pending
+        const depositReq = await depositModel.findOne({ _id: id });
+        if (!depositReq) {
+            return res.status(404).json({ msg: "Transaction request not found." });
+        }
+        
+        if (depositReq.status !== "pending") {
+            return res.status(400).json({ msg: "This transaction request has already been processed." });
+        }
+
+        if (option === "rejected") {
+            // Update status to rejected
+            depositReq.status = "rejected";
+            await depositReq.save();
+            
+            return res.status(200).json({ msg: "Transaction request rejected successfully." });
+        } else if (option === "approved") {
+            // Update status to approved
+            depositReq.status = "approved";
+            await depositReq.save();
+            
+            // Add the balance to the user's wallet availableBalance
+            const updatedUser = await userModel.findOneAndUpdate(
+                { gglId: depositReq.id },
+                { $inc: { "wallet.balance.availableBalance": depositReq.amount } },
+                { new: true }
+            );
+
+            if (!updatedUser) {
+                // If user not found, roll back approval status
+                depositReq.status = "pending";
+                await depositReq.save();
+                return res.status(404).json({ msg: "User associated with this transaction was not found. Request rolled back to pending." });
+            }
+            
+            return res.status(200).json({ msg: "Transaction approved and funds added to user's wallet successfully." });
+        } else {
+            return res.status(400).json({ msg: "Invalid status option." });
+        }
+    } catch (err) {
+        console.error("Admin transaction processing error:", err);
+        return res.status(500).json({ msg: "Internal server error." });
+    }
+});
 
 app.get("/admin/point-table", adminAuthCheck, async (req, res)=>{
     try {

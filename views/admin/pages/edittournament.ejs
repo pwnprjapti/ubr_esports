@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Edit Tournament | UBR Esports Admin</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css">
+    <link rel="stylesheet" href="/css/addtournament.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="add-tournament-wrapper">
+                    <div class="add-tournament-card">
+                        <h1>Edit Tournament</h1>
+
+                        <form class="tournament-form" method="post">
+                            <!-- Category (Read Only) -->
+                            <div class="form-group">
+                                <label for="tournamentCategory">Category</label>
+                                <input 
+                                    type="text" 
+                                    id="tournamentCategory" 
+                                    class="form-input" 
+                                    value="<%= category.title %>" 
+                                    disabled
+                                >
+                            </div>
+
+                            <!-- Tournament Title -->
+                            <div class="form-group">
+                                <label for="tournamentTitle">Tournament Title</label>
+                                <input 
+                                    type="text" 
+                                    id="tournamentTitle" 
+                                    name="tournamentTitle" 
+                                    class="form-input" 
+                                    placeholder="e.g. BGMI Daily Pro Scrims" 
+                                    value="<%= match.title %>"
+                                    required
+                                >
+                            </div>
+
+                            <!-- Match Date & Match Time -->
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="matchDate">Match Date</label>
+                                    <input 
+                                        type="date" 
+                                        id="matchDate" 
+                                        name="matchDate" 
+                                        class="form-input" 
+                                        value="<%= match.date %>"
+                                        required
+                                    >
+                                </div>
+                            </div>
+
+                            <!-- Total Slots & Entry Fee -->
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="totalSlots">Total Slots</label>
+                                    <input 
+                                        type="number" 
+                                        id="totalSlots" 
+                                        name="totalSlots" 
+                                        class="form-input" 
+                                        value="<%= match.slots %>" 
+                                        required
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="entryFee">Entry Fee (₹)</label>
+                                    <input 
+                                        type="number" 
+                                        id="entryFee" 
+                                        name="entryFee" 
+                                        class="form-input" 
+                                        placeholder="e.g. 60 (0 for Free)" 
+                                        value="<%= match.entryFee %>"
+                                        required
+                                    >
+                                </div>
+                            </div>
+
+                            <!-- Prize Pool -->
+                            <div class="form-group">
+                                <label for="prizePool">Prize Pool (₹)</label>
+                                <input 
+                                    type="number" 
+                                    id="prizePool" 
+                                    name="prizePool" 
+                                    class="form-input" 
+                                    placeholder="e.g. 5000" 
+                                    value="<%= match.prizePool %>"
+                                    required
+                                >
+                            </div>
+
+                            <!-- IDP Timing -->
+                            <div class="form-group">
+                                <label for="idpTiming">IDP Timing (Room Schedule)</label>
+                                <input 
+                                    type="text" 
+                                    id="idpTiming" 
+                                    name="idpTiming" 
+                                    class="form-input" 
+                                    placeholder="e.g. 07:00 pm, 09:00 pm, 11:00 pm" 
+                                    value="<%= match.idpTimings %>"
+                                    required
+                                >
+                            </div>
+
+                            <!-- Maps -->
+                            <div class="form-group">
+                                <label for="maps">Maps</label>
+                                <input 
+                                    type="text" 
+                                    id="maps" 
+                                    name="maps" 
+                                    class="form-input" 
+                                    placeholder="e.g. Erangle, Miramar, Sanhok" 
+                                    value="<%= match.maps || '' %>"
+                                    required
+                                >
+                            </div>
+
+                            <!-- Details -->
+                            <div class="form-group">
+                                <label for="details">Tournament Details</label>
+                                <textarea 
+                                    id="details" 
+                                    name="details" 
+                                    class="form-input" 
+                                    placeholder="Enter tournament details, rules, or descriptions..." 
+                                    rows="4"
+                                    style="resize: vertical; font-family: inherit; width: 100%;"
+                                    required
+                                ><%= match.details %></textarea>
+                            </div>
+
+                            <!-- WhatsApp Group Link -->
+                            <div class="form-group">
+                                <label for="whatsappGroupLink">WhatsApp Group Link</label>
+                                <input 
+                                    type="url" 
+                                    id="whatsappGroupLink" 
+                                    name="whatsappGroupLink" 
+                                    class="form-input" 
+                                    placeholder="e.g. https://chat.whatsapp.com/..." 
+                                    value="<%= match.whatsappGroupLink || '' %>"
+                                >
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" id="submitbtn" class="submit-btn">
+                                Save Tournament Details
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+
+    <script>
+        const title = document.getElementById("tournamentTitle");
+        const date = document.getElementById("matchDate");
+        const slots = document.getElementById("totalSlots");
+        const entryFee = document.getElementById("entryFee");
+        const prizePool = document.getElementById("prizePool");
+        const idpTiming = document.getElementById("idpTiming");
+        const maps = document.getElementById("maps");
+        const details = document.getElementById("details");
+        const whatsappGroupLink = document.getElementById("whatsappGroupLink");
+        const submitbtn = document.getElementById("submitbtn");
+        const baseurl = "<%= baseurl %>";
+        const categoryId = "<%= category._id %>";
+        const matchId = "<%= match._id %>";
+
+        async function submitData(e) {
+            e.preventDefault();
+
+            const data = {
+                date:date.value,
+                title:title.value,
+                prizePool:prizePool.value, 
+                slots:slots.value,
+                entryFee:entryFee.value,
+                idpTimings:idpTiming.value,
+                maps:maps.value,
+                details:details.value,
+                whatsappGroupLink:whatsappGroupLink.value,
+            }
+
+           try{
+                console.log(data);
+
+                const originalBtnHtml = submitbtn.innerHTML;
+                submitbtn.disabled = true;
+                submitbtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+                const res = await fetch(`${baseurl}/admin/category/${categoryId}/tournament/edit/${matchId}`, {
+                    method:"POST",
+                    headers:{
+                        "Content-Type":"application/json"
+                    },
+                    body:JSON.stringify({data})
+                });
+
+                const result = await res.json();
+                alert(result.msg);
+                console.log(result);
+
+                if (res.status === 200 || result.msg === "Tournament updated successfully") {
+                    window.location.href = `/admin/category/${categoryId}`;
+                } else {
+                    submitbtn.disabled = false;
+                    submitbtn.innerHTML = originalBtnHtml;
+                }
+           }catch(err){
+                console.log(err);
+                if (typeof submitbtn !== 'undefined' && originalBtnHtml) {
+                    submitbtn.disabled = false;
+                    submitbtn.innerHTML = originalBtnHtml;
+                }
+           }
+        }
+
+       submitbtn.addEventListener("click", submitData);
+    </script>
+</body>
+</html>

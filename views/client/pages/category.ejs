@@ -88,8 +88,8 @@
 
         /* Teams List inside Modal */
         .modal-teams-list {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 0.75rem;
         }
 
@@ -194,6 +194,25 @@
             text-shadow: none;
             white-space: nowrap;
         }
+
+        @media (max-width: 480px) {
+            .modal-teams-list {
+                gap: 0.5rem;
+            }
+            .modal-team-item {
+                padding: 0.45rem 0.65rem;
+                gap: 0.6rem;
+                border-radius: 8px;
+            }
+            .modal-team-logo {
+                width: 32px;
+                height: 32px;
+                font-size: 1rem;
+            }
+            .modal-team-name {
+                font-size: 0.85rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -268,7 +287,7 @@
                                 </div>
                                 <% const filledPercentage = Math.min(100, Math.round((approvedTeams.length / (match.slots || 1)) * 100)); %>
                                 <div class="progress-bar-container" style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.08); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.04);">
-                                    <div class="progress-bar-fill" style="width: <%= filledPercentage %>%; height: 100%; background: linear-gradient(90deg, #ff455e, #d7263d); border-radius: 999px; transition: width 0.3s ease;"></div>
+                                    <div class="progress-bar-fill" style="width: <%= filledPercentage %>%; height: 100%; background: <%= match.teams.length >= match.slots ? '#ff0000' : 'linear-gradient(90deg, #4ade80, #22c55e)' %>; border-radius: 999px; transition: width 0.3s ease;"></div>
                                 </div>
                             </div>
                             <div class="meta-item">
@@ -309,7 +328,13 @@
                                      </button>
                                  <% } %>
                              <% } else { %>
-                                 <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;" onclick="bookSlotDirectly(this, '<%= id %>', '<%= match.title %>', '<%= match.entryFee %>')"><i class="fa-solid fa-ticket"></i> Book Slot</button>
+                                 <% if (match.teams && match.teams.length >= match.slots) { %>
+                                     <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #6c757d; color: white;" disabled>
+                                         <i class="fa-solid fa-ban"></i> Slots Full
+                                     </button>
+                                 <% } else { %>
+                                     <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;" onclick="bookSlotDirectly(this, '<%= id %>', '<%= match.title %>', '<%= match.entryFee %>')"><i class="fa-solid fa-ticket"></i> Book Slot</button>
+                                 <% } %>
                              <% } %>
                              <div class="secondary-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%;">
                                  <button type="button" class="pay-btn" style="min-height: 38px; padding: 0.5rem; font-size: 0.85rem; width: 100%;" onclick="showTeams(this)">
@@ -473,6 +498,13 @@
         let pendingBookingBtn = null;
 
         function bookSlotDirectly(btn, id, title, entryFee) {
+            const fee = Number(entryFee) || 0;
+            const balance = Number("<%= (wallet && wallet.balance && typeof wallet.balance.availableBalance !== 'undefined') ? wallet.balance.availableBalance : 0 %>") || 0;
+            if (fee > 0 && balance < fee) {
+                alert("Insufficient balance in your wallet to book this slot. Please add funds.");
+                return;
+            }
+
             pendingBookingId = id;
             pendingBookingTitle = title;
             pendingBookingEntryFee = entryFee;

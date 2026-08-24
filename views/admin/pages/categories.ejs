@@ -136,6 +136,33 @@
             background-color: #ff455e;
             box-shadow: 0 4px 12px rgba(215, 38, 61, 0.5);
         }
+
+        .edit-category-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 3.25rem;
+            background: rgba(255, 193, 7, 0.85);
+            border: none;
+            border-radius: 50% !important;
+            width: 34px !important;
+            height: 34px !important;
+            padding: 0 !important;
+            box-sizing: border-box !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000000;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .edit-category-btn:hover {
+            transform: scale(1.1);
+            background-color: #ffca28;
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -162,6 +189,9 @@
 
                       <% for(element of categories ) { %>
                          <div class="category-card" style="position: relative;">
+                             <button class="edit-category-btn" onclick="event.stopPropagation(); window.location.href='/admin/editcategory/<%= element._id %>'" title="Edit Category">
+                                 <i class="fa-solid fa-pen-to-square"></i>
+                             </button>
                              <button class="delete-category-btn" onclick="deleteCategory(event, this, '<%= element._id %>')" title="Delete Category">
                                  <i class="fa-solid fa-trash-can"></i>
                              </button>

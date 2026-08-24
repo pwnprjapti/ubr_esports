@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Transactions | UBR Esports Admin</title>
+    <link rel="icon" type="image/jpeg" href="/images/photo.jpg.jpeg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css">
+    <link rel="stylesheet" href="/css/admin/dashboard.css">
+    <style>
+        .screenshot-thumbnail {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .screenshot-thumbnail:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="page-title-bar">
+                    <div>
+                        <h1 class="page-heading">Add Cash Transactions</h1>
+                        <p class="page-sub">Verify payment screenshots and process user wallet deposit requests.</p>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Player Name</th>
+                                    <th>Amount</th>
+                                    <th>Payment Screenshot</th>
+                                    <th>Requested At</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                                <% for (const txn of transactions) { %>
+                                <tr>
+                                    <td><strong><%= txn.playerName %></strong></td>
+                                    <td><strong class="text-green" style="font-size: 1.05rem;">₹<%= txn.amount %></strong></td>
+                                    <td>
+                                        <% if (txn.screenshot) { %>
+                                            <a href="<%= txn.screenshot %>" target="_blank" title="View Full Screenshot">
+                                                <img src="<%= txn.screenshot %>" alt="Payment Screenshot" class="screenshot-thumbnail">
+                                            </a>
+                                        <% } else { %>
+                                            <span style="color: #9e9ea7; font-size: 0.85rem;">No Image</span>
+                                        <% } %>
+                                    </td>
+                                    <td><%= new Date(txn.date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) %></td>
+                                    <td>
+                                        <% if (txn.status === 'approved') { %>
+                                            <span class="badge badge-green">Approved</span>
+                                        <% } else if (txn.status === 'rejected') { %>
+                                            <span class="badge badge-red" style="background: rgba(215, 38, 61, 0.15); color: #ff455e; border: 1px solid rgba(215, 38, 61, 0.3);">Rejected</span>
+                                        <% } else { %>
+                                            <span class="badge badge-yellow">Pending</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                         <% if(txn.status === "approved" || txn.status === "rejected") { %>
+                                             <span style="color: #9e9ea7; font-size: 0.9rem; font-weight: 700; text-transform: uppercase;"><%= txn.status %></span>
+                                         <% } else { %>
+                                          <div style="display: flex; gap: 0.4rem;">
+                                             <button class="btn-action btn-approve" onclick="processTransaction(this, 'approved', '<%= txn._id %>');"><i class="fa-solid fa-check"></i> Approve</button>
+                                             <button class="btn-action btn-delete" onclick="processTransaction(this, 'rejected', '<%= txn._id %>')"><i class="fa-solid fa-xmark"></i> Reject</button>
+                                          </div>
+                                         <% } %>
+                                    </td>
+                                </tr>
+                                <% } %>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+
+    <script>
+        async function processTransaction(btn, option, id) {
+            const actionText = option === 'approved' ? 'approve' : 'reject';
+            if (confirm(`Are you sure you want to ${actionText} this add cash request?`)) {
+                const originalHtml = btn.innerHTML;
+                const siblings = btn.parentElement.querySelectorAll('button');
+                siblings.forEach(s => s.disabled = true);
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+                try {
+                    const res = await fetch("<%= baseurl %>/admin/transactionReq", {
+                        method:'POST',
+                        headers:{
+                            "Content-Type":"application/json"
+                        },
+                        body:JSON.stringify({option, id})
+                    });
+
+                    const result = await res.json();
+                    alert(result.msg);
+                    window.location.reload();
+                } catch(err) {
+                    console.error("Error processing transaction:", err);
+                    alert("Something went wrong");
+                    siblings.forEach(s => s.disabled = false);
+                    btn.innerHTML = originalHtml;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
