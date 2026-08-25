@@ -196,7 +196,7 @@ app.get("/withdrawal", authCheck, async (req, res)=>{
             balance:isExist.wallet.balance
         }
 
-        const withdrawalHistory = await withdrawalModel.find({id:req.user.id});
+        const withdrawalHistory = await withdrawalModel.find({id:req.user.id}).sort({_id: -1});
         console.log(withdrawalHistory);
         res.render("pages/withdrawal", {user, withdrawalHistory, baseurl});
      } catch (err) {
@@ -205,19 +205,43 @@ app.get("/withdrawal", authCheck, async (req, res)=>{
      }
 })
 
-app.post("/withdrawal", authCheck, async (req, res)=>{
+app.post("/withdrawal", authCheck, upload.single('qrImage'), async (req, res)=>{
     try {
         console.log(req.body);
-        const details = req.body;
-        const amount = Number(details.amount);
-        if (isNaN(amount) || amount <= 0) {
+        const { amount, payoutMethod, note } = req.body;
+        const amountNum = Number(amount);
+        if (isNaN(amountNum) || amountNum <= 0) {
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch(e) {}
+            }
             return res.status(400).json({msg:"Invalid amount."});
+        }
+
+        let payoutDetail = req.body.payoutDetail;
+
+        if (payoutMethod === 'qr') {
+            if (!req.file) {
+                return res.status(400).json({msg:"Please upload a QR code image."});
+            }
+            try {
+                // Upload QR code to Cloudinary
+                const uploadResult = await uploadToCloudinary(req.file.path, 'withdrawals');
+                payoutDetail = uploadResult.secure_url;
+            } catch (uploadErr) {
+                console.error("Cloudinary upload failed:", uploadErr);
+                return res.status(500).json({msg:"Failed to upload QR code. Please try again."});
+            }
+        } else {
+            // If not qr, delete file if somehow uploaded
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch(e) {}
+            }
         }
 
         // Atomically check balance and deduct immediately on request creation
         const updateWallet = await userModel.findOneAndUpdate(
-            { gglId: req.user.id, "wallet.balance.availableBalance": { $gte: amount } },
-            { $inc: { "wallet.balance.availableBalance": -amount } },
+            { gglId: req.user.id, "wallet.balance.availableBalance": { $gte: amountNum } },
+            { $inc: { "wallet.balance.availableBalance": -amountNum } },
             { new: true }
         );
 
@@ -226,8 +250,10 @@ app.post("/withdrawal", authCheck, async (req, res)=>{
         };
 
         const fulldetail = {
-            ...details,
-            amount: amount,
+            payoutMethod,
+            payoutDetail,
+            note,
+            amount: amountNum,
             status: "pending",
             playerName: req.user.displayName,
             id: req.user.id
@@ -241,12 +267,15 @@ app.post("/withdrawal", authCheck, async (req, res)=>{
             // Refund if DB creation fails
             await userModel.findOneAndUpdate(
                 { gglId: req.user.id },
-                { $inc: { "wallet.balance.availableBalance": amount } }
+                { $inc: { "wallet.balance.availableBalance": amountNum } }
             );
             return res.status(500).json({msg:"Failed to submit request. Money has been refunded."});
         }
     } catch (err) {
         console.error("Withdrawal error:", err);
+        if (req.file && fs.existsSync(req.file.path)) {
+            try { fs.unlinkSync(req.file.path); } catch(e) {}
+        }
         return res.status(500).json({msg:"Internal server error"});
     }
 })
@@ -1071,9 +1100,21 @@ app.post("/admin/category/:id/match/:mid/team/:tid/status", adminAuthCheck, asyn
 })
 
 app.get("/admin/withdrawals", adminAuthCheck, async (req, res)=>{
-    const withdrawals = await withdrawalModel.find();
-    console.log(withdrawals);
-    res.render("admin/pages/withdrawals", { withdrawals, baseurl });
+    try {
+        const withdrawals = await withdrawalModel.find();
+        
+        // Sort in-memory: pending first, then by latest request on top
+        withdrawals.sort((a, b) => {
+            if (a.status === 'pending' && b.status !== 'pending') return -1;
+            if (a.status !== 'pending' && b.status === 'pending') return 1;
+            return b._id.toString().localeCompare(a._id.toString());
+        });
+
+        res.render("admin/pages/withdrawals", { withdrawals, baseurl });
+    } catch (err) {
+        console.error("Error fetching withdrawals for admin:", err);
+        res.status(500).send("Internal Server Error");
+    }
 })
 
 app.post("/admin/withdrawalReq", adminAuthCheck, async (req, res)=>{

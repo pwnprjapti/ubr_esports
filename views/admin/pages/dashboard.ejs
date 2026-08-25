@@ -118,7 +118,7 @@
                                 <tr>
                                     <th>Player / Team</th>
                                     <th>Amount</th>
-                                    <th>UPI ID</th>
+                                    <th>UPI ID / QR Code</th>
                                     <th>Note</th>
                                     <th>Status</th>
                                 </tr>
@@ -128,7 +128,15 @@
                                 <tr>
                                     <td><strong><%= request.playerName %></strong></td>
                                     <td><strong class="text-green">₹<%= request.amount %></strong></td>
-                                    <td><code><%= request.payoutDetail %></code></td>
+                                    <td>
+                                        <% if (request.payoutMethod === 'qr') { %>
+                                            <a href="<%= request.payoutDetail %>" target="_blank" title="Click to view full image">
+                                                <img src="<%= request.payoutDetail %>" alt="QR Code" style="max-width: 60px; max-height: 60px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; display: block;" />
+                                            </a>
+                                        <% } else { %>
+                                            <code><%= request.payoutDetail %></code>
+                                        <% } %>
+                                    </td>
                                     <td><%= request.note %></td>
                                     <td>
                                         <button class="btn-action btn-approve"> <%= request.status %> </button>

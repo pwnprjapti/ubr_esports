@@ -88,7 +88,7 @@
                             <tbody>
                                <% for(history of withdrawalHistory){%>
                                 <tr>
-                                    <td>11 Aug 2026</td>
+                                    <td><%= (history._id && history._id.getTimestamp) ? history._id.getTimestamp().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '11 Aug 2026' %></td>
                                     <td><strong>₹ <%= history.amount %></strong></td>
                                     <td><%= history.payoutMethod %></td>
                                     <td><span class="status-badge status-paid"> <%= history.status %></span></td>
@@ -143,25 +143,30 @@
 
         async function withdrawal() {
             const submitBtn = document.querySelector(".submit-btn");
-            const payload = {
-                amount:amount.value,
-                payoutMethod:methodSelect.value,
-                payoutDetail:detailInput.value,
-                note:note.value
+            const formData = new FormData();
+            formData.append("amount", amount.value);
+            formData.append("payoutMethod", methodSelect.value);
+            formData.append("note", note.value);
+
+            if (methodSelect.value === 'qr') {
+                if (detailInput.files.length === 0) {
+                    alert("Please select a QR code image to upload.");
+                    return;
+                }
+                formData.append("qrImage", detailInput.files[0]);
+            } else {
+                formData.append("payoutDetail", detailInput.value);
             }
 
-            console.log(payload);
+            console.log("Submitting withdrawal request...");
             const originalBtnHtml = submitBtn.innerHTML;
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
 
             try {
                 const res = await fetch(`${baseurl}/withdrawal`, {
-                    method:'POST',
-                    headers:{
-                        "Content-Type":"application/json"
-                    },
-                    body:JSON.stringify(payload)
+                    method: 'POST',
+                    body: formData
                 });
 
                 const result = await res.json();
