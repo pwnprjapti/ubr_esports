@@ -98,6 +98,7 @@
                                     <th>Erangle</th>
                                     <th>Rondo</th>
                                     <th>Miramar</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -128,6 +129,11 @@
                                     <td> <%= team.dropDetails.erangle || "" %></td>
                                     <td> <%= team.dropDetails.rando || "" %></td>
                                     <td> <%= team.dropDetails.miramar || "" %></td>
+                                    <td>
+                                        <button class="approve-btn" onclick="openWalletModal('<%= team.userId %>', '<%= team.teamName %>', '<%= team.walletBalance || 0 %>')">
+                                            <i class="fa-solid fa-wallet"></i> Update Wallet
+                                        </button>
+                                    </td>
 
                                 </tr>
                                 <%  } %>
@@ -141,6 +147,91 @@
             <%- include("../partials/footer") %>
         </div>
     </div>
+
+    <!-- Wallet Update Modal -->
+    <div id="walletModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+        <div style="background-color: #1e1e2f; color: white; margin: auto; padding: 2rem; border: 1px solid #333; width: 90%; max-width: 400px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); position: relative;">
+            <span onclick="closeWalletModal()" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; position: absolute; right: 1.5rem; top: 1rem;">&times;</span>
+            <h3 style="margin-top: 0; font-size: 1.4rem; color: #ff455e; border-bottom: 1px solid #333; padding-bottom: 0.75rem;">Update Wallet</h3>
+            <p style="margin: 1rem 0; font-size: 0.95rem; color: #ccc; line-height: 1.5;">
+                Team: <strong id="modalTeamName" style="color: white;"></strong><br>
+                Current Balance: <strong id="modalCurrentBalance" style="color: #28a745;">₹0</strong>
+            </p>
+            <form id="walletForm" onsubmit="submitWalletUpdate(event)">
+                <input type="hidden" id="modalUserId">
+                <div style="margin-bottom: 1.25rem;">
+                    <label for="walletAmount" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #bbb;">Amount to Add/Subtract (₹):</label>
+                    <input type="number" id="walletAmount" placeholder="e.g. 100 or -50" required style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid #444; background-color: #2a2a40; color: white; font-size: 1rem; box-sizing: border-box;">
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" onclick="closeWalletModal()" style="background: #444; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 700; cursor: pointer;">Cancel</button>
+                    <button type="submit" style="background: #ff455e; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 700; cursor: pointer;">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openWalletModal(userId, teamName, currentBalance) {
+            if (!userId) {
+                alert("This team does not have an associated user account.");
+                return;
+            }
+            document.getElementById('modalUserId').value = userId;
+            document.getElementById('modalTeamName').textContent = teamName;
+            document.getElementById('modalCurrentBalance').textContent = '₹' + currentBalance;
+            document.getElementById('walletAmount').value = '';
+            const modal = document.getElementById('walletModal');
+            modal.style.display = 'flex';
+        }
+
+        function closeWalletModal() {
+            document.getElementById('walletModal').style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('walletModal');
+            if (event.target == modal) {
+                closeWalletModal();
+            }
+        }
+
+        async function submitWalletUpdate(event) {
+            event.preventDefault();
+            const userId = document.getElementById('modalUserId').value;
+            const amount = parseFloat(document.getElementById('walletAmount').value);
+            
+            if (!userId) {
+                alert("User ID is missing!");
+                return;
+            }
+            if (isNaN(amount)) {
+                alert("Please enter a valid amount.");
+                return;
+            }
+
+            try {
+                const response = await fetch('/admin/user/' + userId + '/update-wallet', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ amount })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.msg || "Wallet updated successfully!");
+                    location.reload();
+                } else {
+                    alert(data.msg || "Failed to update wallet.");
+                }
+            } catch (error) {
+                console.error("Error updating wallet:", error);
+                alert("Something went wrong. Please try again.");
+            }
+        }
+    </script>
 
 </body>
 </html>

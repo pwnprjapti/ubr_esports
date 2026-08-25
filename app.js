@@ -950,23 +950,29 @@ app.get("/admin/teams/:id/:mid", adminAuthCheck, async (req, res)=>{
         
         const matchesTeams = category.matches[0].teams || [];
         
-        // Fetch current logos from the users collection for all these teams
+        // Fetch current logos and wallet details from the users collection for all these teams
         const teamNames = matchesTeams.map(t => t.teamName);
-        const users = await userModel.find({ "team.teamName": { $in: teamNames } }).select("team");
+        const users = await userModel.find({ "team.teamName": { $in: teamNames } }).select("team wallet");
         
-        // Create a map of teamName -> teamLogo
+        // Create maps of teamName -> logo, userId, and balance
         const logoMap = {};
+        const userMap = {};
+        const balanceMap = {};
         users.forEach(u => {
             if (u.team && u.team.teamName) {
                 logoMap[u.team.teamName] = u.team.teamLogo;
+                userMap[u.team.teamName] = u._id.toString();
+                balanceMap[u.team.teamName] = (u.wallet && u.wallet.balance && typeof u.wallet.balance.availableBalance !== 'undefined') ? u.wallet.balance.availableBalance : 0;
             }
         });
         
-        // Construct teams array with the latest logo
+        // Construct teams array with the latest logo, userId, and walletBalance
         const teams = matchesTeams.map(t => {
             const teamObj = t.toObject ? t.toObject() : t;
             return {
                 ...teamObj,
+                userId: userMap[t.teamName] || "",
+                walletBalance: balanceMap[t.teamName] || 0,
                 teamLogo: logoMap[t.teamName] || t.teamLogo || "",
                 dropDetails: teamObj.dropDetails || {
                     erangle: teamObj.erangle || "",
@@ -981,6 +987,41 @@ app.get("/admin/teams/:id/:mid", adminAuthCheck, async (req, res)=>{
     } catch (err) {
         console.error("Error fetching teams:", err);
         res.status(500).send("Internal Server Error");
+    }
+})
+
+app.post("/admin/user/:userId/update-wallet", adminAuthCheck, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { amount } = req.body;
+
+        if (typeof amount !== 'number') {
+            return res.status(400).json({ msg: "Invalid amount." });
+        }
+
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ msg: "User not found." });
+        }
+
+        // Initialize wallet structure if it doesn't exist
+        if (!user.wallet) {
+            user.wallet = { balance: { availableBalance: 0, prizePool: 0 }, withdrawal: [] };
+        }
+        if (!user.wallet.balance) {
+            user.wallet.balance = { availableBalance: 0, prizePool: 0 };
+        }
+        if (typeof user.wallet.balance.availableBalance === 'undefined') {
+            user.wallet.balance.availableBalance = 0;
+        }
+
+        user.wallet.balance.availableBalance += amount;
+        await user.save();
+
+        return res.status(200).json({ msg: "Wallet updated successfully.", newBalance: user.wallet.balance.availableBalance });
+    } catch (err) {
+        console.error("Error updating wallet balance:", err);
+        return res.status(500).json({ msg: "Internal server error." });
     }
 })
 
