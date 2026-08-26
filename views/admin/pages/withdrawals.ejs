@@ -53,7 +53,7 @@
                                             <code><%= withdrawal.payoutDetail %></code>
                                         <% } %>
                                     </td>
-                                    <td><%= (withdrawal._id && withdrawal._id.getTimestamp) ? withdrawal._id.getTimestamp().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'N/A' %></td>
+                                    <td><%= (withdrawal._id && withdrawal._id.getTimestamp) ? withdrawal._id.getTimestamp().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }) : 'N/A' %></td>
                                     <td><span class="badge badge-yellow"><%= withdrawal.status %></span></td>
                                     <td>
                                          <% if(withdrawal.status === "approved" || withdrawal.status === "rejected") { %>

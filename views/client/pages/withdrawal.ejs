@@ -88,7 +88,7 @@
                             <tbody>
                                <% for(history of withdrawalHistory){%>
                                 <tr>
-                                    <td><%= (history._id && history._id.getTimestamp) ? history._id.getTimestamp().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '11 Aug 2026' %></td>
+                                    <td><%= (history._id && history._id.getTimestamp) ? history._id.getTimestamp().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }) : '11 Aug 2026' %></td>
                                     <td><strong>₹ <%= history.amount %></strong></td>
                                     <td><%= history.payoutMethod %></td>
                                     <td><span class="status-badge status-paid"> <%= history.status %></span></td>

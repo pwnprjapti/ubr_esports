@@ -865,18 +865,15 @@ app.get("/admin/addtournament", adminAuthCheck, async (req, res)=>{
 app.post("/admin/addtournament", adminAuthCheck, async (req, res)=>{
     console.log(req.body);
     const match = req.body.data;
-    let msg;
-    const isExist = await categoryModel.findOne({title:req.body.category, matches:{ $elemMatch : { title:req.body.data.title }}});
-    console.log("is exist or not  : " + isExist);
-    if(!isExist){
-        const add = await categoryModel.findOneAndUpdate({title:req.body.category}, { $push:{matches:match}});
-        console.log("adding touramnet" + add);
-        msg = "Match added succesfully"
-    }else{
-        msg = " match with this title already Exists"
+    
+    const add = await categoryModel.findOneAndUpdate({title:req.body.category}, { $push:{matches:match}});
+    console.log("adding touramnet" + add);
+
+    if(!add){
+        res.json({msg:"Something went wrong, can't add tournament"});
     }
 
-    res.json({msg});
+    res.json({msg:"Match added succesfully"});
 })
 
 app.post("/admin/category/:id/tournament/delete/:mid", adminAuthCheck, async (req, res) => {
