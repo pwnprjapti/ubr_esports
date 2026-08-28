@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
     gglId:{type:String},
-    team:{teamName:{type:String}, teamLogo:{type:String}, whatsappNumber:{type:Number}},
+    team:{_id: { type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() }, teamName:{type:String}, teamLogo:{type:String}, whatsappNumber:{type:Number}},
     wallet:{
         balance:{
             availableBalance:{type:Number},

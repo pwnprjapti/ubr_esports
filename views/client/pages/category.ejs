@@ -333,7 +333,7 @@
                                          <i class="fa-solid fa-ban"></i> Slots Full
                                      </button>
                                  <% } else { %>
-                                     <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;" onclick="bookSlotDirectly(this, '<%= id %>', '<%= match.title %>', '<%= match.entryFee %>')"><i class="fa-solid fa-ticket"></i> Book Slot</button>
+                                     <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;" onclick="bookSlotDirectly(this, '<%= id %>', '<%= match.title %>', '<%= match.entryFee %>', '<%= match._id %>')"><i class="fa-solid fa-ticket"></i> Book Slot</button>
                                  <% } %>
                              <% } %>
                              <div class="secondary-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%;">
@@ -497,7 +497,7 @@
         let pendingBookingEntryFee = null;
         let pendingBookingBtn = null;
 
-        function bookSlotDirectly(btn, id, title, entryFee) {
+        function bookSlotDirectly(btn, id, title, entryFee, matchid) {
             const fee = Number(entryFee) || 0;
             const balance = Number("<%= (wallet && wallet.balance && typeof wallet.balance.availableBalance !== 'undefined') ? wallet.balance.availableBalance : 0 %>") || 0;
             if (fee > 0 && balance < fee) {
@@ -510,7 +510,7 @@
             pendingBookingEntryFee = entryFee;
             pendingBookingBtn = btn;
 
-            fetch(`/checksignin?categoryId=${id}&matchTitle=${encodeURIComponent(title)}`)
+            fetch(`/checksignin?categoryId=${id}&title=${encodeURIComponent(title)}&matchid`)
                 .then(res => res.json())
                 .then(data => {
                     if (!data.authenticated) {

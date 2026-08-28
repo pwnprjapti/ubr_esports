@@ -526,7 +526,7 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
            return res.status(400).json({msg:"Please set up your team settings first."});
        }
        console.log(getTeam.team.teamName);
-       const { id, title } = req.body;
+       const { id, title, matchid } = req.body;
  
        // Fetch category and match details from DB to prevent client-side entryFee tampering
        const category = await categoryModel.findOne({_id:id});
@@ -554,7 +554,7 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
          return res.status(400).json({msg:"Please add Drop Details "});
        };
  
-       const isAlreadyRegistered = await categoryModel.findOne({_id:id, matches:{$elemMatch:{title, teams:{ $elemMatch:{teamName:getTeam.team.teamName}}}}});
+       const isAlreadyRegistered = await categoryModel.findOne({_id:id, matches:{$elemMatch:{_id:matchid, teams:{ $elemMatch:{_id:getTeam.team._id}}}}});
        if(isAlreadyRegistered){
          if (req.file) fs.unlinkSync(req.file.path);
          return res.status(409).json({msg:"You have already booked"});
@@ -572,10 +572,7 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
            erangle: erangle || "",
            rando: rando || "",
            miramar: miramar || ""
-        //    dropDetails: {
-        //        erangle: erangle || "",
-        //        rando: rando || "",
-        //        miramar: miramar || ""
+
            }
 
        console.log(fullteam);
@@ -641,7 +638,9 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
 
 app.get("/point-table", async (req, res) => {
     try {
-        const pointTables = await pointTableModel.find();
+        // const pointTables = await pointTableModel.find().sort({ createdAt: -1 });
+        const pointTable = await pointTableModel.find();
+        const pointTables = pointTable.reverse();
         res.render("client/pages/pointtable", { pointTables, baseurl });
     } catch (err) {
         console.error("Error rendering point table page:", err);
