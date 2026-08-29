@@ -1130,8 +1130,28 @@ app.post("/admin/category/:id/match/:mid/team/:tid/status", adminAuthCheck, asyn
 
 app.get("/admin/withdrawals", adminAuthCheck, async (req, res)=>{
     try {
-        const withdrawals = await withdrawalModel.find();
+        const rawWithdrawals = await withdrawalModel.find();
         
+        // Map to plain objects and fetch user balance for each withdrawal request
+        const withdrawals = await Promise.all(rawWithdrawals.map(async (w) => {
+            const wObj = w.toObject();
+            
+            // Find user to check balance
+            const user = await userModel.findOne({ gglId: wObj.id });
+            if (user) {
+                const available = (user.wallet && user.wallet.balance && typeof user.wallet.balance.availableBalance !== 'undefined') ? Number(user.wallet.balance.availableBalance) : 0;
+                const prize = (user.wallet && user.wallet.balance && typeof user.wallet.balance.prizePool !== 'undefined') ? Number(user.wallet.balance.prizePool) : 0;
+                const total = available + prize;
+                
+                wObj.userTotalBalance = total;
+                wObj.hasEnoughBalance = total >= wObj.amount;
+            } else {
+                wObj.userTotalBalance = 0;
+                wObj.hasEnoughBalance = false;
+            }
+            return wObj;
+        }));
+
         // Sort in-memory: pending first, then by latest request on top
         withdrawals.sort((a, b) => {
             if (a.status === 'pending' && b.status !== 'pending') return -1;
