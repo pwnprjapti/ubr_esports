@@ -638,9 +638,8 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
 
 app.get("/point-table", async (req, res) => {
     try {
-        // const pointTables = await pointTableModel.find().sort({ createdAt: -1 });
-        const pointTable = await pointTableModel.find();
-        const pointTables = pointTable.reverse();
+        const pointTables = await pointTableModel.find().sort({ _id: -1 });
+        console.log("point table testing")
         res.render("client/pages/pointtable", { pointTables, baseurl });
     } catch (err) {
         console.error("Error rendering point table page:", err);
@@ -1215,7 +1214,7 @@ app.post("/admin/transactionReq", adminAuthCheck, async (req, res)=>{
 
 app.get("/admin/point-table", adminAuthCheck, async (req, res)=>{
     try {
-        const pointTables = await pointTableModel.find();
+        const pointTables = await pointTableModel.find().sort({ _id: -1 });
         res.render("admin/pages/pointtable", { pointTables, baseurl });
     } catch (err) {
         console.error("Error fetching point tables:", err);

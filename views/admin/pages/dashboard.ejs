@@ -78,11 +78,11 @@
                             <tbody>
                                   <% for ( category of categories.slice(0, 6) ){ if( category.matches.length > 0){ %>
                                 <tr>
-                                    <td><strong><%= category.matches[0]?.title %></strong></td>
-                                    <td><%= category.matches[0]?.date %></td>
-                                    <td><%= category.matches[0].teams.length %> / <%= category.matches[0]?.slots %></td>
-                                    <td><span class="text-green">₹<%= category.matches[0]?.prizePool %></span></td>
-                                    <td><span class="badge badge-blue"><%= category.matches[0]?.idpTimings %></span></td>
+                                    <td><strong><%= category.matches.at(-1)?.title %></strong></td>
+                                    <td><%= category.matches.at(-1)?.date %></td>
+                                    <td><%= category.matches.at(-1)?.teams.length %> / <%= category.matches.at(-1)?.slots %></td>
+                                    <td><span class="text-green">₹<%= category.matches.at(-1)?.prizePool %></span></td>
+                                    <td><span class="badge badge-blue"><%= category.matches.at(-1)?.idpTimings %></span></td>
                                 </tr>
                                 <% }} %>
 
