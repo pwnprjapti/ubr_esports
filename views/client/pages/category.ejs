@@ -496,20 +496,24 @@
         let pendingBookingTitle = null;
         let pendingBookingEntryFee = null;
         let pendingBookingBtn = null;
+        let pendingBookingMatchId = null;
 
         function bookSlotDirectly(btn, id, title, entryFee, matchid) {
             const fee = Number(entryFee) || 0;
             const balance = Number("<%= (wallet && wallet.balance && typeof wallet.balance.availableBalance !== 'undefined') ? wallet.balance.availableBalance : 0 %>") || 0;
-            // if (fee > 0 && balance < fee) {
-            //     alert("Insufficient balance in your wallet to book this slot. Please add funds.");
-            //     return;
-            // }
+            const prizePool = Number("<%= (wallet && wallet.balance && typeof wallet.balance.prizePool !== 'undefined') ? wallet.balance.prizePool : 0 %>") || 0;
+            const isLoggedIn = <%= (wallet && wallet.balance) ? "true" : "false" %>;
+            if (isLoggedIn && fee > 0 && (balance + prizePool) < fee) {
+                alert("Insufficient balance in your wallet to book this slot. Please add funds.");
+                return;
+            }
             console.log("id " + id);
 
             pendingBookingId = id;
             pendingBookingTitle = title;
             pendingBookingEntryFee = entryFee;
             pendingBookingBtn = btn;
+            if (matchid) pendingBookingMatchId = matchid;
 
             fetch(`/checksignin?id=${id}&title=${encodeURIComponent(title)}&matchid`)
                 .then(res => res.json())
@@ -621,7 +625,7 @@
                 if (res.status === 200) {
                     closeTeamSettingsModal();
                     if (pendingBookingId && pendingBookingTitle) {
-                        bookSlotDirectly(pendingBookingBtn, pendingBookingId, pendingBookingTitle, pendingBookingEntryFee);
+                        bookSlotDirectly(pendingBookingBtn, pendingBookingId, pendingBookingTitle, pendingBookingEntryFee, pendingBookingMatchId);
                     }
                 } else {
                     submitBtn.disabled = false;
@@ -665,7 +669,7 @@
                     alert(typeof result === 'string' ? result : 'Drop details saved successfully!');
                     closeDropDetailsModal();
                     if (pendingBookingId && pendingBookingTitle) {
-                        bookSlotDirectly(pendingBookingBtn, pendingBookingId, pendingBookingTitle, pendingBookingEntryFee);
+                        bookSlotDirectly(pendingBookingBtn, pendingBookingId, pendingBookingTitle, pendingBookingEntryFee, pendingBookingMatchId);
                     }
                 } else {
                     alert(result.msg || 'Failed to save drop details.');

@@ -581,62 +581,86 @@ app.post("/book", upload.none(), async (req, res)=>{
            erangle: erangle || "",
            rando: rando || "",
            miramar: miramar || ""
-
            }
 
-       console.log(fullteam);
+        console.log(fullteam);
+        let deductAvailable = 0;
+        let deductPrize = 0;
 
-        // Check if user has sufficient wallet balance and deduct atomically
-        if (entryFee > 0) {
-            const user = await userModel.findOne({ gglId: req.user.id });
-            const availableBalance = (user && user.wallet && user.wallet.balance && typeof user.wallet.balance.availableBalance !== 'undefined') ? Number(user.wallet.balance.availableBalance) : 0;
-            if (availableBalance < entryFee) {
-                if (req.file) fs.unlinkSync(req.file.path);
-                return res.status(400).json({ msg: "Insufficient balance in your wallet. Available: ₹" + availableBalance + ", Required: ₹" + entryFee });
-            }
+         // Check if user has sufficient wallet balance and deduct atomically
+         if (entryFee > 0) {
+             const user = await userModel.findOne({ gglId: req.user.id });
+             const availableBalance = (user && user.wallet && user.wallet.balance && typeof user.wallet.balance.availableBalance !== 'undefined') ? Number(user.wallet.balance.availableBalance) : 0;
+             const prizePool = (user && user.wallet && user.wallet.balance && typeof user.wallet.balance.prizePool !== 'undefined') ? Number(user.wallet.balance.prizePool) : 0;
 
-            // Deduct the entry fee atomically
-            const updateWallet = await userModel.findOneAndUpdate(
-                { gglId: req.user.id, "wallet.balance.availableBalance": { $gte: entryFee } },
-                { $inc: { "wallet.balance.availableBalance": -entryFee } },
-                { new: true }
-            );
+             if (availableBalance + prizePool < entryFee) {
+                 if (req.file) fs.unlinkSync(req.file.path);
+                 return res.status(400).json({ msg: "Insufficient balance in your wallet. Available: ₹" + availableBalance + ", Prizepool: ₹" + prizePool + ", Required: ₹" + entryFee });
+             }
 
-            if (!updateWallet) {
-                if (req.file) fs.unlinkSync(req.file.path);
-                return res.status(400).json({ msg: "Insufficient balance in your wallet." });
-            }
-        }
-  
-        // Save the team. Ensure we only push if the team is not already in the teams array of this specific match
-        const saveTeam = await categoryModel.findOneAndUpdate(
-            { 
-                _id: id, 
-                matches: { 
-                    $elemMatch: { 
-                        _id: matchid,
-                        "teams.teamName": { $ne: fullteam.teamName }
-                    } 
-                } 
-            },
-            { $push: { "matches.$.teams": fullteam } },
-            { returnDocument: 'after' }
-        );
-  
-        console.log(saveTeam);
-         if(saveTeam){
-             return res.status(200).json({msg: "Slot booked successfully.", whatsappGroupLink: match.whatsappGroupLink || ""});
-        } else {
-            // Refund the entry fee if it was deducted
-            if (entryFee > 0) {
-                await userModel.findOneAndUpdate(
-                    { gglId: req.user.id },
-                    { $inc: { "wallet.balance.availableBalance": entryFee } }
-                );
-            }
-            if (req.file) fs.unlinkSync(req.file.path);
-            return res.status(500).json({msg:"Failed to book slot."});
-        }
+             if (availableBalance >= entryFee) {
+                 deductAvailable = entryFee;
+             } else {
+                 deductAvailable = availableBalance;
+                 deductPrize = entryFee - availableBalance;
+             }
+
+             // Deduct the entry fee atomically
+             const updateWallet = await userModel.findOneAndUpdate(
+                 { 
+                     gglId: req.user.id, 
+                     "wallet.balance.availableBalance": { $gte: deductAvailable },
+                     "wallet.balance.prizePool": { $gte: deductPrize }
+                 },
+                 { 
+                     $inc: { 
+                         "wallet.balance.availableBalance": -deductAvailable,
+                         "wallet.balance.prizePool": -deductPrize
+                     } 
+                 },
+                 { new: true }
+             );
+
+             if (!updateWallet) {
+                 if (req.file) fs.unlinkSync(req.file.path);
+                 return res.status(400).json({ msg: "Insufficient balance in your wallet." });
+             }
+         }
+   
+         // Save the team. Ensure we only push if the team is not already in the teams array of this specific match
+         const saveTeam = await categoryModel.findOneAndUpdate(
+             { 
+                 _id: id, 
+                 matches: { 
+                     $elemMatch: { 
+                         _id: matchid,
+                         "teams.teamName": { $ne: fullteam.teamName }
+                     } 
+                 } 
+             },
+             { $push: { "matches.$.teams": fullteam } },
+             { returnDocument: 'after' }
+         );
+   
+         console.log(saveTeam);
+          if(saveTeam){
+              return res.status(200).json({msg: "Slot booked successfully.", whatsappGroupLink: match.whatsappGroupLink || ""});
+         } else {
+             // Refund the entry fee if it was deducted
+             if (entryFee > 0) {
+                 await userModel.findOneAndUpdate(
+                     { gglId: req.user.id },
+                     { 
+                         $inc: { 
+                             "wallet.balance.availableBalance": deductAvailable,
+                             "wallet.balance.prizePool": deductPrize
+                         } 
+                     }
+                 );
+             }
+             if (req.file) fs.unlinkSync(req.file.path);
+             return res.status(500).json({msg:"Failed to book slot."});
+         }
    } catch (err) {
        console.error("Booking error:", err);
        if (req.file) {
