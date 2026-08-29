@@ -44,6 +44,7 @@ app.use(session({
     cookie:{
         httpOnly:true,
         secure:process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
         maxAge: 1000*60*60*24*365 // 1 year
     }
 }));
@@ -238,16 +239,24 @@ app.post("/withdrawal", authCheck, upload.single('qrImage'), async (req, res)=>{
             }
         }
 
-        // Atomically check balance and deduct immediately on request creation
-        const updateWallet = await userModel.findOneAndUpdate(
-            { gglId: req.user.id, "wallet.balance.availableBalance": { $gte: amountNum } },
-            { $inc: { "wallet.balance.availableBalance": -amountNum } },
-            { new: true }
-        );
+        const user = await userModel.findOne({ gglId: req.user.id });
+        if (!user) {
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch(e) {}
+            }
+            return res.status(404).json({ msg: "User not found." });
+        }
 
-        if(!updateWallet){
-            return res.status(409).json({msg:"You Dont have sufficient balance in Your wallet"})
-        };
+        const availableBalance = (user.wallet && user.wallet.balance && typeof user.wallet.balance.availableBalance !== 'undefined') ? Number(user.wallet.balance.availableBalance) : 0;
+        const prizePool = (user.wallet && user.wallet.balance && typeof user.wallet.balance.prizePool !== 'undefined') ? Number(user.wallet.balance.prizePool) : 0;
+        const totalBalance = availableBalance + prizePool;
+
+        if (totalBalance < amountNum) {
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch(e) {}
+            }
+            return res.status(400).json({ msg: "Insufficient balance in your wallet. Total available: ₹" + totalBalance });
+        }
 
         const fulldetail = {
             payoutMethod,
@@ -264,12 +273,10 @@ app.post("/withdrawal", authCheck, upload.single('qrImage'), async (req, res)=>{
         if(result){
             return res.status(200).json({msg:"Request submited successfully, wait for approvel."});
         } else {
-            // Refund if DB creation fails
-            await userModel.findOneAndUpdate(
-                { gglId: req.user.id },
-                { $inc: { "wallet.balance.availableBalance": amountNum } }
-            );
-            return res.status(500).json({msg:"Failed to submit request. Money has been refunded."});
+            if (req.file && fs.existsSync(req.file.path)) {
+                try { fs.unlinkSync(req.file.path); } catch(e) {}
+            }
+            return res.status(500).json({msg:"Failed to submit request."});
         }
     } catch (err) {
         console.error("Withdrawal error:", err);
@@ -514,8 +521,9 @@ app.get("/logout", (req, res)=>{
     })
 })
 
-app.post("/book", upload.single('screenshot'), async (req, res)=>{
+app.post("/book", upload.none(), async (req, res)=>{
      if (!req.isAuthenticated()) {
+        console.log("not log ined")
         return res.status(401).json({ authenticated: false });
     }
     
@@ -534,12 +542,12 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
          if (req.file) fs.unlinkSync(req.file.path);
          return res.status(404).json({msg:"This category does not exist."})
        }
-       const match = category.matches.find(m => m.title === title);
+       const match = category.matches.find(m => m._id.toString() === matchid || m.id === matchid);
        if(!match){
          if (req.file) fs.unlinkSync(req.file.path);
          return res.status(404).json({msg:"This match does not exist."})
        }
-        const entryFee = Number(match.entryFee) || 0;
+       const entryFee = Number(match.entryFee) || 0;
 
         // Check if slots are full
        if (match.teams && match.teams.length >= match.slots) {
@@ -566,6 +574,7 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
  
        const teamObj = getTeam.team.toObject ? getTeam.team.toObject() : getTeam.team;
        const fullteam = {
+            _id: teamObj._id,
            teamName: teamObj.teamName,
            teamLogo: teamObj.teamLogo,
            whatsappNumber: teamObj.whatsappNumber,
@@ -605,15 +614,16 @@ app.post("/book", upload.single('screenshot'), async (req, res)=>{
                 _id: id, 
                 matches: { 
                     $elemMatch: { 
-                        title: title, 
-                        "teams.teamName": { $ne: fullteam.teamName } 
+                        _id: matchid,
+                        "teams.teamName": { $ne: fullteam.teamName }
                     } 
                 } 
             },
             { $push: { "matches.$.teams": fullteam } },
-            { new: true }
+            { returnDocument: 'after' }
         );
   
+        console.log(saveTeam);
          if(saveTeam){
              return res.status(200).json({msg: "Slot booked successfully.", whatsappGroupLink: match.whatsappGroupLink || ""});
         } else {
@@ -986,7 +996,7 @@ app.get("/admin/teams/:id/:mid", adminAuthCheck, async (req, res)=>{
             if (u.team && u.team.teamName) {
                 logoMap[u.team.teamName] = u.team.teamLogo;
                 userMap[u.team.teamName] = u._id.toString();
-                balanceMap[u.team.teamName] = (u.wallet && u.wallet.balance && typeof u.wallet.balance.availableBalance !== 'undefined') ? u.wallet.balance.availableBalance : 0;
+                balanceMap[u.team.teamName] = (u.wallet && u.wallet.balance && typeof u.wallet.balance.prizePool !== 'undefined') ? u.wallet.balance.prizePool : 0;
             }
         });
         
@@ -1035,14 +1045,14 @@ app.post("/admin/user/:userId/update-wallet", adminAuthCheck, async (req, res) =
         if (!user.wallet.balance) {
             user.wallet.balance = { availableBalance: 0, prizePool: 0 };
         }
-        if (typeof user.wallet.balance.availableBalance === 'undefined') {
-            user.wallet.balance.availableBalance = 0;
+        if (typeof user.wallet.balance.prizePool === 'undefined') {
+            user.wallet.balance.prizePool = 0;
         }
 
-        user.wallet.balance.availableBalance += amount;
+        user.wallet.balance.prizePool += amount;
         await user.save();
 
-        return res.status(200).json({ msg: "Wallet updated successfully.", newBalance: user.wallet.balance.availableBalance });
+        return res.status(200).json({ msg: "Wallet updated successfully.", newBalance: user.wallet.balance.prizePool });
     } catch (err) {
         console.error("Error updating wallet balance:", err);
         return res.status(500).json({ msg: "Internal server error." });
@@ -1131,14 +1141,39 @@ app.post("/admin/withdrawalReq", adminAuthCheck, async (req, res)=>{
             withdrawalReq.status = "rejected";
             await withdrawalReq.save();
             
-            // Refund the balance to the user
-            await userModel.findOneAndUpdate(
-                { gglId: withdrawalReq.id },
-                { $inc: { "wallet.balance.availableBalance": withdrawalReq.amount } }
-            );
-            
-            return res.status(200).json({ msg: "Withdrawal rejected and funds refunded to user." });
+            return res.status(200).json({ msg: "Withdrawal request rejected successfully." });
         } else if (option === "approved") {
+            // Find the user to deduct the amount
+            const user = await userModel.findOne({ gglId: withdrawalReq.id });
+            if (!user) {
+                return res.status(404).json({ msg: "User not found." });
+            }
+
+            const availableBalance = (user.wallet && user.wallet.balance && typeof user.wallet.balance.availableBalance !== 'undefined') ? Number(user.wallet.balance.availableBalance) : 0;
+            const prizePool = (user.wallet && user.wallet.balance && typeof user.wallet.balance.prizePool !== 'undefined') ? Number(user.wallet.balance.prizePool) : 0;
+            const totalBalance = availableBalance + prizePool;
+
+            if (totalBalance < withdrawalReq.amount) {
+                return res.status(400).json({ msg: "User does not have sufficient balance. Current Total: ₹" + totalBalance });
+            }
+
+            // Initialize structure to be safe
+            if (!user.wallet) user.wallet = {};
+            if (!user.wallet.balance) user.wallet.balance = { availableBalance: 0, prizePool: 0 };
+            if (typeof user.wallet.balance.availableBalance === 'undefined') user.wallet.balance.availableBalance = 0;
+            if (typeof user.wallet.balance.prizePool === 'undefined') user.wallet.balance.prizePool = 0;
+
+            // Deduct split logic: First from prizePool, then remaining from availableBalance
+            if (prizePool >= withdrawalReq.amount) {
+                user.wallet.balance.prizePool -= withdrawalReq.amount;
+            } else {
+                const remaining = withdrawalReq.amount - prizePool;
+                user.wallet.balance.prizePool = 0;
+                user.wallet.balance.availableBalance -= remaining;
+            }
+
+            await user.save();
+
             // Update status to approved
             withdrawalReq.status = "approved";
             await withdrawalReq.save();

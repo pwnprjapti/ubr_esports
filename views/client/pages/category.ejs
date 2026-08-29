@@ -500,17 +500,18 @@
         function bookSlotDirectly(btn, id, title, entryFee, matchid) {
             const fee = Number(entryFee) || 0;
             const balance = Number("<%= (wallet && wallet.balance && typeof wallet.balance.availableBalance !== 'undefined') ? wallet.balance.availableBalance : 0 %>") || 0;
-            if (fee > 0 && balance < fee) {
-                alert("Insufficient balance in your wallet to book this slot. Please add funds.");
-                return;
-            }
+            // if (fee > 0 && balance < fee) {
+            //     alert("Insufficient balance in your wallet to book this slot. Please add funds.");
+            //     return;
+            // }
+            console.log("id " + id);
 
             pendingBookingId = id;
             pendingBookingTitle = title;
             pendingBookingEntryFee = entryFee;
             pendingBookingBtn = btn;
 
-            fetch(`/checksignin?categoryId=${id}&title=${encodeURIComponent(title)}&matchid`)
+            fetch(`/checksignin?id=${id}&title=${encodeURIComponent(title)}&matchid`)
                 .then(res => res.json())
                 .then(data => {
                     if (!data.authenticated) {
@@ -540,10 +541,12 @@
                     const formData = new FormData();
                     formData.append('id', id);
                     formData.append('title', title);
+                    formData.append('matchid', matchid);
 
                     fetch(`${baseurl}/book`, {
                         method: 'POST',
-                        body: formData
+                        body: formData,
+                        credentials: 'include'
                     })
                     .then(res => {
                         if (res.status === 401) {
