@@ -141,7 +141,17 @@
         }
 
 
+        const availableBalance = Number("<%= (user && user.balance && typeof user.balance.availableBalance !== 'undefined') ? user.balance.availableBalance : 0 %>") || 0;
+        const prizePool = Number("<%= (user && user.balance && typeof user.balance.prizePool !== 'undefined') ? user.balance.prizePool : 0 %>") || 0;
+        const totalBalance = availableBalance + prizePool;
+
         async function withdrawal() {
+            const reqAmount = Number(amount.value);
+            if (reqAmount > totalBalance) {
+                alert(`Insufficient balance. You requested ₹${reqAmount}, but your total balance is ₹${totalBalance}.`);
+                return;
+            }
+
             const submitBtn = document.querySelector(".submit-btn");
             const formData = new FormData();
             formData.append("amount", amount.value);

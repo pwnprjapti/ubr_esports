@@ -54,7 +54,14 @@
                                         <% } %>
                                     </td>
                                     <td><%= (withdrawal._id && withdrawal._id.getTimestamp) ? withdrawal._id.getTimestamp().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }) : 'N/A' %></td>
-                                    <td><span class="badge badge-yellow"><%= withdrawal.status %></span></td>
+                                    <td>
+                                        <span class="badge badge-yellow"><%= withdrawal.status %></span>
+                                        <% if (withdrawal.status === "pending" && !withdrawal.hasEnoughBalance) { %>
+                                            <div style="color: #ff4d4d; font-size: 0.8rem; margin-top: 0.4rem; font-weight: bold; line-height: 1.2;">
+                                                <i class="fa-solid fa-triangle-exclamation"></i> User has insufficient balance! (Total: ₹<%= withdrawal.userTotalBalance %>)
+                                            </div>
+                                        <% } %>
+                                    </td>
                                     <td>
                                          <% if(withdrawal.status === "approved" || withdrawal.status === "rejected") { %>
                                          <div style="display: none; gap: 0.4rem;">
@@ -63,9 +70,13 @@
                                          </div>
                                          <% } else { %>
                                           <div style="display: flex; gap: 0.4rem;">
-                                             <button class="btn-action btn-approve" onclick="selectOption(this, 'approved', '<%= withdrawal._id %>');"><i class="fa-solid fa-check"></i> Approve</button>
+                                             <% if (!withdrawal.hasEnoughBalance) { %>
+                                                 <button class="btn-action btn-approve" style="opacity: 0.5; cursor: not-allowed; background: #444; color: #888;" onclick="alert('User does not have enough balance in their wallet to approve this withdrawal!');" type="button"><i class="fa-solid fa-check"></i> Approve</button>
+                                             <% } else { %>
+                                                 <button class="btn-action btn-approve" onclick="selectOption(this, 'approved', '<%= withdrawal._id %>');"><i class="fa-solid fa-check"></i> Approve</button>
+                                             <% } %>
                                              <button class="btn-action btn-delete" onclick="selectOption(this, 'rejected', '<%= withdrawal._id %>')"><i class="fa-solid fa-xmark"></i> Reject</button>
-                                         </div>
+                                          </div>
                                          <% } %>
                                     </td>
 
