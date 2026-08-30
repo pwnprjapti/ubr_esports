@@ -258,24 +258,65 @@ app.post("/withdrawal", authCheck, upload.single('qrImage'), async (req, res)=>{
             return res.status(400).json({ msg: "Insufficient balance in your wallet. Total available: ₹" + totalBalance });
         }
 
-        const fulldetail = {
-            payoutMethod,
-            payoutDetail,
-            note,
-            amount: amountNum,
-            status: "pending",
-            playerName: req.user.displayName,
-            id: req.user.id
-        };
+        // Initialize structure to be safe
+        if (!user.wallet) user.wallet = {};
+        if (!user.wallet.balance) user.wallet.balance = { availableBalance: 0, prizePool: 0 };
+        if (typeof user.wallet.balance.availableBalance === 'undefined') user.wallet.balance.availableBalance = 0;
+        if (typeof user.wallet.balance.prizePool === 'undefined') user.wallet.balance.prizePool = 0;
 
-        const addRequest = await withdrawalModel.create(fulldetail);
-        const result = await addRequest.save();
+        // Deduct split logic: First from prizePool, then remaining from availableBalance
+        let prizePoolDeducted = 0;
+        let availableBalanceDeducted = 0;
+
+        if (prizePool >= amountNum) {
+            user.wallet.balance.prizePool -= amountNum;
+            prizePoolDeducted = amountNum;
+        } else {
+            const remaining = amountNum - prizePool;
+            user.wallet.balance.prizePool = 0;
+            prizePoolDeducted = prizePool;
+            user.wallet.balance.availableBalance -= remaining;
+            availableBalanceDeducted = remaining;
+        }
+
+        // Save the updated user balance
+        await user.save();
+
+        let result;
+        try {
+            const fulldetail = {
+                payoutMethod,
+                payoutDetail,
+                note,
+                amount: amountNum,
+                status: "pending",
+                playerName: req.user.displayName,
+                id: req.user.id,
+                prizePoolDeducted,
+                availableBalanceDeducted,
+                isDeducted: true
+            };
+
+            const addRequest = await withdrawalModel.create(fulldetail);
+            result = await addRequest.save();
+        } catch (dbErr) {
+            // Revert deduction
+            user.wallet.balance.prizePool += prizePoolDeducted;
+            user.wallet.balance.availableBalance += availableBalanceDeducted;
+            await user.save();
+            throw dbErr;
+        }
+
         if(result){
             return res.status(200).json({msg:"Request submited successfully, wait for approvel."});
         } else {
             if (req.file && fs.existsSync(req.file.path)) {
                 try { fs.unlinkSync(req.file.path); } catch(e) {}
             }
+            // Revert deduction
+            user.wallet.balance.prizePool += prizePoolDeducted;
+            user.wallet.balance.availableBalance += availableBalanceDeducted;
+            await user.save();
             return res.status(500).json({msg:"Failed to submit request."});
         }
     } catch (err) {
@@ -1144,10 +1185,14 @@ app.get("/admin/withdrawals", adminAuthCheck, async (req, res)=>{
                 const total = available + prize;
                 
                 wObj.userTotalBalance = total;
-                wObj.hasEnoughBalance = total >= wObj.amount;
+                if (wObj.isDeducted) {
+                    wObj.hasEnoughBalance = true;
+                } else {
+                    wObj.hasEnoughBalance = total >= wObj.amount;
+                }
             } else {
                 wObj.userTotalBalance = 0;
-                wObj.hasEnoughBalance = false;
+                wObj.hasEnoughBalance = wObj.isDeducted ? true : false;
             }
             return wObj;
         }));
@@ -1181,42 +1226,61 @@ app.post("/admin/withdrawalReq", adminAuthCheck, async (req, res)=>{
         }
 
         if (option === "rejected") {
+            // Revert / refund deduction if it was immediately deducted
+            if (withdrawalReq.isDeducted) {
+                const user = await userModel.findOne({ gglId: withdrawalReq.id });
+                if (user) {
+                    // Initialize structure to be safe
+                    if (!user.wallet) user.wallet = {};
+                    if (!user.wallet.balance) user.wallet.balance = { availableBalance: 0, prizePool: 0 };
+                    if (typeof user.wallet.balance.availableBalance === 'undefined') user.wallet.balance.availableBalance = 0;
+                    if (typeof user.wallet.balance.prizePool === 'undefined') user.wallet.balance.prizePool = 0;
+
+                    user.wallet.balance.prizePool += Number(withdrawalReq.prizePoolDeducted || 0);
+                    user.wallet.balance.availableBalance += Number(withdrawalReq.availableBalanceDeducted || 0);
+                    await user.save();
+                }
+            }
+
             // Update status to rejected
             withdrawalReq.status = "rejected";
             await withdrawalReq.save();
             
             return res.status(200).json({ msg: "Withdrawal request rejected successfully." });
         } else if (option === "approved") {
-            // Find the user to deduct the amount
-            const user = await userModel.findOne({ gglId: withdrawalReq.id });
-            if (!user) {
-                return res.status(404).json({ msg: "User not found." });
+            // If it was NOT already deducted (legacy pending request), deduct it now
+            if (!withdrawalReq.isDeducted) {
+                // Find the user to deduct the amount
+                const user = await userModel.findOne({ gglId: withdrawalReq.id });
+                if (!user) {
+                    return res.status(404).json({ msg: "User not found." });
+                }
+
+                const availableBalance = (user.wallet && user.wallet.balance && typeof user.wallet.balance.availableBalance !== 'undefined') ? Number(user.wallet.balance.availableBalance) : 0;
+                const prizePool = (user.wallet && user.wallet.balance && typeof user.wallet.balance.prizePool !== 'undefined') ? Number(user.wallet.balance.prizePool) : 0;
+                const totalBalance = availableBalance + prizePool;
+
+                if (totalBalance < withdrawalReq.amount) {
+                    return res.status(400).json({ msg: "User does not have sufficient balance. Current Total: ₹" + totalBalance });
+                }
+
+                // Initialize structure to be safe
+                if (!user.wallet) user.wallet = {};
+                if (!user.wallet.balance) user.wallet.balance = { availableBalance: 0, prizePool: 0 };
+                if (typeof user.wallet.balance.availableBalance === 'undefined') user.wallet.balance.availableBalance = 0;
+                if (typeof user.wallet.balance.prizePool === 'undefined') user.wallet.balance.prizePool = 0;
+
+                // Deduct split logic: First from prizePool, then remaining from availableBalance
+                if (prizePool >= withdrawalReq.amount) {
+                    user.wallet.balance.prizePool -= withdrawalReq.amount;
+                } else {
+                    const remaining = withdrawalReq.amount - prizePool;
+                    user.wallet.balance.prizePool = 0;
+                    user.wallet.balance.availableBalance -= remaining;
+                }
+
+                await user.save();
             }
-
-            const availableBalance = (user.wallet && user.wallet.balance && typeof user.wallet.balance.availableBalance !== 'undefined') ? Number(user.wallet.balance.availableBalance) : 0;
-            const prizePool = (user.wallet && user.wallet.balance && typeof user.wallet.balance.prizePool !== 'undefined') ? Number(user.wallet.balance.prizePool) : 0;
-            const totalBalance = availableBalance + prizePool;
-
-            if (totalBalance < withdrawalReq.amount) {
-                return res.status(400).json({ msg: "User does not have sufficient balance. Current Total: ₹" + totalBalance });
-            }
-
-            // Initialize structure to be safe
-            if (!user.wallet) user.wallet = {};
-            if (!user.wallet.balance) user.wallet.balance = { availableBalance: 0, prizePool: 0 };
-            if (typeof user.wallet.balance.availableBalance === 'undefined') user.wallet.balance.availableBalance = 0;
-            if (typeof user.wallet.balance.prizePool === 'undefined') user.wallet.balance.prizePool = 0;
-
-            // Deduct split logic: First from prizePool, then remaining from availableBalance
-            if (prizePool >= withdrawalReq.amount) {
-                user.wallet.balance.prizePool -= withdrawalReq.amount;
-            } else {
-                const remaining = withdrawalReq.amount - prizePool;
-                user.wallet.balance.prizePool = 0;
-                user.wallet.balance.availableBalance -= remaining;
-            }
-
-            await user.save();
 
             // Update status to approved
             withdrawalReq.status = "approved";
