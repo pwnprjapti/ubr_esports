@@ -6,6 +6,7 @@ import fs from "fs"
 import { fileURLToPath } from "url"
 import passport from "passport"
 import session from "express-session"
+import MongoStore from "connect-mongo"
 import mongoose from "mongoose"
 import bcrypt from "bcrypt"
 import './views/client/auth/google.js';
@@ -41,6 +42,11 @@ app.use(session({
     secret:process.env.SESSION_SECRET,
     resave:false,
     saveUninitialized:true,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGO_URI,
+        collectionName: 'sessions',
+        ttl: 14 * 24 * 60 * 60 // 14 days
+    }),
     cookie:{
         httpOnly:true,
         secure:process.env.NODE_ENV === "production",
