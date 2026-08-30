@@ -1395,34 +1395,15 @@ app.post("/admin/add-point-table", adminAuthCheck, upload.single('pointTableImag
         const uploadResult = await uploadToCloudinary(req.file.path, 'point_tables');
         const imageUrl = uploadResult.secure_url;
 
-        // Upsert logic: if point table already exists for this match, delete old image and update entry
-        const existingTable = await pointTableModel.findOne({ categoryId, matchTitle });
-        if (existingTable) {
-            const oldPath = existingTable.pointTableImage;
-            if (oldPath) {
-                if (oldPath.startsWith("http://") || oldPath.startsWith("https://")) {
-                    await deleteFromCloudinary(oldPath);
-                } else {
-                    const oldLocalPath = path.join(__dirname, 'public', 'images', oldPath);
-                    if (fs.existsSync(oldLocalPath)) {
-                        try { fs.unlinkSync(oldLocalPath); } catch (e) { console.error("Error deleting old point table image:", e); }
-                    }
-                }
-            }
-            existingTable.pointTableImage = imageUrl;
-            existingTable.categoryTitle = categoryTitle;
-            existingTable.date = date;
-            await existingTable.save();
-        } else {
-            const newTable = new pointTableModel({
-                categoryId,
-                categoryTitle,
-                matchTitle,
-                date,
-                pointTableImage: imageUrl
-            });
-            await newTable.save();
-        }
+        // Create a new point table entry (prevent replacement of existing tables with the same category and match title)
+        const newTable = new pointTableModel({
+            categoryId,
+            categoryTitle,
+            matchTitle,
+            date,
+            pointTableImage: imageUrl
+        });
+        await newTable.save();
 
         return res.status(200).json({ msg: "Point table submitted successfully.", success: true });
     } catch (err) {
