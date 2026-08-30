@@ -1010,11 +1010,7 @@ app.post("/admin/category/:id/tournament/edit/:mid", adminAuthCheck, async (req,
         const oldTitle = match.title;
         const newTitle = matchData.title;
 
-        // Check if another match in the same category has this new title
-        const isExist = category.matches.some(m => m.title === newTitle && m._id.toString() !== mid);
-        if (isExist) {
-            return res.status(400).json({ msg: "A tournament with this title already exists in this category." });
-        }
+
 
         // Update match fields
         match.date = matchData.date;
