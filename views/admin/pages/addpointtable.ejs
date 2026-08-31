@@ -24,7 +24,7 @@
                         <form class="category-form" onsubmit="submitData(event)">
                             <!-- 1. Match Dropdown Field -->
                             <div class="form-group">
-                                <label for="matchSelector">Select Tournament / Match</label>
+                                <label for="matchSelector">Select Scrim / Match</label>
                                 <select id="matchSelector" name="matchSelector" class="form-input" style="background-color: #1a1c26; color: #fff; border: 1px solid rgba(255,255,255,0.08); padding: 0.75rem; border-radius: 8px; width: 100%; cursor: pointer;" required>
                                     <option value="" disabled selected>Select a match...</option>
                                     <% categories.forEach(cat => { %>
@@ -35,13 +35,13 @@
                                 </select>
                             </div>
 
-                            <!-- Tournament Date Field -->
+                            <!-- Scrim Date Field -->
                             <div class="form-group" style="margin-top: 1rem;">
-                                <label for="tournamentDate">Enter Tournament Date</label>
+                                <label for="scrimDate">Enter Scrim Date</label>
                                 <input 
                                     type="date" 
-                                    id="tournamentDate" 
-                                    name="tournamentDate" 
+                                    id="scrimDate" 
+                                    name="scrimDate" 
                                     class="form-input" 
                                     style="background-color: #1a1c26; color: #fff; border: 1px solid rgba(255,255,255,0.08); padding: 0.75rem; border-radius: 8px; width: 100%; box-sizing: border-box;"
                                     required
@@ -77,7 +77,7 @@
 
     <script>
         const matchSelector = document.getElementById("matchSelector");
-        const tournamentDate = document.getElementById("tournamentDate");
+        const scrimDate = document.getElementById("scrimDate");
         const pointTableImage = document.getElementById("pointTableImage");
         const submitButton = document.getElementById("submitButton");
         const baseurl = "<%= baseurl %>";
@@ -89,8 +89,8 @@
                     alert("Please select a match");
                     return;
                 }
-                if (!tournamentDate.value) {
-                    alert("Please select a tournament date");
+                if (!scrimDate.value) {
+                    alert("Please select a scrim date");
                     return;
                 }
                 if (!pointTableImage.files[0]) {
@@ -104,7 +104,7 @@
                 formData.append("categoryId", categoryId);
                 formData.append("categoryTitle", categoryTitle);
                 formData.append("matchTitle", matchTitle);
-                formData.append("date", tournamentDate.value);
+                formData.append("date", scrimDate.value);
                 formData.append("pointTableImage", pointTableImage.files[0]);
 
                 const originalBtnHtml = submitButton.innerHTML;

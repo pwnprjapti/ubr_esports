@@ -8,7 +8,7 @@
     --text-muted: #a0a0aa;
 }
 
-.add-tournament-wrapper {
+.add-scrim-wrapper {
     width: 100%;
     display: flex;
     justify-content: center;
@@ -16,7 +16,7 @@
     padding: 1.5rem 0;
 }
 
-.add-tournament-card {
+.add-scrim-card {
     width: 100%;
     max-width: 600px;
     background: var(--card-bg);
@@ -27,14 +27,14 @@
     box-sizing: border-box;
 }
 
-.add-tournament-card h1 {
+.add-scrim-card h1 {
     font-size: 1.5rem;
     font-weight: 800;
     color: var(--text);
     margin: 0 0 1.5rem;
 }
 
-.tournament-form {
+.scrim-form {
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
@@ -108,7 +108,7 @@ select.form-input option {
 }
 
 @media (max-width: 600px) {
-    .add-tournament-card {
+    .add-scrim-card {
         padding: 1.25rem;
     }
     .form-grid-2 {

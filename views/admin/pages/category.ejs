@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/css/admin/adminLayout.css">
     <link rel="stylesheet" href="/css/admin/category.css">
     <style>
-        .delete-tournament-btn {
+        .delete-scrim-btn {
             position: absolute;
             top: 0.75rem;
             right: 0.75rem;
@@ -30,13 +30,13 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
-        .delete-tournament-btn:hover {
+        .delete-scrim-btn:hover {
             transform: scale(1.1);
             background-color: #ff455e;
             box-shadow: 0 4px 12px rgba(215, 38, 61, 0.5);
         }
 
-        .edit-tournament-btn {
+        .edit-scrim-btn {
             position: absolute;
             top: 0.75rem;
             right: 3.25rem;
@@ -57,7 +57,7 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
-        .edit-tournament-btn:hover {
+        .edit-scrim-btn:hover {
             transform: scale(1.1);
             background-color: #ffca28;
             box-shadow: 0 4px 12px rgba(255, 193, 7, 0.5);
@@ -111,11 +111,11 @@
                             </div> -->
                         <div class="hero-text" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                             <div>
-                                <h1>BGMI Tournaments & Scrims</h1>
+                                <h1>BGMI Scrims & Scrims</h1>
                                 <p>Select a date to find live scrims, daily cash cups, and weekend custom matches.</p>
                             </div>
-                            <a href="/admin/addtournament" class="slot-btn-full" style="width: auto; padding: 0.65rem 1.25rem; text-decoration: none;">
-                                <i class="fa-solid fa-plus"></i> Add Tournament
+                            <a href="/admin/addscrim" class="slot-btn-full" style="width: auto; padding: 0.65rem 1.25rem; text-decoration: none;">
+                                <i class="fa-solid fa-plus"></i> Add Scrim
                             </a>
                         </div>
                     </section>
@@ -125,7 +125,7 @@
                         <div class="filter-header">
                             <div class="filter-title">
                                 <i class="fa-solid fa-calendar-days"></i>
-                                <span>Filter by Tournament Date</span>
+                                <span>Filter by Scrim Date</span>
                             </div>
                         </div>
 
@@ -145,20 +145,20 @@
                         <span class="line"></span>
                     </div>
 
-                    <!-- Tournament / Category Grid -->
-                    <section class="tournament-grid" id="tournamentGrid">
+                    <!-- Scrim / Category Grid -->
+                    <section class="scrim-grid" id="scrimGrid">
 
                         <!-- Card 1 -->
                           <% for (const match of matches) { %>
-                         <article class="tournament-card" data-date="<%= match.date %>" style="position: relative;">
-                             <button class="edit-tournament-btn" onclick="event.stopPropagation(); window.location.href='/admin/category/<%= id %>/tournament/edit/<%= match._id %>'" title="Edit Tournament">
+                         <article class="scrim-card" data-date="<%= match.date %>" style="position: relative;">
+                             <button class="edit-scrim-btn" onclick="event.stopPropagation(); window.location.href='/admin/category/<%= id %>/scrim/edit/<%= match._id %>'" title="Edit Scrim">
                                  <i class="fa-solid fa-pen-to-square"></i>
                              </button>
-                             <button class="delete-tournament-btn" onclick="deleteTournament(event, this, '<%= id %>', '<%= match._id %>')" title="Delete Tournament">
+                             <button class="delete-scrim-btn" onclick="deleteScrim(event, this, '<%= id %>', '<%= match._id %>')" title="Delete Scrim">
                                  <i class="fa-solid fa-trash-can"></i>
                              </button>
-                            <h3 class="tournament-title"><%= match.title %></h3>
-                            <div class="tournament-meta">
+                            <h3 class="scrim-title"><%= match.title %></h3>
+                            <div class="scrim-meta">
                                 <div class="meta-item">
                                     <span class="meta-label"><i class="fa-regular fa-calendar"></i> Match Date</span>
                                     <span class="meta-val highlight-date"><%= match.date %></span>
@@ -212,9 +212,9 @@
                     </section>
 
                     <!-- Empty State -->
-                    <div class="no-tournaments-card" id="noTournamentsMsg" style="display: none;">
+                    <div class="no-scrims-card" id="noScrimsMsg" style="display: none;">
                         <div class="empty-icon"><i class="fa-regular fa-calendar-xmark"></i></div>
-                        <h3>No Tournaments Found on this Date</h3>
+                        <h3>No Scrims Found on this Date</h3>
                         <p>There are no matches scheduled for the selected date.</p>
                         <button type="button" class="reset-filter-btn" id="resetDateFilter">
                             <i class="fa-solid fa-rotate-left"></i> View All Dates
@@ -231,13 +231,13 @@
     <script>
         (function() {
             const customDatePicker = document.getElementById('customDatePicker');
-            const tournamentCards = document.querySelectorAll('.tournament-card');
-            const emptyMsg = document.getElementById('noTournamentsMsg');
+            const scrimCards = document.querySelectorAll('.scrim-card');
+            const emptyMsg = document.getElementById('noScrimsMsg');
             const resetBtn = document.getElementById('resetDateFilter');
 
             function applyFilter(customDateValue) {
                 let visibleCount = 0;
-                tournamentCards.forEach(card => {
+                scrimCards.forEach(card => {
                     const cardDate = card.getAttribute('data-date');
                     if (!customDateValue || cardDate === customDateValue) {
                         card.style.display = 'flex';
@@ -299,15 +299,15 @@
     </script>
 
     <script>
-        async function deleteTournament(event, btn, categoryId, matchId) {
+        async function deleteScrim(event, btn, categoryId, matchId) {
             event.stopPropagation();
-            if (confirm("Are you sure you want to delete this tournament? This action cannot be undone.")) {
+            if (confirm("Are you sure you want to delete this scrim? This action cannot be undone.")) {
                 try {
                     const originalBtnHtml = btn.innerHTML;
                     btn.disabled = true;
                     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
-                    const res = await fetch(`/admin/category/${categoryId}/tournament/delete/${matchId}`, {
+                    const res = await fetch(`/admin/category/${categoryId}/scrim/delete/${matchId}`, {
                         method: 'POST'
                     });
                     const result = await res.json();
@@ -319,7 +319,7 @@
                         btn.innerHTML = originalBtnHtml;
                     }
                 } catch(err) {
-                    console.error("Error deleting tournament:", err);
+                    console.error("Error deleting scrim:", err);
                     alert("Something went wrong. Please try again.");
                     if (typeof btn !== 'undefined' && originalBtnHtml) {
                         btn.disabled = false;

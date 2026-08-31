@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>Add Tournament | UBR Esports Admin</title>
+    <title>Edit Scrim | UBR Esports Admin</title>
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <link rel="stylesheet" href="/css/admin/adminLayout.css">
-    <link rel="stylesheet" href="/css/addtournament.css">
+    <link rel="stylesheet" href="/css/addscrim.css">
 </head>
 <body>
     <div class="admin-layout">
@@ -17,38 +17,33 @@
             <%- include("../partials/adminNav") %>
 
             <main class="admin-body">
-                <div class="add-tournament-wrapper">
-                    <div class="add-tournament-card">
-                        <h1>Add Tournament</h1>
+                <div class="add-scrim-wrapper">
+                    <div class="add-scrim-card">
+                        <h1>Edit Scrim</h1>
 
-                        <form class="tournament-form" method="post">
-                            <!-- Select Category Dropdown -->
+                        <form class="scrim-form" method="post">
+                            <!-- Category (Read Only) -->
                             <div class="form-group">
-                                <label for="tournamentCategory">Select Category</label>
-                                <select 
-                                    id="tournamentCategory" 
-                                    name="tournamentCategory" 
-                                    class="form-input" 
-                                    required
-                                >
-                                <option value="" disabled selected>-- Choose Category --</option>
-
-                                <% for (const category of categories ){  %>
-                                    <option value="<%= category.title %>"><%= category.title %></option>
-                                    
-                                <% } %>
-                                </select>
-                            </div>
-
-                            <!-- Tournament Title -->
-                            <div class="form-group">
-                                <label for="tournamentTitle">Tournament Title</label>
+                                <label for="scrimCategory">Category</label>
                                 <input 
                                     type="text" 
-                                    id="tournamentTitle" 
-                                    name="tournamentTitle" 
+                                    id="scrimCategory" 
+                                    class="form-input" 
+                                    value="<%= category.title %>" 
+                                    disabled
+                                >
+                            </div>
+
+                            <!-- Scrim Title -->
+                            <div class="form-group">
+                                <label for="scrimTitle">Scrim Title</label>
+                                <input 
+                                    type="text" 
+                                    id="scrimTitle" 
+                                    name="scrimTitle" 
                                     class="form-input" 
                                     placeholder="e.g. BGMI Daily Pro Scrims" 
+                                    value="<%= match.title %>"
                                     required
                                 >
                             </div>
@@ -62,20 +57,10 @@
                                         id="matchDate" 
                                         name="matchDate" 
                                         class="form-input" 
+                                        value="<%= match.date %>"
                                         required
                                     >
                                 </div>
-
-                                <!-- <div class="form-group">
-                                    <label for="matchTime">Match Time</label>
-                                    <input 
-                                        type="time" 
-                                        id="matchTime" 
-                                        name="matchTime" 
-                                        class="form-input" 
-                                        required
-                                    >
-                                </div> -->
                             </div>
 
                             <!-- Total Slots & Entry Fee -->
@@ -87,7 +72,7 @@
                                         id="totalSlots" 
                                         name="totalSlots" 
                                         class="form-input" 
-                                        value="20" 
+                                        value="<%= match.slots %>" 
                                         required
                                     >
                                 </div>
@@ -100,6 +85,7 @@
                                         name="entryFee" 
                                         class="form-input" 
                                         placeholder="e.g. 60 (0 for Free)" 
+                                        value="<%= match.entryFee %>"
                                         required
                                     >
                                 </div>
@@ -114,6 +100,7 @@
                                     name="prizePool" 
                                     class="form-input" 
                                     placeholder="e.g. 5000" 
+                                    value="<%= match.prizePool %>"
                                     required
                                 >
                             </div>
@@ -127,6 +114,7 @@
                                     name="idpTiming" 
                                     class="form-input" 
                                     placeholder="e.g. 07:00 pm, 09:00 pm, 11:00 pm" 
+                                    value="<%= match.idpTimings %>"
                                     required
                                 >
                             </div>
@@ -140,22 +128,23 @@
                                     name="maps" 
                                     class="form-input" 
                                     placeholder="e.g. Erangle, Miramar, Sanhok" 
+                                    value="<%= match.maps || '' %>"
                                     required
                                 >
                             </div>
 
                             <!-- Details -->
                             <div class="form-group">
-                                <label for="details">Tournament Details</label>
+                                <label for="details">Scrim Details</label>
                                 <textarea 
                                     id="details" 
                                     name="details" 
                                     class="form-input" 
-                                    placeholder="Enter tournament details, rules, or descriptions..." 
+                                    placeholder="Enter scrim details, rules, or descriptions..." 
                                     rows="4"
                                     style="resize: vertical; font-family: inherit; width: 100%;"
                                     required
-                                ></textarea>
+                                ><%= match.details %></textarea>
                             </div>
 
                             <!-- WhatsApp Group Link -->
@@ -167,12 +156,13 @@
                                     name="whatsappGroupLink" 
                                     class="form-input" 
                                     placeholder="e.g. https://chat.whatsapp.com/..." 
+                                    value="<%= match.whatsappGroupLink || '' %>"
                                 >
                             </div>
 
                             <!-- Submit Button -->
                             <button type="submit" id="submitbtn" class="submit-btn">
-                                Submit Tournament
+                                Save Scrim Details
                             </button>
                         </form>
                     </div>
@@ -184,8 +174,7 @@
     </div>
 
     <script>
-        const category = document.getElementById("tournamentCategory");
-        const title = document.getElementById("tournamentTitle");
+        const title = document.getElementById("scrimTitle");
         const date = document.getElementById("matchDate");
         const slots = document.getElementById("totalSlots");
         const entryFee = document.getElementById("entryFee");
@@ -196,6 +185,8 @@
         const whatsappGroupLink = document.getElementById("whatsappGroupLink");
         const submitbtn = document.getElementById("submitbtn");
         const baseurl = "<%= baseurl %>";
+        const categoryId = "<%= category._id %>";
+        const matchId = "<%= match._id %>";
 
         async function submitData(e) {
             e.preventDefault();
@@ -212,38 +203,39 @@
                 whatsappGroupLink:whatsappGroupLink.value,
             }
 
-            const category_ = category.value;
-
            try{
                 console.log(data);
 
                 const originalBtnHtml = submitbtn.innerHTML;
                 submitbtn.disabled = true;
-                submitbtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+                submitbtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
 
-            const res = await fetch(`${baseurl}/admin/addtournament`, {
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify({data, category:category_})
-            });
+                const res = await fetch(`${baseurl}/admin/category/${categoryId}/scrim/edit/${matchId}`, {
+                    method:"POST",
+                    headers:{
+                        "Content-Type":"application/json"
+                    },
+                    body:JSON.stringify({data})
+                });
 
-            const result = await res.json();
-             alert(result.msg);
-            console.log(result);
+                const result = await res.json();
+                alert(result.msg);
+                console.log(result);
 
-            submitbtn.disabled = false;
-            submitbtn.innerHTML = originalBtnHtml;
+                if (res.status === 200 || result.msg === "Scrim updated successfully") {
+                    window.location.href = `/admin/category/${categoryId}`;
+                } else {
+                    submitbtn.disabled = false;
+                    submitbtn.innerHTML = originalBtnHtml;
+                }
            }catch(err){
-            console.log(err);
-            if (typeof submitbtn !== 'undefined' && originalBtnHtml) {
-                submitbtn.disabled = false;
-                submitbtn.innerHTML = originalBtnHtml;
-            }
+                console.log(err);
+                if (typeof submitbtn !== 'undefined' && originalBtnHtml) {
+                    submitbtn.disabled = false;
+                    submitbtn.innerHTML = originalBtnHtml;
+                }
            }
         }
-
 
        submitbtn.addEventListener("click", submitData);
     </script>

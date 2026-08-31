@@ -599,7 +599,7 @@ app.post("/book", upload.none(), async (req, res)=>{
         // Check if slots are full
        if (match.teams && match.teams.length >= match.slots) {
            if (req.file) fs.unlinkSync(req.file.path);
-           return res.status(400).json({msg:"Tournament slots are already full!"});
+           return res.status(400).json({msg:"Scrim slots are already full!"});
        }
  
        const drop = await userModel.findOne({gglId:req.user.id}).select("dropDetails");
@@ -935,27 +935,27 @@ app.post("/admin/editcategory/:id", adminAuthCheck, upload.single('categoryPictu
     }
 })
 
-app.get("/admin/addtournament", adminAuthCheck, async (req, res)=>{
+app.get("/admin/addscrim", adminAuthCheck, async (req, res)=>{
     const categories = await categoryModel.find().select("title -_id");
     console.log(categories);
-    res.render("admin/pages/addtournament", { categories, baseurl });
+    res.render("admin/pages/addscrim", { categories, baseurl });
 })
 
-app.post("/admin/addtournament", adminAuthCheck, async (req, res)=>{
+app.post("/admin/addscrim", adminAuthCheck, async (req, res)=>{
     console.log(req.body);
     const match = req.body.data;
     
     const add = await categoryModel.findOneAndUpdate({title:req.body.category}, { $push:{matches:match}});
-    console.log("adding touramnet" + add);
+    console.log("adding scrim" + add);
 
     if(!add){
-        res.json({msg:"Something went wrong, can't add tournament"});
+        res.json({msg:"Something went wrong, can't add scrim"});
     }
 
     res.json({msg:"Match added succesfully"});
 })
 
-app.post("/admin/category/:id/tournament/delete/:mid", adminAuthCheck, async (req, res) => {
+app.post("/admin/category/:id/scrim/delete/:mid", adminAuthCheck, async (req, res) => {
     try {
         const { id, mid } = req.params;
         const result = await categoryModel.findByIdAndUpdate(
@@ -964,17 +964,17 @@ app.post("/admin/category/:id/tournament/delete/:mid", adminAuthCheck, async (re
             { new: true }
         );
         if (result) {
-            return res.status(200).json({ success: true, msg: "Tournament deleted successfully" });
+            return res.status(200).json({ success: true, msg: "Scrim deleted successfully" });
         } else {
-            return res.status(404).json({ success: false, msg: "Category or Tournament not found" });
+            return res.status(404).json({ success: false, msg: "Category or Scrim not found" });
         }
     } catch (err) {
-        console.error("Error deleting tournament:", err);
+        console.error("Error deleting scrim:", err);
         return res.status(500).json({ success: false, msg: "Internal server error" });
     }
 })
 
-app.get("/admin/category/:id/tournament/edit/:mid", adminAuthCheck, async (req, res)=>{
+app.get("/admin/category/:id/scrim/edit/:mid", adminAuthCheck, async (req, res)=>{
     try {
         const { id, mid } = req.params;
         const category = await categoryModel.findById(id);
@@ -983,16 +983,16 @@ app.get("/admin/category/:id/tournament/edit/:mid", adminAuthCheck, async (req, 
         }
         const match = category.matches.id(mid);
         if(!match){
-            return res.status(404).send("Tournament not found");
+            return res.status(404).send("Scrim not found");
         }
-        res.render("admin/pages/edittournament", { category, match, baseurl });
+        res.render("admin/pages/editscrim", { category, match, baseurl });
     } catch(err) {
         console.error(err);
         res.status(500).send("Internal Server Error");
     }
 })
 
-app.post("/admin/category/:id/tournament/edit/:mid", adminAuthCheck, async (req, res)=>{
+app.post("/admin/category/:id/scrim/edit/:mid", adminAuthCheck, async (req, res)=>{
     try {
         const { id, mid } = req.params;
         const matchData = req.body.data;
@@ -1004,7 +1004,7 @@ app.post("/admin/category/:id/tournament/edit/:mid", adminAuthCheck, async (req,
         
         const match = category.matches.id(mid);
         if(!match){
-            return res.status(404).json({ msg: "Tournament not found" });
+            return res.status(404).json({ msg: "Scrim not found" });
         }
 
         const oldTitle = match.title;
@@ -1033,9 +1033,9 @@ app.post("/admin/category/:id/tournament/edit/:mid", adminAuthCheck, async (req,
             );
         }
 
-        res.json({ msg: "Tournament updated successfully" });
+        res.json({ msg: "Scrim updated successfully" });
     } catch(err) {
-        console.error("Error updating tournament:", err);
+        console.error("Error updating scrim:", err);
         res.status(500).json({ msg: "Internal server error" });
     }
 })

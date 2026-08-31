@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>Tournaments & Categories | UBR Esports</title>
+    <title>Scrims & Categories | UBR Esports</title>
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
-    <meta name="description" content="Browse and filter upcoming BGMI tournaments by date. Book your squad slots and compete for cash prize pools.">
+    <meta name="description" content="Browse and filter upcoming BGMI scrims by date. Book your squad slots and compete for cash prize pools.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <link rel="stylesheet" href="/css/home.css">
     <link rel="stylesheet" href="/css/nav.css">
@@ -229,7 +229,7 @@
                 <div class="filter-header">
                     <div class="filter-title">
                         <i class="fa-solid fa-calendar-days"></i>
-                        <span>Filter by Tournament Date</span>
+                        <span>Filter by Scrim Date</span>
                     </div>
                 </div>
 
@@ -250,15 +250,15 @@
                 <span class="line"></span>
             </div>
 
-            <!-- Tournament Grid -->
-            <section class="tournament-grid" id="tournamentGrid">
-                <!-- Tournament 1: Today -->
+            <!-- Scrim Grid -->
+            <section class="scrim-grid" id="scrimGrid">
+                <!-- Scrim 1: Today -->
 
             <% const hasMatches = Array.isArray(matches) && matches.length > 0; %>
 
-            <div class="no-tournaments-card" id="noTournamentsMsg" style="display: <%= hasMatches ? 'none' : 'block' %>;">
+            <div class="no-scrims-card" id="noScrimsMsg" style="display: <%= hasMatches ? 'none' : 'block' %>;">
                 <div class="empty-icon"><i class="fa-regular fa-calendar-xmark"></i></div>
-                <h3>No Tournaments Found for this category </h3>
+                <h3>No Scrims Found for this category </h3>
                 <p>There are no matches scheduled for the selected Category. Choose another Category.</p>
                 <button type="button" onclick="window.location.href='/'" class="reset-filter-btn" id="resetDateFilter">
                     <i class="fa-solid fa-rotate-left"></i> View All Categories
@@ -269,9 +269,9 @@
                 <% for (const match of matches) { %>
                     <% const approvedTeams = (match.teams || []).filter(t => t.status === "approved" || !t.status); %>
                     <% const registeredTeam = (typeof userTeamName !== 'undefined' && userTeamName) ? match.teams.find(t => t.teamName === userTeamName) : null; %>
-                    <article class="tournament-card" data-date="<%= match.date %>" data-period="today">
-                        <h3 class="tournament-title"><%= match.title %></h3>
-                        <div class="tournament-meta">
+                    <article class="scrim-card" data-date="<%= match.date %>" data-period="today">
+                        <h3 class="scrim-title"><%= match.title %></h3>
+                        <div class="scrim-meta">
                             <div class="meta-item">
                                 <span class="meta-label"><i class="fa-regular fa-calendar"></i> Match Date</span>
                                 <span class="meta-val highlight-date"><%= match.date %></span>
@@ -360,11 +360,11 @@
                 <% } %>
             <% } %>
 
-            <!-- Empty State if no tournaments match selected date -->
-            <div class="no-tournaments-card" id="noTournamentsMsg" style="display: none;">
+            <!-- Empty State if no scrims match selected date -->
+            <div class="no-scrims-card" id="noScrimsMsg" style="display: none;">
                 <div class="empty-icon"><i class="fa-regular fa-calendar-xmark"></i></div>
-                <h3>No Tournaments Found on this Date</h3>
-                <p>There are no matches scheduled for the selected date. Choose another date or view all upcoming tournaments.</p>
+                <h3>No Scrims Found on this Date</h3>
+                <p>There are no matches scheduled for the selected date. Choose another date or view all upcoming scrims.</p>
                 <button type="button" class="reset-filter-btn" id="resetDateFilter">
                     <i class="fa-solid fa-rotate-left"></i> View All Dates
                 </button>
@@ -381,15 +381,15 @@
         (function() {
             const datePills = document.querySelectorAll('.date-pill');
             const customDatePicker = document.getElementById('customDatePicker');
-            const tournamentCards = document.querySelectorAll('.tournament-card');
-            const countDisplay = document.getElementById('tournamentCount');
-            const emptyMsg = document.getElementById('noTournamentsMsg');
+            const scrimCards = document.querySelectorAll('.scrim-card');
+            const countDisplay = document.getElementById('scrimCount');
+            const emptyMsg = document.getElementById('noScrimsMsg');
             const resetBtn = document.getElementById('resetDateFilter');
 
             function applyFilter(filterType, customDateValue = null) {
                 let visibleCount = 0;
 
-                tournamentCards.forEach(card => {
+                scrimCards.forEach(card => {
                     const cardDate = card.getAttribute('data-date');
                     const cardPeriod = card.getAttribute('data-period');
                     let isMatch = false;
@@ -418,7 +418,7 @@
 
                 // Update counter and empty state
                 if (countDisplay) {
-                    countDisplay.textContent = `Showing ${visibleCount} of ${tournamentCards.length} Tournaments`;
+                    countDisplay.textContent = `Showing ${visibleCount} of ${scrimCards.length} Scrims`;
                 }
                 if (visibleCount === 0) {
                     emptyMsg.style.display = 'block';
@@ -534,7 +534,7 @@
                     }
 
                     if (data.isAlreadyRegistered) {
-                        alert("You have already registered/booked for this tournament!");
+                        alert("You have already registered/booked for this scrim!");
                         return;
                     }
 
@@ -742,7 +742,7 @@
             const modalTitle = document.getElementById('modalTitle');
             const modalBody = document.getElementById('modalBody');
 
-            modalTitle.textContent = "Tournament Details";
+            modalTitle.textContent = "Scrim Details";
 
             modalBody.innerHTML = `
                 <div style="font-size: 1.1rem; font-weight: 800; color: #ffffff; margin-bottom: 1rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.75rem;">
