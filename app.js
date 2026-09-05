@@ -12,6 +12,8 @@ import bcrypt from "bcrypt"
 import './views/client/auth/google.js';
 import multer from "multer"
 import cors from "cors"
+import fetch from "node-fetch"
+import crypto from "crypto"
 
 //models
 
@@ -89,7 +91,12 @@ app.locals.imageUrl = function(img) {
 
 app.use(express.static(path.join(__dirname, 'assets')));
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
-app.use(express.json());
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf.toString();
+    }
+}));
+app.use(express.urlencoded({ extended: true }));
 
 //middleware
 
@@ -334,45 +341,206 @@ app.post("/withdrawal", authCheck, upload.single('qrImage'), async (req, res)=>{
     }
 })
 
-app.post("/addcash", authCheck, upload.single('screenshot'), async (req, res) => {
+/**
+ * Helper function: Verify payment with Lola Pay and credit user wallet
+ */
+async function processOrderPayment(orderId) {
+    if (!orderId) return { success: false, msg: "Missing order ID" };
+
+    const depositReq = await depositModel.findOne({ orderId });
+    if (!depositReq) {
+        return { success: false, msg: "Deposit record not found for order: " + orderId };
+    }
+
+    // Prevent duplicate wallet crediting if already approved
+    if (depositReq.status === "approved" || depositReq.status === "success") {
+        return { success: true, alreadyProcessed: true, deposit: depositReq };
+    }
+
+    try {
+        const response = await fetch("https://payment.ubresports.in/api/check-status", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-API-Key": process.env.X_API_KEY,
+                "X-API-Secret": process.env.X_API_SECRET
+            },
+            body: JSON.stringify({ order_id: orderId })
+        });
+
+        const json = await response.json();
+
+        if (json.status === "success" && json.data) {
+            const txn = json.data;
+
+            if (txn.payment_status === "success") {
+                depositReq.status = "approved";
+                depositReq.utr = txn.utr || depositReq.utr || "";
+                depositReq.gatewayTxnId = txn.gateway_txn_id || depositReq.gatewayTxnId || "";
+                depositReq.provider = txn.provider || depositReq.provider || "paytm";
+                depositReq.paymentMethod = txn.payment_method || depositReq.paymentMethod || "UPI QR";
+                if (txn.paid_at) {
+                    depositReq.paidAt = new Date(txn.paid_at);
+                }
+                await depositReq.save();
+
+                // Add balance to user wallet availableBalance
+                const updatedUser = await userModel.findOneAndUpdate(
+                    { gglId: depositReq.id },
+                    { $inc: { "wallet.balance.availableBalance": Number(depositReq.amount) } },
+                    { new: true }
+                );
+
+                console.log(`Payment confirmed for Order ${orderId}: ₹${depositReq.amount} credited to user ${depositReq.id}`);
+                return { success: true, deposit: depositReq, user: updatedUser };
+            } else if (txn.payment_status === "failed") {
+                depositReq.status = "failed";
+                await depositReq.save();
+                return { success: false, msg: "Payment failed at gateway", deposit: depositReq };
+            }
+        }
+
+        return { success: false, msg: "Payment still pending or unverified", deposit: depositReq };
+    } catch (err) {
+        console.error("Error verifying Lola Pay order status:", err);
+        return { success: false, msg: err.message };
+    }
+}
+
+/**
+ * 1. Add Cash Route - Initiates Lola Pay UPI QR Checkout
+ */
+app.post("/addcash", authCheck, async (req, res) => {
     try {
         const { amount } = req.body;
         const amountNum = Number(amount);
+
         if (isNaN(amountNum) || amountNum <= 0) {
-            if (req.file && fs.existsSync(req.file.path)) {
-                try { fs.unlinkSync(req.file.path); } catch(e) {}
-            }
-            return res.status(400).json({ msg: "Please enter a valid amount." });
+            return res.status(400).json({ success: false, msg: "Please enter a valid amount greater than 0." });
         }
 
-        if (!req.file) {
-            return res.status(400).json({ msg: "Please upload a payment screenshot." });
-        }
+        const orderId = `ORD_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+        const customerName = req.user.displayName || req.user.name || "Player";
+        const customerMobile = req.user.whatsappNumber ? String(req.user.whatsappNumber) : "";
+        const callbackUrl = `${baseurl || 'https://ubresports.in'}/payment/callback`;
 
-        // Upload payment screenshot to Cloudinary
-        const uploadResult = await uploadToCloudinary(req.file.path, 'deposits');
-        const imageUrl = uploadResult.secure_url;
+        const payload = {
+            amount: amountNum.toFixed(2),
+            order_id: orderId,
+            customer_name: customerName,
+            customer_mobile: customerMobile,
+            description: "Wallet balance deposit",
+            callback_url: callbackUrl,
+            is_reusable: false
+        };
 
-        // Create deposit request document
-        const depositRequest = new depositModel({
-            playerName: req.user.displayName,
-            id: req.user.id,
-            amount: amountNum,
-            screenshot: imageUrl,
-            status: "pending"
+        const response = await fetch("https://payment.ubresports.in/api/create-order", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-API-Key": process.env.X_API_KEY,
+                "X-API-Secret": process.env.X_API_SECRET
+            },
+            body: JSON.stringify(payload)
         });
 
-        await depositRequest.save();
+        const json = await response.json();
 
-        res.status(200).json({ msg: "Add cash request submitted successfully. Waiting for admin approval.", success: true });
+        if (json.status === "success" && json.data && json.data.payment_url) {
+            // Save pending deposit in database
+            await depositModel.create({
+                orderId: orderId,
+                playerName: customerName,
+                id: req.user.id, // user's gglId
+                amount: amountNum,
+                paymentUrl: json.data.payment_url,
+                status: "pending",
+                date: new Date()
+            });
+
+            return res.status(200).json({
+                success: true,
+                orderId: orderId,
+                paymentUrl: json.data.payment_url,
+                msg: "Payment link generated successfully. Redirecting..."
+            });
+        } else {
+            console.error("Lola Pay Create Order Error:", json);
+            return res.status(400).json({
+                success: false,
+                msg: json.error || json.message || "Failed to create payment order from gateway."
+            });
+        }
     } catch (err) {
         console.error("Add cash request error:", err);
-        if (req.file && fs.existsSync(req.file.path)) {
-            try { fs.unlinkSync(req.file.path); } catch(e) {}
-        }
-        res.status(500).json({ msg: "Internal server error." });
+        return res.status(500).json({ success: false, msg: "Internal server error." });
     }
 });
+
+/**
+ * 2. Payment Callback Route - Handles customer redirection after payment
+ */
+app.get("/payment/callback", async (req, res) => {
+    try {
+        const { order_id, status } = req.query;
+
+        if (!order_id) {
+            return res.redirect("/?payment_status=failed");
+        }
+
+        const result = await processOrderPayment(order_id);
+
+        if (result.success) {
+            return res.redirect("/?payment_status=success");
+        } else {
+            return res.redirect("/?payment_status=pending");
+        }
+    } catch (err) {
+        console.error("Payment callback error:", err);
+        return res.redirect("/?payment_status=failed");
+    }
+});
+
+/**
+ * 3. Payment Webhook Route - Real-time async payment notifications from Lola Pay
+ */
+app.post("/payment/webhook", async (req, res) => {
+    try {
+        const signature =
+            req.headers["x-payindia-signature"] ||
+            req.headers["x-lola-pay-signature"] ||
+            req.headers["x-payindia-signature".toLowerCase()];
+
+        const webhookSecret = process.env.LOLA_PAY_WEBHOOK_SECRET;
+
+        // If webhook secret configured, verify HMAC SHA-256 signature
+        if (webhookSecret && signature) {
+            const rawBody = req.rawBody || JSON.stringify(req.body);
+            const expectedSignature = crypto
+                .createHmac("sha256", webhookSecret)
+                .update(rawBody)
+                .digest("hex");
+
+            if (signature !== expectedSignature) {
+                console.warn("Lola Pay Webhook: Signature mismatch!");
+                return res.status(400).send("Invalid Signature");
+            }
+        }
+
+        const data = req.body || {};
+        const orderId = data.order_id || (data.data && data.data.order_id);
+
+        if (orderId) {
+            await processOrderPayment(orderId);
+        }
+
+        return res.status(200).json({ received: true });
+    } catch (err) {
+        console.error("Lola Pay Webhook processing error:", err);
+        return res.status(500).json({ error: "Webhook processing error" });
+    }
+});
+
 
 app.get("/category/:id", async (req, res)=>{
     try {

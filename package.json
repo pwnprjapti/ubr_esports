@@ -1,6 +1,7 @@
 {
   "name": "ubr-esport",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -20,8 +21,10 @@
     "ejs": "^6.0.1",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
+    "mongodb": "^7.6.0",
     "mongoose": "^9.9.2",
     "multer": "^2.2.0",
+    "node-fetch": "^3.3.2",
     "nodemon": "^3.1.14",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
