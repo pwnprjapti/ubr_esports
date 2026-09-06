@@ -763,9 +763,30 @@
     modal.style.display = 'flex';
 }
 
-        function closeModal() {
-            document.getElementById('infoModal').style.display = 'none';
-        }
+function showDetails(btn) {
+    const dataEl = btn.querySelector('.match-data');
+    if (!dataEl) return;
+
+    const detailsText = dataEl.getAttribute('data-details') || '';
+
+    const modal = document.getElementById('infoModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+
+    modalTitle.textContent = "Scrim Details";
+
+    modalBody.innerHTML = `
+        <div style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6; color: #c4c4cc; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem; text-align: left; box-sizing: border-box; width: 100%;">
+            ${escapeHtml(detailsText || 'No details provided.')}
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('infoModal').style.display = 'none';
+}
 
         // Close modal when clicking outside content
         window.addEventListener('click', function(event) {
