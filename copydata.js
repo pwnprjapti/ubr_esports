@@ -8,7 +8,7 @@ const TARGET_URI =
 
 // IMPORTANT: Source database name in Atlas is 'ubresport' (without 's')
 const SOURCE_DB = "ubresport";
-const TARGET_DB = "ubresports";
+const TARGET_DB = "ubresport";
 
 // Clear target collections before copying to ensure a clean sync without duplicate key errors
 const CLEAR_TARGET_FIRST = true;

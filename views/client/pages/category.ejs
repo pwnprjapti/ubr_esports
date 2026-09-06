@@ -266,9 +266,17 @@
             </div>
 
             <% if (hasMatches) { %>
-                <% for (const match of matches) { %>
+               <% 
+                    // Available matches pehle (0), Full matches baad me (1)
+                    const sortedMatches = [...matches].sort((a, b) => {
+                      const aFull = (a.teams && a.teams.length >= a.slots) ? 1 : 0;
+                      const bFull = (b.teams && b.teams.length >= b.slots) ? 1 : 0;
+                      return aFull - bFull;
+                    });
+                %>
+                <% for (const match of sortedMatches) { %>
                     <% const approvedTeams = (match.teams || []).filter(t => t.status === "approved" || !t.status); %>
-                    <% const registeredTeam = (typeof userTeamName !== 'undefined' && userTeamName) ? match.teams.find(t => t.teamName === userTeamName) : null; %>
+                    <% const registeredTeam = (typeof userTeamName !== 'undefined' && userTeamName && match.teams) ? match.teams.find(t => t.teamName && userTeamName && t.teamName.toString().trim().toLowerCase() === userTeamName.toString().trim().toLowerCase()) : null; %>
                     <article class="scrim-card" data-date="<%= match.date %>" data-period="today">
                         <h3 class="scrim-title"><%= match.title %></h3>
                         <div class="scrim-meta">
@@ -337,9 +345,10 @@
                                  <% } %>
                              <% } %>
                              <div class="secondary-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%;">
-                                 <button type="button" class="pay-btn" style="min-height: 38px; padding: 0.5rem; font-size: 0.85rem; width: 100%;" onclick="showTeams(this)">
+                                 <% const isBooked = Boolean(registeredTeam); %>
+                                 <button type="button" class="pay-btn" style="min-height: 38px; padding: 0.5rem; font-size: 0.85rem; width: 100%;" data-booked="<%= isBooked %>" onclick="showTeams(this)">
                                      <i class="fa-solid fa-users"></i> View Teams
-                                     <span class="teams-data" style="display: none;"><%= JSON.stringify(approvedTeams) %></span>
+                                     <span class="teams-data" style="display: none;"><%- isBooked ? JSON.stringify(approvedTeams) : '[]' %></span>
                                  </button>
                                  <button type="button" class="pay-btn" style="min-height: 38px; padding: 0.5rem; font-size: 0.85rem; width: 100%;" onclick="showDetails(this)">
                                      <i class="fa-solid fa-circle-info"></i> View Details
@@ -685,76 +694,74 @@
         }
 
         function showTeams(btn) {
-            const teamsJsonEl = btn.querySelector('.teams-data');
-            let teams = [];
-            try {
-                teams = JSON.parse(teamsJsonEl.textContent);
-            } catch(e) {
-                console.error("Error parsing teams data", e);
-            }
+    const isBooked = btn.getAttribute('data-booked') === 'true';
 
-            const modal = document.getElementById('infoModal');
-            const modalTitle = document.getElementById('modalTitle');
-            const modalBody = document.getElementById('modalBody');
+    const modal = document.getElementById('infoModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
 
-            modalTitle.textContent = "Registered Teams";
-            
-            if (teams.length === 0) {
-                modalBody.innerHTML = `
-                    <div style="text-align: center; padding: 2rem 1rem; color: #9e9ea7;">
-                        <i class="fa-solid fa-users-slash" style="font-size: 2.5rem; color: #ff455e; margin-bottom: 1rem; display: block;"></i>
-                        <p style="margin: 0; font-weight: 600;">No teams registered yet.</p>
-                        <p style="margin: 0.25rem 0 0; font-size: 0.85rem;">Be the first squad to sign up!</p>
-                    </div>
-                `;
-            } else {
-                let listHtml = '<div class="modal-teams-list">';
-                teams.forEach(team => {
-                     const logoUrl = team.teamLogo 
-                         ? (team.teamLogo.startsWith('http://') || team.teamLogo.startsWith('https://') ? team.teamLogo : `/images/${team.teamLogo}`)
-                         : '';
-                     const logoHtml = logoUrl 
-                         ? `<img src="${logoUrl}" alt="${team.teamName}">`
-                         : `<i class="fa-solid fa-shield-halved"></i>`;
-                    
-                    listHtml += `
-                        <div class="modal-team-item">
-                            <div class="modal-team-logo">
-                                ${logoHtml}
-                            </div>
-                            <div class="modal-team-name">${escapeHtml(team.teamName)}</div>
-                        </div>
-                    `;
-                });
-                listHtml += '</div>';
-                modalBody.innerHTML = listHtml;
-            }
+    // 1. Agar user ne slot book nahi kiya hai
+    if (!isBooked) {
+        modalTitle.textContent = "Access Restricted";
+        modalBody.innerHTML = `
+            <div style="text-align: center; padding: 2rem 1rem; color: #9e9ea7;">
+                <i class="fa-solid fa-lock" style="font-size: 2.5rem; color: #ff455e; margin-bottom: 1rem; display: block;"></i>
+                <p style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #ffffff;">Book slot to view teams</p>
+                <p style="margin: 0.5rem 0 0; font-size: 0.88rem; color: #9e9ea7;">
+                    Tournament me registered teams dekhne ke liye pehle apna slot book karein.
+                </p>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        return; // Function yahin ruk jayega, teams load nahi hongi
+    }
 
-            modal.style.display = 'flex';
+    // 2. Agar slot already booked hai, to teams parse karke show karein
+    const teamsJsonEl = btn.querySelector('.teams-data');
+    let teams = [];
+    try {
+        if (teamsJsonEl && teamsJsonEl.textContent) {
+            teams = JSON.parse(teamsJsonEl.textContent.trim());
         }
+    } catch(e) {
+        console.error("Error parsing teams data", e);
+    }
 
-        function showDetails(btn) {
-            const dataEl = btn.querySelector('.match-data');
-            const title = dataEl.getAttribute('data-title');
-            const detailsText = dataEl.getAttribute('data-details');
-
-            const modal = document.getElementById('infoModal');
-            const modalTitle = document.getElementById('modalTitle');
-            const modalBody = document.getElementById('modalBody');
-
-            modalTitle.textContent = "Scrim Details";
-
-            modalBody.innerHTML = `
-                <div style="font-size: 1.1rem; font-weight: 800; color: #ffffff; margin-bottom: 1rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.75rem;">
-                    ${escapeHtml(title)}
-                </div>
-                <div style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6; color: #c4c4cc; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem; text-align: left; box-sizing: border-box; width: 100%;">
-                    ${escapeHtml(detailsText || 'No details provided.')}
+    modalTitle.textContent = "Registered Teams";
+    
+    if (teams.length === 0) {
+        modalBody.innerHTML = `
+            <div style="text-align: center; padding: 2rem 1rem; color: #9e9ea7;">
+                <i class="fa-solid fa-users-slash" style="font-size: 2.5rem; color: #ff455e; margin-bottom: 1rem; display: block;"></i>
+                <p style="margin: 0; font-weight: 600;">No teams registered yet.</p>
+                <p style="margin: 0.25rem 0 0; font-size: 0.85rem;">Be the first squad to sign up!</p>
+            </div>
+        `;
+    } else {
+        let listHtml = '<div class="modal-teams-list">';
+        teams.forEach(team => {
+             const logoUrl = team.teamLogo 
+                 ? (team.teamLogo.startsWith('http://') || team.teamLogo.startsWith('https://') ? team.teamLogo : `/images/${team.teamLogo}`)
+                 : '';
+             const logoHtml = logoUrl 
+                 ? `<img src="${logoUrl}" alt="${team.teamName}">`
+                 : `<i class="fa-solid fa-shield-halved"></i>`;
+            
+            listHtml += `
+                <div class="modal-team-item">
+                    <div class="modal-team-logo">
+                        ${logoHtml}
+                    </div>
+                    <div class="modal-team-name">${escapeHtml(team.teamName)}</div>
                 </div>
             `;
+        });
+        listHtml += '</div>';
+        modalBody.innerHTML = listHtml;
+    }
 
-            modal.style.display = 'flex';
-        }
+    modal.style.display = 'flex';
+}
 
         function closeModal() {
             document.getElementById('infoModal').style.display = 'none';
