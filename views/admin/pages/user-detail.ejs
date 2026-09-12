@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title><%= (user.team && user.team.teamName) ? user.team.teamName : 'User Details' %> | UBR Esports Admin</title>
+    <link rel="icon" type="image/png" href="/images/ubrLogo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css">
+    <link rel="stylesheet" href="/css/admin/dashboard.css">
+    <style>
+        .back-nav-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .btn-back {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 0.6rem 1.1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        .btn-back:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-light);
+        }
+        .user-header-banner {
+            background: linear-gradient(135deg, rgba(20, 22, 31, 0.95), rgba(30, 33, 48, 0.9));
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .user-profile-left {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+        .user-avatar-lg {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(215, 38, 61, 0.2);
+            border: 2px solid var(--accent-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ff455e;
+            font-size: 1.8rem;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .user-avatar-lg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .copy-badge {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-color);
+            padding: 0.3rem 0.65rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .copy-badge:hover {
+            background: rgba(215, 38, 61, 0.2);
+            border-color: var(--accent-light);
+            color: #fff;
+        }
+        .btn-whatsapp-action {
+            background: #128c7e;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn-whatsapp-action:hover {
+            background: #25d366;
+            transform: translateY(-1px);
+        }
+        .badge-status {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .badge-approved { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .badge-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-rejected, .badge-failed { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        .wallet-editor-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .wallet-mode-pills {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .wallet-mode-pill {
+            flex: 1;
+            text-align: center;
+            padding: 0.6rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .wallet-mode-pill.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 650px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+        .form-control {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 700;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus {
+            border-color: var(--accent-light);
+        }
+        .quick-presets {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+        .btn-preset {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-color);
+            color: #e2e8f0;
+            padding: 0.3rem 0.7rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-preset:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+        .btn-submit-wallet {
+            background: #059669;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.6rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn-submit-wallet:hover {
+            background: #047857;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <% 
+                    const avail = (user.wallet && user.wallet.balance && typeof user.wallet.balance.availableBalance !== 'undefined') ? Number(user.wallet.balance.availableBalance) : 0;
+                    const prize = (user.wallet && user.wallet.balance && typeof user.wallet.balance.prizePool !== 'undefined') ? Number(user.wallet.balance.prizePool) : 0;
+                    const total = avail + prize;
+                    const teamName = (user.team && user.team.teamName) ? user.team.teamName : "No Team Setup";
+                    const logo = (user.team && user.team.teamLogo) ? user.team.teamLogo : null;
+                    const whatsapp = (user.team && user.team.whatsappNumber) ? user.team.whatsappNumber : null;
+                    const drop = user.dropDetails || {};
+                    const joinedDate = (user._id && user._id.getTimestamp) ? user._id.getTimestamp().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
+                %>
+
+                <div class="back-nav-bar">
+                    <a href="/admin/users" class="btn-back">
+                        <i class="fa-solid fa-arrow-left"></i> Back to Users List
+                    </a>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">User ID: <code><%= user._id %></code></span>
+                </div>
+
+                <!-- Header Banner -->
+                <div class="user-header-banner">
+                    <div class="user-profile-left">
+                        <div class="user-avatar-lg">
+                            <% if (logo) { %>
+                                <img src="<%= imageUrl(logo) %>" alt="<%= teamName %>">
+                            <% } else { %>
+                                <i class="fa-solid fa-shield-halved"></i>
+                            <% } %>
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                                <h1 style="margin: 0; font-size: 1.6rem; font-weight: 900; color: #fff;"><%= teamName %></h1>
+                                <div class="copy-badge" onclick="copyToClipboard('<%= user._id %>')" title="Click to copy User ID">
+                                    <span><%= user._id %></span>
+                                    <i class="fa-regular fa-copy"></i>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem;">
+                                Registered on: <strong style="color: #e2e8f0;"><%= joinedDate %></strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <% if (whatsapp) { %>
+                        <a href="https://wa.me/91<%= whatsapp %>" target="_blank" class="btn-whatsapp-action">
+                            <i class="fa-brands fa-whatsapp" style="font-size: 1.1rem;"></i> Chat with <%= whatsapp %>
+                        </a>
+                    <% } %>
+                </div>
+
+                <!-- 3 Wallet Cards -->
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Available Balance</span>
+                            <span class="stat-num text-green" id="dispAvail">₹<%= avail %></span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon icon-yellow">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Won PrizePool</span>
+                            <span class="stat-num" style="color: #f59e0b;" id="dispPrize">₹<%= prize %></span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Total Cash</span>
+                            <span class="stat-num" style="color: #60a5fa;" id="dispTotal">₹<%= total %></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wallet Editor Box -->
+                <div class="wallet-editor-card">
+                    <h2 class="card-title" style="margin-bottom: 1rem;">
+                        <i class="fa-solid fa-pen-to-square" style="color: #22c55e;"></i> Edit User Wallet Balance
+                    </h2>
+
+                    <div class="wallet-mode-pills">
+                        <button type="button" class="wallet-mode-pill active" id="btnModeSet" onclick="switchWalletMode('set')">
+                            <i class="fa-solid fa-sliders"></i> Set Exact Balances
+                        </button>
+                        <button type="button" class="wallet-mode-pill" id="btnModeAdjust" onclick="switchWalletMode('adjust')">
+                            <i class="fa-solid fa-plus-minus"></i> Add / Deduct Funds
+                        </button>
+                    </div>
+
+                    <form id="detailWalletForm" onsubmit="submitDetailWalletEdit(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label id="lblDetailAvail" for="inpDetailAvail">Available Balance (₹):</label>
+                                <input type="number" id="inpDetailAvail" class="form-control" value="<%= avail %>" required step="any">
+                                <div class="quick-presets" id="presetsDetailAvail" style="display: none;">
+                                    <button type="button" class="btn-preset" onclick="quickAdd('inpDetailAvail', 50)">+50</button>
+                                    <button type="button" class="btn-preset" onclick="quickAdd('inpDetailAvail', 100)">+100</button>
+                                    <button type="button" class="btn-preset" onclick="quickAdd('inpDetailAvail', 500)">+500</button>
+                                    <button type="button" class="btn-preset" onclick="quickAdd('inpDetailAvail', -50)">-50</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label id="lblDetailPrize" for="inpDetailPrize">Won PrizePool (₹):</label>
+                                <input type="number" id="inpDetailPrize" class="form-control" value="<%= prize %>" required step="any">
+                                <div class="quick-presets" id="presetsDetailPrize" style="display: none;">
+                                    <button type="button" class="btn-preset" onclick="quickAdd('inpDetailPrize', 50)">+50</button>
+                                    <button type="button" class="btn-preset" onclick="quickAdd('inpDetailPrize', 100)">+100</button>
+                                    <button type="button" class="btn-preset" onclick="quickAdd('inpDetailPrize', 500)">+500</button>
+                                    <button type="button" class="btn-preset" onclick="quickAdd('inpDetailPrize', -50)">-50</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: flex-end;">
+                            <button type="submit" id="btnDetailSave" class="btn-submit-wallet">
+                                <i class="fa-solid fa-floppy-disk"></i> Update Wallet Balance
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Drop Locations & Team Settings -->
+                <div class="content-card" style="margin-bottom: 1.5rem;">
+                    <h2 class="card-title" style="margin-bottom: 1rem;">
+                        <i class="fa-solid fa-crosshairs" style="color: var(--accent-light);"></i> Registered Drop Locations (Client Side)
+                    </h2>
+                    <div class="stats-row" style="margin-bottom: 0;">
+                        <div class="stat-card" style="border-left: 4px solid #22c55e;">
+                            <div class="stat-content">
+                                <span class="stat-label"><i class="fa-solid fa-map-location-dot"></i> Erangle Drop</span>
+                                <span class="stat-num" style="font-size: 1.25rem; color: #22c55e;"><%= drop.erangle || 'Not specified' %></span>
+                            </div>
+                        </div>
+                        <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+                            <div class="stat-content">
+                                <span class="stat-label"><i class="fa-solid fa-map-location-dot"></i> Miramar Drop</span>
+                                <span class="stat-num" style="font-size: 1.25rem; color: #f59e0b;"><%= drop.miramar || 'Not specified' %></span>
+                            </div>
+                        </div>
+                        <div class="stat-card" style="border-left: 4px solid #3b82f6;">
+                            <div class="stat-content">
+                                <span class="stat-label"><i class="fa-solid fa-map-location-dot"></i> Rondo Drop</span>
+                                <span class="stat-num" style="font-size: 1.25rem; color: #3b82f6;"><%= drop.rando || 'Not specified' %></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Withdrawals History -->
+                <div class="content-card" style="margin-bottom: 1.5rem;">
+                    <div class="card-header-flex">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-wallet" style="color: #f59e0b;"></i> Withdrawal Requests History (<%= withdrawals.length %>)
+                        </h2>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Amount</th>
+                                    <th>Method / Payout Detail</th>
+                                    <th>Status</th>
+                                    <th>Deducted Balance</th>
+                                    <th>Admin Note</th>
+                                    <th>Requested Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (withdrawals && withdrawals.length > 0) { %>
+                                    <% for (let w of withdrawals) { 
+                                        const wDate = w._id ? new Date(parseInt(w._id.toString().substring(0, 8), 16) * 1000).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'N/A';
+                                    %>
+                                    <tr>
+                                        <td><strong class="text-green" style="font-size: 1.05rem;">₹<%= w.amount %></strong></td>
+                                        <td>
+                                            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;"><%= w.payoutMethod %></div>
+                                            <% if (w.payoutMethod === 'qr') { %>
+                                                <a href="<%= w.payoutDetail %>" target="_blank" style="color: #3b82f6;">
+                                                    <i class="fa-solid fa-qrcode"></i> View QR Code Image
+                                                </a>
+                                            <% } else { %>
+                                                <code><%= w.payoutDetail || 'N/A' %></code>
+                                            <% } %>
+                                        </td>
+                                        <td><span class="badge-status badge-<%= w.status %>"><%= w.status %></span></td>
+                                        <td><small style="color: var(--text-muted);">Avail: ₹<%= w.availableBalanceDeducted || 0 %> | Prize: ₹<%= w.prizePoolDeducted || 0 %></small></td>
+                                        <td><%= w.note || '-' %></td>
+                                        <td><small><%= wDate %></small></td>
+                                    </tr>
+                                    <% } %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                                            No withdrawal requests made by this user.
+                                        </td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Deposits / Add Cash History -->
+                <div class="content-card" style="margin-bottom: 1.5rem;">
+                    <div class="card-header-flex">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-qrcode" style="color: #22c55e;"></i> Add Cash / Deposits History (<%= deposits.length %>)
+                        </h2>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Amount</th>
+                                    <th>Payment Method / Provider</th>
+                                    <th>UTR / Gateway Txn ID</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (deposits && deposits.length > 0) { %>
+                                    <% for (let d of deposits) { 
+                                        const dDate = d.date ? new Date(d.date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'N/A';
+                                    %>
+                                    <tr>
+                                        <td><code><%= d.orderId || '-' %></code></td>
+                                        <td><strong class="text-green" style="font-size: 1.05rem;">₹<%= d.amount %></strong></td>
+                                        <td><%= d.paymentMethod || 'UPI QR' %> (<%= d.provider || 'paytm' %>)</td>
+                                        <td><code><%= d.utr || d.gatewayTxnId || '-' %></code></td>
+                                        <td><span class="badge-status badge-<%= d.status %>"><%= d.status %></span></td>
+                                        <td><small><%= dDate %></small></td>
+                                    </tr>
+                                    <% } %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                                            No deposits recorded for this user.
+                                        </td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Booked Scrims / Matches -->
+                <div class="content-card">
+                    <div class="card-header-flex">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-trophy" style="color: var(--accent-light);"></i> Tournament / Scrim Registrations (<%= scrims.length %>)
+                        </h2>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Match Title</th>
+                                    <th>Date & Timings</th>
+                                    <th>Entry Fee</th>
+                                    <th>Prize Pool</th>
+                                    <th>Slot Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (scrims && scrims.length > 0) { %>
+                                    <% for (let s of scrims) { %>
+                                    <tr>
+                                        <td><strong><%= s.categoryTitle %></strong></td>
+                                        <td><%= s.matchTitle %></td>
+                                        <td><small><%= s.date %> <%= s.idpTimings ? '(' + s.idpTimings + ')' : '' %></small></td>
+                                        <td>₹<%= s.entryFee %></td>
+                                        <td><span class="text-green">₹<%= s.prizePool %></span></td>
+                                        <td><span class="badge-status badge-<%= s.teamStatus === 'approved' ? 'approved' : 'pending' %>"><%= s.teamStatus %></span></td>
+                                    </tr>
+                                    <% } %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                                            No scrims booked yet by this squad.
+                                        </td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+
+    <script>
+        let currentDetailMode = 'set';
+        const userId = "<%= user._id %>";
+        let liveAvail = <%= avail %>;
+        let livePrize = <%= prize %>;
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('User ID copied to clipboard: ' + text);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+        function switchWalletMode(mode) {
+            currentDetailMode = mode;
+            const btnSet = document.getElementById('btnModeSet');
+            const btnAdjust = document.getElementById('btnModeAdjust');
+            const presetsAvail = document.getElementById('presetsDetailAvail');
+            const presetsPrize = document.getElementById('presetsDetailPrize');
+
+            if (mode === 'set') {
+                btnSet.classList.add('active');
+                btnAdjust.classList.remove('active');
+                presetsAvail.style.display = 'none';
+                presetsPrize.style.display = 'none';
+                document.getElementById('lblDetailAvail').textContent = 'New Available Balance (₹):';
+                document.getElementById('lblDetailPrize').textContent = 'New Won PrizePool (₹):';
+                document.getElementById('inpDetailAvail').value = liveAvail;
+                document.getElementById('inpDetailPrize').value = livePrize;
+            } else {
+                btnSet.classList.remove('active');
+                btnAdjust.classList.add('active');
+                presetsAvail.style.display = 'flex';
+                presetsPrize.style.display = 'flex';
+                document.getElementById('lblDetailAvail').textContent = 'Amount to Add / Deduct (Available ₹):';
+                document.getElementById('lblDetailPrize').textContent = 'Amount to Add / Deduct (PrizePool ₹):';
+                document.getElementById('inpDetailAvail').value = 0;
+                document.getElementById('inpDetailPrize').value = 0;
+            }
+        }
+
+        function quickAdd(inputId, delta) {
+            const input = document.getElementById(inputId);
+            let current = parseFloat(input.value) || 0;
+            input.value = current + delta;
+        }
+
+        async function submitDetailWalletEdit(event) {
+            event.preventDefault();
+            const avail = parseFloat(document.getElementById('inpDetailAvail').value);
+            const prize = parseFloat(document.getElementById('inpDetailPrize').value);
+
+            if (isNaN(avail) || isNaN(prize)) {
+                alert('Please enter valid numeric amounts.');
+                return;
+            }
+
+            const btn = document.getElementById('btnDetailSave');
+            const origHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+
+            try {
+                const res = await fetch(`/admin/user/${userId}/edit-wallet`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mode: currentDetailMode,
+                        availableBalance: avail,
+                        prizePool: prize
+                    })
+                });
+
+                const result = await res.json();
+                if (res.ok && result.success) {
+                    alert(result.msg || 'Wallet updated successfully!');
+                    liveAvail = result.wallet.availableBalance;
+                    livePrize = result.wallet.prizePool;
+
+                    document.getElementById('dispAvail').textContent = '₹' + liveAvail;
+                    document.getElementById('dispPrize').textContent = '₹' + livePrize;
+                    document.getElementById('dispTotal').textContent = '₹' + result.totalBalance;
+
+                    switchWalletMode(currentDetailMode);
+                } else {
+                    alert(result.msg || 'Failed to update wallet.');
+                }
+            } catch (err) {
+                console.error('Wallet update error:', err);
+                alert('Something went wrong while updating wallet.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+    </script>
+</body>
+</html>

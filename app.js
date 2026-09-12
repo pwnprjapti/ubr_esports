@@ -1,5 +1,8 @@
 import express from "express"
 import dotenv from "dotenv"
+dotenv.config();
+
+import compression from "compression"
 import ejs from "ejs"
 import path from "path"
 import fs from "fs"
@@ -26,42 +29,59 @@ import pointTableModel from "./models/pointtable.model.js"
 import pointTableCoverModel from "./models/pointtablecover.model.js"
 import { uploadToCloudinary, deleteFromCloudinary } from "./utils/cloudinary.js"
 
-
 const app = express();
+
+// Enable HTTP compression for all responses (drastically speeds up HTML, JSON, JS, CSS transfer)
+app.use(compression());
 
 app.use(cors({
   origin: "https://ubresports.in",
   credentials: true
 }));
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// database connection 
-mongoose.connect(process.env.MONGO_URI).then(()=> console.log("database connected successfully..")).catch(err=>console.log(err));
+// Serve static assets BEFORE session & passport so static requests don't hit MongoDB!
+app.use(express.static(path.join(__dirname, 'assets'), { maxAge: '1d' }));
+app.use('/images', express.static(path.join(__dirname, 'public', 'images'), { maxAge: '1d' }));
+
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf.toString();
+    }
+}));
+app.use(express.urlencoded({ extended: true }));
+
+// database connection with connection pool optimization
+mongoose.connect(process.env.MONGO_URI, {
+    maxPoolSize: 50,
+    minPoolSize: 5,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000
+}).then(() => console.log("database connected successfully..")).catch(err => console.log(err));
 
 app.set('trust proxy', 1);
 app.use(session({
-    secret:process.env.SESSION_SECRET,
-    resave:false,
-    saveUninitialized:true,
+    secret: process.env.SESSION_SECRET || "ubr-secret",
+    resave: false,
+    saveUninitialized: false, // Prevents creating junk sessions in MongoDB for guests/bots
     store: MongoStore.create({
         mongoUrl: process.env.MONGO_URI,
         collectionName: 'sessions',
-        ttl: 14 * 24 * 60 * 60 // 14 days
+        ttl: 14 * 24 * 60 * 60, // 14 days
+        touchAfter: 24 * 3600 // Only update session in DB once in 24 hours if data has not changed
     }),
-    cookie:{
-        httpOnly:true,
-        secure:process.env.NODE_ENV === "production",
+    cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
-        maxAge: 1000*60*60*24*365 // 1 year
+        maxAge: 1000 * 60 * 60 * 24 * 365 // 1 year
     }
 }));
 
 app.use(passport.initialize());
 app.use(passport.session());
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -88,15 +108,6 @@ app.locals.imageUrl = function(img) {
     }
     return `/images/${img}`;
 };
-
-app.use(express.static(path.join(__dirname, 'assets')));
-app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
-app.use(express.json({
-    verify: (req, res, buf) => {
-        req.rawBody = buf.toString();
-    }
-}));
-app.use(express.urlencoded({ extended: true }));
 
 //middleware
 
@@ -563,14 +574,13 @@ app.get("/category/:id", async (req, res)=>{
         let wallet = null;
 
         if (req.isAuthenticated()) {
-            
             const details = await userModel.findOne({gglId:req.user.id});
-            console.log(details.wallet.balance);
-            if (details.team && details.team.teamName) {
-                userTeamName = details.team.teamName;
+            if (details) {
+                if (details.team && details.team.teamName) {
+                    userTeamName = details.team.teamName;
+                }
+                wallet = details.wallet;
             }
-
-             wallet = details.wallet;
         }
         console.log(wallet)
         res.render("pages/category", { matches, id, baseurl, userTeamName, wallet });
@@ -912,6 +922,263 @@ app.get("/admin/dashboard", adminAuthCheck,  async (req, res)=>{
         console.log(err)
     }
 })
+
+// Helper to retrieve booked scrims for a user's squad
+async function getUserScrims(user) {
+    const scrims = [];
+    if (!user || !user.team || (!user.team.teamName && !user.team._id)) {
+        return scrims;
+    }
+    const orConditions = [];
+    if (user.team.teamName) {
+        orConditions.push({ "matches.teams.teamName": user.team.teamName });
+    }
+    if (user.team._id) {
+        orConditions.push({ "matches.teams._id": user.team._id });
+    }
+    try {
+        const categories = await categoryModel.find({ $or: orConditions });
+        for (const cat of categories) {
+            if (!cat.matches) continue;
+            for (const m of cat.matches) {
+                if (!m.teams) continue;
+                const joinedTeam = m.teams.find(t => 
+                    (user.team._id && t._id && t._id.toString() === user.team._id.toString()) ||
+                    (user.team.teamName && t.teamName && t.teamName.toLowerCase() === user.team.teamName.toLowerCase())
+                );
+                if (joinedTeam) {
+                    scrims.push({
+                        categoryId: cat._id,
+                        categoryTitle: cat.title,
+                        matchId: m._id,
+                        matchTitle: m.title,
+                        date: m.date,
+                        entryFee: m.entryFee || 0,
+                        prizePool: m.prizePool || 0,
+                        idpTimings: m.idpTimings || "",
+                        teamStatus: joinedTeam.status || "registered",
+                        joinedAt: joinedTeam._id ? joinedTeam._id.getTimestamp() : null
+                    });
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Error fetching user scrims:", err);
+    }
+    scrims.sort((a, b) => {
+        const timeA = a.joinedAt ? new Date(a.joinedAt).getTime() : 0;
+        const timeB = b.joinedAt ? new Date(b.joinedAt).getTime() : 0;
+        return timeB - timeA;
+    });
+    return scrims;
+}
+
+// 1. Admin Users List with Search & Pagination
+app.get("/admin/users", adminAuthCheck, async (req, res) => {
+    try {
+        const search = req.query.search ? req.query.search.trim() : '';
+        let filter = {};
+
+        if (search) {
+            const regex = new RegExp(search, 'i');
+            const searchNum = Number(search);
+            const orConditions = [
+                { gglId: regex },
+                { "team.teamName": regex },
+                { "dropDetails.erangle": regex },
+                { "dropDetails.rando": regex },
+                { "dropDetails.miramar": regex }
+            ];
+            if (mongoose.Types.ObjectId.isValid(search)) {
+                orConditions.push({ _id: new mongoose.Types.ObjectId(search) });
+            }
+            orConditions.push({
+                $expr: {
+                    $regexMatch: {
+                        input: { $toString: "$_id" },
+                        regex: regex
+                    }
+                }
+            });
+            if (!isNaN(searchNum) && search.length >= 3) {
+                orConditions.push({ "team.whatsappNumber": searchNum });
+            }
+            filter.$or = orConditions;
+        }
+
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = 25;
+        const skip = (page - 1) * limit;
+
+        const totalUsers = await userModel.countDocuments(filter);
+        const totalPages = Math.ceil(totalUsers / limit) || 1;
+        const users = await userModel.find(filter).sort({ _id: -1 }).skip(skip).limit(limit);
+
+        const allUsersCount = await userModel.countDocuments();
+
+        // Calculate total wallet balances across system
+        const balanceAgg = await userModel.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalAvailable: { $sum: { $ifNull: ["$wallet.balance.availableBalance", 0] } },
+                    totalPrizePool: { $sum: { $ifNull: ["$wallet.balance.prizePool", 0] } }
+                }
+            }
+        ]);
+
+        const totalAvailable = balanceAgg[0]?.totalAvailable || 0;
+        const totalPrizePool = balanceAgg[0]?.totalPrizePool || 0;
+        const totalSystemBalance = totalAvailable + totalPrizePool;
+
+        res.render("admin/pages/users", {
+            users,
+            page,
+            totalPages,
+            totalUsers,
+            allUsersCount,
+            totalAvailable,
+            totalPrizePool,
+            totalSystemBalance,
+            search,
+            baseurl
+        });
+    } catch (err) {
+        console.error("Error fetching admin users:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+// 2. Admin User Details JSON API (Used by Quick Modal)
+app.get("/admin/api/user/:id", adminAuthCheck, async (req, res) => {
+    try {
+        const { id } = req.params;
+        let user = null;
+        if (mongoose.Types.ObjectId.isValid(id)) {
+            user = await userModel.findById(id);
+        }
+        if (!user) {
+            user = await userModel.findOne({ gglId: id });
+        }
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found." });
+        }
+
+        const withdrawals = await withdrawalModel.find({ id: user.gglId }).sort({ _id: -1 });
+        const deposits = await depositModel.find({ id: user.gglId }).sort({ date: -1, _id: -1 });
+        const scrims = await getUserScrims(user);
+
+        return res.status(200).json({
+            success: true,
+            user: {
+                _id: user._id,
+                gglId: user.gglId,
+                team: user.team,
+                wallet: user.wallet,
+                dropDetails: user.dropDetails,
+                createdAt: user._id ? user._id.getTimestamp() : null
+            },
+            withdrawals,
+            deposits,
+            scrims
+        });
+    } catch (err) {
+        console.error("Error fetching user details API:", err);
+        return res.status(500).json({ success: false, msg: "Internal server error." });
+    }
+});
+
+// 3. Admin Dedicated User Detail Full Page
+app.get("/admin/user/:id", adminAuthCheck, async (req, res) => {
+    try {
+        const { id } = req.params;
+        let user = null;
+        if (mongoose.Types.ObjectId.isValid(id)) {
+            user = await userModel.findById(id);
+        }
+        if (!user) {
+            user = await userModel.findOne({ gglId: id });
+        }
+        if (!user) {
+            return res.status(404).send("User not found.");
+        }
+
+        const withdrawals = await withdrawalModel.find({ id: user.gglId }).sort({ _id: -1 });
+        const deposits = await depositModel.find({ id: user.gglId }).sort({ date: -1, _id: -1 });
+        const scrims = await getUserScrims(user);
+
+        res.render("admin/pages/user-detail", {
+            user,
+            withdrawals,
+            deposits,
+            scrims,
+            baseurl
+        });
+    } catch (err) {
+        console.error("Error rendering user detail page:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+// 4. Admin Edit User Wallet Endpoint
+app.post("/admin/user/:id/edit-wallet", adminAuthCheck, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { mode, availableBalance, prizePool } = req.body;
+
+        let user = null;
+        if (mongoose.Types.ObjectId.isValid(id)) {
+            user = await userModel.findById(id);
+        }
+        if (!user) {
+            user = await userModel.findOne({ gglId: id });
+        }
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found." });
+        }
+
+        if (!user.wallet) {
+            user.wallet = { balance: { availableBalance: 0, prizePool: 0 }, withdrawal: [] };
+        }
+        if (!user.wallet.balance) {
+            user.wallet.balance = { availableBalance: 0, prizePool: 0 };
+        }
+        if (typeof user.wallet.balance.availableBalance === 'undefined') user.wallet.balance.availableBalance = 0;
+        if (typeof user.wallet.balance.prizePool === 'undefined') user.wallet.balance.prizePool = 0;
+
+        const newAvail = Number(availableBalance);
+        const newPrize = Number(prizePool);
+
+        if (isNaN(newAvail) || isNaN(newPrize)) {
+            return res.status(400).json({ success: false, msg: "Invalid numeric balance entered." });
+        }
+
+        if (mode === "adjust") {
+            user.wallet.balance.availableBalance += newAvail;
+            user.wallet.balance.prizePool += newPrize;
+        } else {
+            user.wallet.balance.availableBalance = Math.max(0, newAvail);
+            user.wallet.balance.prizePool = Math.max(0, newPrize);
+        }
+
+        if (user.wallet.balance.availableBalance < 0) user.wallet.balance.availableBalance = 0;
+        if (user.wallet.balance.prizePool < 0) user.wallet.balance.prizePool = 0;
+
+        await user.save();
+
+        const totalBalance = user.wallet.balance.availableBalance + user.wallet.balance.prizePool;
+
+        return res.status(200).json({
+            success: true,
+            msg: "Wallet updated successfully!",
+            wallet: user.wallet.balance,
+            totalBalance
+        });
+    } catch (err) {
+        console.error("Error editing user wallet:", err);
+        return res.status(500).json({ success: false, msg: "Internal server error." });
+    }
+});
 
 app.get("/admin/categories", adminAuthCheck, async (req, res)=>{
     const categories = await categoryModel.find();

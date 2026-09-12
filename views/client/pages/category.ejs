@@ -325,12 +325,17 @@
                         <% } %>
                        
                         <div class="card-actions-grid" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; width: 100%;">
-                             <% if (registeredTeam) { %>
-                                 <% if (match.whatsappGroupLink) { %>
-                                     <a href="<%= match.whatsappGroupLink %>" target="_blank" class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #25d366; color: white; text-decoration: none; font-weight: 800; border-radius: 8px; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#128c7e'" onmouseout="this.style.backgroundColor='#25d366'">
-                                         <i class="fa-brands fa-whatsapp" style="margin-right: 0.5rem;"></i> TAP TO JOIN IDP GROUP
-                                     </a>
-                                 <% } else { %>
+                              <% if (registeredTeam) { %>
+                                  <% if (match.whatsappGroupLink) { %>
+                                      <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
+                                          <a href="<%= match.whatsappGroupLink %>" target="_blank" class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #25d366; color: white; text-decoration: none; font-weight: 800; border-radius: 8px; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#128c7e'" onmouseout="this.style.backgroundColor='#25d366'">
+                                              <i class="fa-brands fa-whatsapp" style="margin-right: 0.5rem; font-size: 1.1rem;"></i> TAP TO JOIN IDP GROUP
+                                          </a>
+                                          <button type="button" class="slot-btn" onclick="copyWhatsAppLink('<%= match.whatsappGroupLink %>', this)" title="Copy WhatsApp Group Link" style="width: 100%; min-height: 40px; margin: 0; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: rgba(37, 211, 102, 0.12); border: 1px solid rgba(37, 211, 102, 0.5); color: #25d366; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-weight: 700; font-size: 0.88rem;" onmouseover="this.style.backgroundColor='rgba(37, 211, 102, 0.22)'" onmouseout="this.style.backgroundColor='rgba(37, 211, 102, 0.12)'">
+                                              <i class="fa-regular fa-copy"></i> <span>Copy WhatsApp Link</span>
+                                          </button>
+                                      </div>
+                                  <% } else { %>
                                      <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #28a745; color: white;" disabled>
                                          <i class="fa-solid fa-circle-check"></i> Booked Successfully
                                      </button>
@@ -812,6 +817,56 @@ function closeModal() {
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
+        }
+
+        // Copy WhatsApp Group Link Helper
+        function copyWhatsAppLink(link, btn) {
+            if (!link) {
+                alert("WhatsApp Group Link not available.");
+                return;
+            }
+
+            function showSuccess() {
+                const origHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Link Copied!</span>';
+                btn.style.backgroundColor = '#25d366';
+                btn.style.color = '#ffffff';
+                setTimeout(() => {
+                    btn.innerHTML = origHtml;
+                    btn.style.backgroundColor = 'rgba(37, 211, 102, 0.12)';
+                    btn.style.color = '#25d366';
+                }, 2500);
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(link).then(() => {
+                    showSuccess();
+                }).catch(err => {
+                    fallbackCopyWhatsApp(link, showSuccess);
+                });
+            } else {
+                fallbackCopyWhatsApp(link, showSuccess);
+            }
+        }
+
+        function fallbackCopyWhatsApp(text, onSuccess) {
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                if (successful && onSuccess) {
+                    onSuccess();
+                } else {
+                    prompt('Copy WhatsApp Group Link:', text);
+                }
+            } catch (e) {
+                prompt('Copy WhatsApp Group Link:', text);
+            }
         }
     </script>
 

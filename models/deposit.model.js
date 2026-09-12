@@ -3,11 +3,11 @@ import mongoose from "mongoose";
 const depositSchema = new mongoose.Schema({
     orderId: { type: String, unique: true, sparse: true },
     playerName: { type: String, required: true },
-    id: { type: String, required: true }, // user's gglId
+    id: { type: String, required: true, index: true }, // user's gglId
     amount: { type: Number, required: true },
     currency: { type: String, default: "INR" },
     screenshot: { type: String, default: "" }, // Optional legacy screenshot URL
-    status: { type: String, default: "pending" }, // pending, approved, failed
+    status: { type: String, default: "pending", index: true }, // pending, approved, failed
     utr: { type: String, default: "" },
     gatewayTxnId: { type: String, default: "" },
     paymentMethod: { type: String, default: "UPI QR" },

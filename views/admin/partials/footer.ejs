@@ -30,7 +30,10 @@
 
         // Highlight active link based on URL
         const currentPath = window.location.pathname;
-        if (currentPath.includes('/admin/category')) {
+        if (currentPath.includes('/admin/users') || currentPath.includes('/admin/user')) {
+            const el = document.getElementById('nav-users');
+            if (el) el.classList.add('active');
+        } else if (currentPath.includes('/admin/category') || currentPath.includes('/admin/categories')) {
             const el = document.getElementById('nav-category');
             if (el) el.classList.add('active');
         } else if (currentPath.includes('/admin/teams')) {
@@ -39,7 +42,13 @@
         } else if (currentPath.includes('/admin/withdrawals')) {
             const el = document.getElementById('nav-withdrawals');
             if (el) el.classList.add('active');
-        } else if (currentPath.includes('/admin')) {
+        } else if (currentPath.includes('/admin/transactions')) {
+            const el = document.getElementById('nav-transactions');
+            if (el) el.classList.add('active');
+        } else if (currentPath.includes('/admin/point-table')) {
+            const el = document.getElementById('nav-pointtable');
+            if (el) el.classList.add('active');
+        } else if (currentPath === '/admin' || currentPath === '/admin/' || currentPath.includes('/admin/dashboard')) {
             const el = document.getElementById('nav-dashboard');
             if (el) el.classList.add('active');
         }

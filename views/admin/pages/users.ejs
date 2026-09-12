@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Users Management | UBR Esports Admin</title>
+    <link rel="icon" type="image/png" href="/images/ubrLogo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css">
+    <link rel="stylesheet" href="/css/admin/dashboard.css">
+    <style>
+        .search-bar-wrap {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .search-input-group {
+            position: relative;
+            flex: 1;
+            min-width: 260px;
+        }
+        .search-input-group i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        .search-input {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-input:focus {
+            border-color: var(--accent-light);
+        }
+        .btn-search {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.4rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn-search:hover {
+            background: var(--accent-light);
+            transform: translateY(-1px);
+        }
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1.2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+        }
+        .btn-reset:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .copy-badge {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-color);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.82rem;
+            color: #e2e8f0;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .copy-badge:hover {
+            background: rgba(215, 38, 61, 0.2);
+            border-color: var(--accent-light);
+            color: #fff;
+        }
+        .btn-action-view {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.2s ease;
+        }
+        .btn-action-view:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        .btn-action-wallet {
+            background: #059669;
+            color: #fff;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.2s ease;
+        }
+        .btn-action-wallet:hover {
+            background: #047857;
+            transform: translateY(-1px);
+        }
+        .btn-whatsapp-sm {
+            background: #128c7e;
+            color: white;
+            padding: 0.25rem 0.55rem;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            transition: background 0.2s;
+        }
+        .btn-whatsapp-sm:hover {
+            background: #25d366;
+        }
+        .pagination-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 0.5rem 0.5rem 0.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .pagination-links {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+        }
+        .page-link-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 0.45rem 0.85rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .page-link-btn:hover {
+            color: #fff;
+            border-color: var(--accent-light);
+        }
+        .page-link-btn.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .page-link-btn.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* Modal Styles */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        .modal-backdrop.open {
+            display: flex;
+        }
+        .modal-card {
+            background: #13141f;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+            overflow: hidden;
+            animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.96); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-header-box {
+            padding: 1.25rem 1.75rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .modal-close-icon {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .modal-close-icon:hover {
+            color: #fff;
+        }
+        .modal-tabs-bar {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.75rem 1.75rem 0 1.75rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(0,0,0,0.15);
+            overflow-x: auto;
+        }
+        .modal-tab-btn {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-muted);
+            padding: 0.65rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .modal-tab-btn:hover {
+            color: #fff;
+        }
+        .modal-tab-btn.active {
+            color: var(--accent-light);
+            border-bottom-color: var(--accent-light);
+        }
+        .modal-body-scroll {
+            padding: 1.5rem 1.75rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-tab-pane {
+            display: none;
+        }
+        .modal-tab-pane.active {
+            display: block;
+        }
+
+        /* Detail Cards & Grids */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .info-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        .info-card-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.35rem;
+            font-weight: 700;
+        }
+        .info-card-value {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #fff;
+            word-break: break-all;
+        }
+        .badge-status {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .badge-approved { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .badge-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-rejected, .badge-failed { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        /* Wallet Edit Form in Modal */
+        .wallet-edit-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-top: 1rem;
+        }
+        .wallet-mode-pills {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .wallet-mode-pill {
+            flex: 1;
+            text-align: center;
+            padding: 0.55rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .wallet-mode-pill.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+        .form-control {
+            width: 100%;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.65rem 0.85rem;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus {
+            border-color: var(--accent-light);
+        }
+        .quick-presets {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            margin-top: 0.4rem;
+        }
+        .btn-preset {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: #e2e8f0;
+            padding: 0.25rem 0.6rem;
+            border-radius: 5px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-preset:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="page-title-bar">
+                    <div>
+                        <h1 class="page-heading">Users Management</h1>
+                        <p class="page-sub">View all users with User IDs, inspect client-side details & edit wallet amounts.</p>
+                    </div>
+                </div>
+
+                <!-- 3 Stats Cards -->
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Total Users</span>
+                            <span class="stat-num"><%= allUsersCount %></span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Total Available Balance</span>
+                            <span class="stat-num text-green">₹<%= totalAvailable.toLocaleString('en-IN') %></span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon icon-yellow">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-label">Total Won PrizePool</span>
+                            <span class="stat-num" style="color: #f59e0b;">₹<%= totalPrizePool.toLocaleString('en-IN') %></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search & Filters -->
+                <form action="/admin/users" method="GET" class="search-bar-wrap">
+                    <div class="search-input-group">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" name="search" value="<%= search %>" class="search-input" placeholder="Search by User ID, Squad Name, Mobile Number...">
+                    </div>
+                    <button type="submit" class="btn-search">
+                        <i class="fa-solid fa-filter"></i> Search
+                    </button>
+                    <% if (search) { %>
+                        <a href="/admin/users" class="btn-reset">
+                            <i class="fa-solid fa-xmark"></i> Clear Filter
+                        </a>
+                    <% } %>
+                </form>
+
+                <!-- Users Table Card -->
+                <div class="content-card">
+                    <div class="card-header-flex" style="padding-bottom: 0.75rem;">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-id-card"></i> Registered Users List 
+                            <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">
+                                (Showing <%= users.length %> of <%= totalUsers %> <%= search ? 'matching' : '' %> users)
+                            </span>
+                        </h2>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Squad / User</th>
+                                    <th>User ID</th>
+                                    <th>WhatsApp Contact</th>
+                                    <th>Available Balance</th>
+                                    <th>Won PrizePool</th>
+                                    <th>Total Cash</th>
+                                    <th>Joined At</th>
+                                    <th style="text-align: center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (users && users.length > 0) { %>
+                                    <% for (let u of users) { 
+                                        const avail = (u.wallet && u.wallet.balance && typeof u.wallet.balance.availableBalance !== 'undefined') ? Number(u.wallet.balance.availableBalance) : 0;
+                                        const prize = (u.wallet && u.wallet.balance && typeof u.wallet.balance.prizePool !== 'undefined') ? Number(u.wallet.balance.prizePool) : 0;
+                                        const total = avail + prize;
+                                        const teamName = (u.team && u.team.teamName) ? u.team.teamName : "No Team Setup";
+                                        const logo = (u.team && u.team.teamLogo) ? u.team.teamLogo : null;
+                                        const whatsapp = (u.team && u.team.whatsappNumber) ? u.team.whatsappNumber : null;
+                                        const joinedDate = (u._id && u._id.getTimestamp) ? u._id.getTimestamp().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
+                                    %>
+                                    <tr id="user-row-<%= u._id %>">
+                                        <td>
+                                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                                <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(215,38,61,0.2); display: flex; align-items: center; justify-content: center; color: #ff455e; overflow: hidden; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
+                                                    <% if (logo) { %>
+                                                        <img src="<%= imageUrl(logo) %>" alt="<%= teamName %>" style="width: 100%; height: 100%; object-fit: cover;">
+                                                    <% } else { %>
+                                                        <i class="fa-solid fa-shield-halved"></i>
+                                                    <% } %>
+                                                </div>
+                                                <div>
+                                                    <strong style="color: #fff; font-size: 0.95rem;"><%= teamName %></strong>
+                                                    <% if (u.name) { %>
+                                                        <div style="font-size: 0.78rem; color: var(--text-muted);"><%= u.name %></div>
+                                                    <% } %>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="copy-badge" onclick="copyToClipboard('<%= u._id %>')" title="Click to copy User ID">
+                                                <span><%= u._id %></span>
+                                                <i class="fa-regular fa-copy"></i>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <% if (whatsapp) { %>
+                                                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                                    <span style="font-weight: 600; font-size: 0.9rem;"><%= whatsapp %></span>
+                                                    <a href="https://wa.me/91<%= whatsapp %>" target="_blank" class="btn-whatsapp-sm" title="Chat on WhatsApp">
+                                                        <i class="fa-brands fa-whatsapp"></i> Chat
+                                                    </a>
+                                                </div>
+                                            <% } else { %>
+                                                <span style="color: var(--text-muted); font-size: 0.85rem;">Not added</span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <strong class="text-green user-avail-<%= u._id %>" style="font-size: 0.95rem;">₹<%= avail %></strong>
+                                        </td>
+                                        <td>
+                                            <strong style="color: #f59e0b; font-size: 0.95rem;" class="user-prize-<%= u._id %>">₹<%= prize %></strong>
+                                        </td>
+                                        <td>
+                                            <strong style="color: #fff; font-size: 1rem;" class="user-total-<%= u._id %>">₹<%= total %></strong>
+                                        </td>
+                                        <td>
+                                            <span style="color: var(--text-muted); font-size: 0.85rem;"><%= joinedDate %></span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <div style="display: inline-flex; gap: 0.4rem; justify-content: center;">
+                                                <button type="button" class="btn-action-view" onclick="openUserModal('<%= u._id %>')" title="View full client-side information">
+                                                    <i class="fa-solid fa-eye"></i> View
+                                                </button>
+                                                <button type="button" class="btn-action-wallet" 
+                                                    data-user-id="<%= u._id %>"
+                                                    data-team-name="<%= teamName %>"
+                                                    data-avail="<%= avail %>"
+                                                    data-prize="<%= prize %>"
+                                                    onclick="handleEditWalletClick(this)" 
+                                                    title="Edit wallet balance">
+                                                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <% } %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="8" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+                                            <i class="fa-solid fa-user-slash" style="font-size: 2.5rem; margin-bottom: 0.75rem; display: block; opacity: 0.5;"></i>
+                                            No users found <%= search ? 'matching "' + search + '"' : '' %>.
+                                        </td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <% if (totalPages > 1) { %>
+                    <div class="pagination-bar">
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">
+                            Page <%= page %> of <%= totalPages %>
+                        </span>
+                        <div class="pagination-links">
+                            <a href="/admin/users?page=<%= page - 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %>" 
+                               class="page-link-btn <%= page <= 1 ? 'disabled' : '' %>">
+                                <i class="fa-solid fa-chevron-left"></i> Prev
+                            </a>
+
+                            <% 
+                                let startPage = Math.max(1, page - 2);
+                                let endPage = Math.min(totalPages, startPage + 4);
+                                if (endPage - startPage < 4) {
+                                    startPage = Math.max(1, endPage - 4);
+                                }
+                            %>
+
+                            <% for (let p = startPage; p <= endPage; p++) { %>
+                                <a href="/admin/users?page=<%= p %><%= search ? '&search=' + encodeURIComponent(search) : '' %>" 
+                                   class="page-link-btn <%= p === page ? 'active' : '' %>">
+                                    <%= p %>
+                                </a>
+                            <% } %>
+
+                            <a href="/admin/users?page=<%= page + 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %>" 
+                               class="page-link-btn <%= page >= totalPages ? 'disabled' : '' %>">
+                                Next <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+
+    <!-- ==================== USER DETAILS MODAL ==================== -->
+    <div id="userDetailsModal" class="modal-backdrop" onclick="handleBackdropClick(event, 'userDetailsModal')">
+        <div class="modal-card">
+            <div class="modal-header-box">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div id="mUserLogoWrap" style="width: 46px; height: 46px; border-radius: 50%; background: rgba(215,38,61,0.2); display: flex; align-items: center; justify-content: center; color: #ff455e; overflow: hidden; border: 1px solid rgba(255,255,255,0.15);">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <h3 id="mTeamName" style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #fff;">Squad Name</h3>
+                            <span id="mUserIdBadge" class="copy-badge" style="font-size: 0.75rem;" title="Click to copy User ID">
+                                <i class="fa-regular fa-copy"></i>
+                            </span>
+                        </div>
+                        <div id="mMetaSub" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+                            Joined: <span id="mJoinedAt">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <a id="mFullPageLink" href="#" class="btn-action-view" target="_blank" style="text-decoration: none;">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Full Page
+                    </a>
+                    <button class="modal-close-icon" onclick="closeModal('userDetailsModal')">&times;</button>
+                </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="modal-tabs-bar">
+                <button class="modal-tab-btn active" onclick="switchTab('tab-overview', this)">
+                    <i class="fa-solid fa-user-ninja"></i> Profile & Drop
+                </button>
+                <button class="modal-tab-btn" onclick="switchTab('tab-wallet', this)">
+                    <i class="fa-solid fa-wallet"></i> Wallet & Edit
+                </button>
+                <button class="modal-tab-btn" onclick="switchTab('tab-withdrawals', this)">
+                    <i class="fa-solid fa-money-bill-transfer"></i> Withdrawals <span id="mWithdrawalCount" class="badge badge-yellow" style="font-size: 0.72rem; padding: 2px 6px;">0</span>
+                </button>
+                <button class="modal-tab-btn" onclick="switchTab('tab-deposits', this)">
+                    <i class="fa-solid fa-qrcode"></i> Deposits / Add Cash <span id="mDepositCount" class="badge badge-blue" style="font-size: 0.72rem; padding: 2px 6px;">0</span>
+                </button>
+                <button class="modal-tab-btn" onclick="switchTab('tab-scrims', this)">
+                    <i class="fa-solid fa-trophy"></i> Booked Scrims <span id="mScrimCount" class="badge badge-green" style="font-size: 0.72rem; padding: 2px 6px;">0</span>
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="modal-body-scroll">
+                <div id="modalLoadingSpinner" style="text-align: center; padding: 3rem 0;">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--accent-light);"></i>
+                    <p style="margin-top: 1rem; color: var(--text-muted);">Loading user client information...</p>
+                </div>
+
+                <div id="modalContentBody" style="display: none;">
+                    <!-- TAB 1: OVERVIEW & DROP DETAILS -->
+                    <div id="tab-overview" class="modal-tab-pane active">
+                        <h4 style="font-size: 1rem; color: #fff; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fa-solid fa-users-gear" style="color: var(--accent-light);"></i> Team & Contact Settings
+                        </h4>
+                        <div class="info-grid">
+                            <div class="info-card">
+                                <div class="info-card-label">Squad / Team Name</div>
+                                <div id="ovTeamName" class="info-card-value">-</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-card-label">WhatsApp Mobile</div>
+                                <div id="ovWhatsapp" class="info-card-value">-</div>
+                            </div>
+                            <div class="info-card">
+                                <div class="info-card-label">User ID</div>
+                                <div id="ovUserId" class="info-card-value" style="font-size: 0.95rem; font-family: monospace;">-</div>
+                            </div>
+                        </div>
+
+                        <h4 style="font-size: 1rem; color: #fff; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fa-solid fa-crosshairs" style="color: #22c55e;"></i> Registered Drop Locations (Client Side)
+                        </h4>
+                        <div class="info-grid">
+                            <div class="info-card" style="border-left: 3px solid #22c55e;">
+                                <div class="info-card-label"><i class="fa-solid fa-map-location-dot"></i> Erangle Drop</div>
+                                <div id="ovDropErangle" class="info-card-value" style="color: #22c55e;">Not specified</div>
+                            </div>
+                            <div class="info-card" style="border-left: 3px solid #f59e0b;">
+                                <div class="info-card-label"><i class="fa-solid fa-map-location-dot"></i> Miramar Drop</div>
+                                <div id="ovDropMiramar" class="info-card-value" style="color: #f59e0b;">Not specified</div>
+                            </div>
+                            <div class="info-card" style="border-left: 3px solid #3b82f6;">
+                                <div class="info-card-label"><i class="fa-solid fa-map-location-dot"></i> Rondo Drop</div>
+                                <div id="ovDropRando" class="info-card-value" style="color: #3b82f6;">Not specified</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: WALLET & EDIT -->
+                    <div id="tab-wallet" class="modal-tab-pane">
+                        <div class="info-grid">
+                            <div class="info-card" style="border-top: 3px solid #22c55e;">
+                                <div class="info-card-label">Available Balance</div>
+                                <div id="wAvail" class="info-card-value text-green">₹0</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Used for match registrations</div>
+                            </div>
+                            <div class="info-card" style="border-top: 3px solid #f59e0b;">
+                                <div class="info-card-label">Won PrizePool</div>
+                                <div id="wPrize" class="info-card-value" style="color: #f59e0b;">₹0</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Earnings from scrim wins</div>
+                            </div>
+                            <div class="info-card" style="border-top: 3px solid #3b82f6;">
+                                <div class="info-card-label">Total Cash in Wallet</div>
+                                <div id="wTotal" class="info-card-value" style="color: #60a5fa;">₹0</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Available + Won PrizePool</div>
+                            </div>
+                        </div>
+
+                        <!-- Admin Wallet Edit Form Box -->
+                        <div class="wallet-edit-box">
+                            <h4 style="margin: 0 0 1rem 0; font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fa-solid fa-pen-to-square" style="color: var(--accent-light);"></i> Admin Wallet Editor
+                            </h4>
+
+                            <div class="wallet-mode-pills">
+                                <button type="button" class="wallet-mode-pill active" id="pillModeSet" onclick="selectEditMode('set')">
+                                    <i class="fa-solid fa-sliders"></i> Set Exact Balances
+                                </button>
+                                <button type="button" class="wallet-mode-pill" id="pillModeAdjust" onclick="selectEditMode('adjust')">
+                                    <i class="fa-solid fa-plus-minus"></i> Add / Deduct Funds
+                                </button>
+                            </div>
+
+                            <form id="modalWalletForm" onsubmit="submitModalWalletEdit(event)">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label id="lblAvailInput" for="inputAvail">Available Balance (₹):</label>
+                                        <input type="number" id="inputAvail" class="form-control" required step="any">
+                                        <div class="quick-presets" id="quickAvailPresets" style="display: none;">
+                                            <button type="button" class="btn-preset" onclick="adjustQuickVal('inputAvail', 50)">+50</button>
+                                            <button type="button" class="btn-preset" onclick="adjustQuickVal('inputAvail', 100)">+100</button>
+                                            <button type="button" class="btn-preset" onclick="adjustQuickVal('inputAvail', 500)">+500</button>
+                                            <button type="button" class="btn-preset" onclick="adjustQuickVal('inputAvail', -50)">-50</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label id="lblPrizeInput" for="inputPrize">Won PrizePool (₹):</label>
+                                        <input type="number" id="inputPrize" class="form-control" required step="any">
+                                        <div class="quick-presets" id="quickPrizePresets" style="display: none;">
+                                            <button type="button" class="btn-preset" onclick="adjustQuickVal('inputPrize', 50)">+50</button>
+                                            <button type="button" class="btn-preset" onclick="adjustQuickVal('inputPrize', 100)">+100</button>
+                                            <button type="button" class="btn-preset" onclick="adjustQuickVal('inputPrize', 500)">+500</button>
+                                            <button type="button" class="btn-preset" onclick="adjustQuickVal('inputPrize', -50)">-50</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+                                    <button type="submit" id="btnSaveWallet" class="btn-action-wallet" style="padding: 0.7rem 1.5rem; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-floppy-disk"></i> Save Wallet Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: WITHDRAWALS -->
+                    <div id="tab-withdrawals" class="modal-tab-pane">
+                        <div class="table-wrap">
+                            <table class="data-table" style="font-size: 0.88rem;">
+                                <thead>
+                                    <tr>
+                                        <th>Amount</th>
+                                        <th>Method / Details</th>
+                                        <th>Status</th>
+                                        <th>Deductions</th>
+                                        <th>Note</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="withdrawalTableBody">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB 4: DEPOSITS / ADD CASH -->
+                    <div id="tab-deposits" class="modal-tab-pane">
+                        <div class="table-wrap">
+                            <table class="data-table" style="font-size: 0.88rem;">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Amount</th>
+                                        <th>Method / Provider</th>
+                                        <th>UTR / Txn ID</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="depositTableBody">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB 5: BOOKED SCRIMS -->
+                    <div id="tab-scrims" class="modal-tab-pane">
+                        <div class="table-wrap">
+                            <table class="data-table" style="font-size: 0.88rem;">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Match Title</th>
+                                        <th>Date / Timing</th>
+                                        <th>Entry Fee</th>
+                                        <th>Prize Pool</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scrimTableBody">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== STANDALONE QUICK EDIT WALLET MODAL ==================== -->
+    <div id="quickEditModal" class="modal-backdrop" onclick="handleBackdropClick(event, 'quickEditModal')">
+        <div class="modal-card" style="max-width: 480px;">
+            <div class="modal-header-box">
+                <h3 style="margin: 0; font-size: 1.2rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-pen-to-square" style="color: #22c55e;"></i> Edit User Wallet
+                </h3>
+                <button class="modal-close-icon" onclick="closeModal('quickEditModal')">&times;</button>
+            </div>
+            <div class="modal-body-scroll" style="padding: 1.5rem;">
+                <p style="margin-top: 0; font-size: 0.95rem; color: var(--text-muted); line-height: 1.5;">
+                    User: <strong id="qTeamName" style="color: #fff;"></strong><br>
+                    Current Available: <strong id="qCurrentAvail" class="text-green">₹0</strong> | 
+                    Current PrizePool: <strong id="qCurrentPrize" style="color: #f59e0b;">₹0</strong>
+                </p>
+
+                <div class="wallet-mode-pills" style="margin-bottom: 1rem;">
+                    <button type="button" class="wallet-mode-pill active" id="qPillSet" onclick="selectQuickMode('set')">
+                        Set Exact Balance
+                    </button>
+                    <button type="button" class="wallet-mode-pill" id="qPillAdjust" onclick="selectQuickMode('adjust')">
+                        Add / Deduct Funds
+                    </button>
+                </div>
+
+                <form id="quickWalletForm" onsubmit="submitQuickWalletEdit(event)">
+                    <input type="hidden" id="qUserId">
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label id="qLblAvail" for="qInputAvail">Available Balance (₹):</label>
+                        <input type="number" id="qInputAvail" class="form-control" required step="any">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label id="qLblPrize" for="qInputPrize">Won PrizePool (₹):</label>
+                        <input type="number" id="qInputPrize" class="form-control" required step="any">
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                        <button type="button" class="btn-reset" onclick="closeModal('quickEditModal')">Cancel</button>
+                        <button type="submit" id="qBtnSave" class="btn-action-wallet" style="padding: 0.65rem 1.4rem;">
+                            <i class="fa-solid fa-check"></i> Update Wallet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        let currentUserId = null;
+        let currentEditMode = 'set'; // 'set' or 'adjust'
+        let quickEditMode = 'set';
+        let cachedUserData = null;
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('User ID copied to clipboard: ' + text);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+        function closeModal(modalId) {
+            const el = document.getElementById(modalId);
+            if (el) el.classList.remove('open');
+        }
+
+        function handleBackdropClick(event, modalId) {
+            if (event.target && event.target.id === modalId) {
+                closeModal(modalId);
+            }
+        }
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.modal-tab-pane').forEach(p => p.classList.remove('active'));
+            
+            if (btn) btn.classList.add('active');
+            const pane = document.getElementById(tabId);
+            if (pane) pane.classList.add('active');
+        }
+
+        // Handle Edit Wallet Click from Table Row using data attributes
+        function handleEditWalletClick(btn) {
+            const userId = btn.getAttribute('data-user-id');
+            const teamName = btn.getAttribute('data-team-name');
+            const avail = parseFloat(btn.getAttribute('data-avail')) || 0;
+            const prize = parseFloat(btn.getAttribute('data-prize')) || 0;
+            openEditWalletModal(userId, teamName, avail, prize);
+        }
+
+        // ==================== OPEN USER DETAIL MODAL ====================
+        async function openUserModal(userId) {
+            currentUserId = userId;
+            const modal = document.getElementById('userDetailsModal');
+            modal.classList.add('open');
+
+            // Reset tabs
+            switchTab('tab-overview', document.querySelector('.modal-tab-btn'));
+
+            document.getElementById('modalLoadingSpinner').style.display = 'block';
+            document.getElementById('modalContentBody').style.display = 'none';
+
+            try {
+                const res = await fetch(`/admin/api/user/${userId}`);
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    alert(data.msg || 'Failed to load user details.');
+                    closeModal('userDetailsModal');
+                    return;
+                }
+
+                cachedUserData = data;
+                renderUserDataInModal(data);
+
+                document.getElementById('modalLoadingSpinner').style.display = 'none';
+                document.getElementById('modalContentBody').style.display = 'block';
+            } catch (err) {
+                console.error('Error fetching user modal data:', err);
+                alert('Something went wrong while fetching user details.');
+                closeModal('userDetailsModal');
+            }
+        }
+
+        function renderUserDataInModal(data) {
+            const user = data.user;
+            const team = user.team || {};
+            const drop = user.dropDetails || {};
+            const wallet = user.wallet || { balance: { availableBalance: 0, prizePool: 0 } };
+            const bal = wallet.balance || { availableBalance: 0, prizePool: 0 };
+            const avail = Number(bal.availableBalance) || 0;
+            const prize = Number(bal.prizePool) || 0;
+            const total = avail + prize;
+
+            // Header info
+            document.getElementById('mTeamName').textContent = team.teamName || 'No Team Setup';
+            document.getElementById('mUserIdBadge').innerHTML = `<span>${user._id}</span> <i class="fa-regular fa-copy"></i>`;
+            document.getElementById('mUserIdBadge').onclick = () => copyToClipboard(user._id);
+            document.getElementById('mFullPageLink').href = `/admin/user/${user._id}`;
+            
+            if (user.createdAt) {
+                const dateObj = new Date(user.createdAt);
+                document.getElementById('mJoinedAt').textContent = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } else {
+                document.getElementById('mJoinedAt').textContent = 'N/A';
+            }
+
+            // Team Logo
+            const logoWrap = document.getElementById('mUserLogoWrap');
+            if (team.teamLogo) {
+                const imgUrl = (team.teamLogo.startsWith('http://') || team.teamLogo.startsWith('https://')) ? team.teamLogo : `/images/${team.teamLogo}`;
+                logoWrap.innerHTML = `<img src="${imgUrl}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">`;
+            } else {
+                logoWrap.innerHTML = `<i class="fa-solid fa-shield-halved"></i>`;
+            }
+
+            // Overview Tab
+            document.getElementById('ovTeamName').textContent = team.teamName || 'None';
+            if (team.whatsappNumber) {
+                document.getElementById('ovWhatsapp').innerHTML = `${team.whatsappNumber} <a href="https://wa.me/91${team.whatsappNumber}" target="_blank" class="btn-whatsapp-sm" style="margin-left: 0.5rem;"><i class="fa-brands fa-whatsapp"></i> Chat</a>`;
+            } else {
+                document.getElementById('ovWhatsapp').textContent = 'Not specified';
+            }
+            document.getElementById('ovUserId').textContent = user._id;
+            document.getElementById('ovDropErangle').textContent = drop.erangle || 'Not specified';
+            document.getElementById('ovDropMiramar').textContent = drop.miramar || 'Not specified';
+            document.getElementById('ovDropRando').textContent = drop.rando || 'Not specified';
+
+            // Wallet Tab
+            document.getElementById('wAvail').textContent = '₹' + avail;
+            document.getElementById('wPrize').textContent = '₹' + prize;
+            document.getElementById('wTotal').textContent = '₹' + total;
+            
+            // Set initial inputs in wallet form
+            selectEditMode('set');
+
+            // Tab badges
+            document.getElementById('mWithdrawalCount').textContent = data.withdrawals ? data.withdrawals.length : 0;
+            document.getElementById('mDepositCount').textContent = data.deposits ? data.deposits.length : 0;
+            document.getElementById('mScrimCount').textContent = data.scrims ? data.scrims.length : 0;
+
+            // Render Withdrawals Table
+            renderWithdrawalsTable(data.withdrawals || []);
+
+            // Render Deposits Table
+            renderDepositsTable(data.deposits || []);
+
+            // Render Scrims Table
+            renderScrimsTable(data.scrims || []);
+        }
+
+        function renderWithdrawalsTable(list) {
+            const tbody = document.getElementById('withdrawalTableBody');
+            if (!list || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No withdrawal requests found for this user.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = list.map(w => {
+                const dateStr = w._id ? new Date(parseInt(w._id.substring(0, 8), 16) * 1000).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'N/A';
+                let statusBadge = `<span class="badge-status badge-${w.status}">${w.status}</span>`;
+                let detailHtml = w.payoutMethod === 'qr' 
+                    ? `<a href="${w.payoutDetail}" target="_blank" style="color: #3b82f6;"><i class="fa-solid fa-qrcode"></i> View QR Image</a>`
+                    : `<code>${w.payoutDetail || 'N/A'}</code>`;
+                let deductions = `Avail: ₹${w.availableBalanceDeducted || 0} | Prize: ₹${w.prizePoolDeducted || 0}`;
+
+                return `
+                    <tr>
+                        <td><strong class="text-green" style="font-size: 1rem;">₹${w.amount}</strong></td>
+                        <td>
+                            <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">${w.payoutMethod || 'UPI'}</div>
+                            ${detailHtml}
+                        </td>
+                        <td>${statusBadge}</td>
+                        <td style="font-size: 0.82rem; color: var(--text-muted);">${deductions}</td>
+                        <td><small>${w.note || '-'}</small></td>
+                        <td><small>${dateStr}</small></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderDepositsTable(list) {
+            const tbody = document.getElementById('depositTableBody');
+            if (!list || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No add cash / deposit records found.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = list.map(d => {
+                const dateStr = d.date ? new Date(d.date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'N/A';
+                const statusBadge = `<span class="badge-status badge-${d.status}">${d.status}</span>`;
+                return `
+                    <tr>
+                        <td><code>${d.orderId || '-'}</code></td>
+                        <td><strong class="text-green" style="font-size: 1rem;">₹${d.amount}</strong></td>
+                        <td>${d.paymentMethod || 'UPI QR'} (${d.provider || 'paytm'})</td>
+                        <td><code>${d.utr || d.gatewayTxnId || '-'}</code></td>
+                        <td>${statusBadge}</td>
+                        <td><small>${dateStr}</small></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderScrimsTable(list) {
+            const tbody = document.getElementById('scrimTableBody');
+            if (!list || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No scrim bookings found for this squad.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = list.map(s => {
+                const statusBadge = `<span class="badge-status badge-${s.teamStatus === 'approved' ? 'approved' : 'pending'}">${s.teamStatus}</span>`;
+                return `
+                    <tr>
+                        <td><strong>${s.categoryTitle}</strong></td>
+                        <td>${s.matchTitle}</td>
+                        <td><small>${s.date} ${s.idpTimings ? '(' + s.idpTimings + ')' : ''}</small></td>
+                        <td>₹${s.entryFee}</td>
+                        <td><span class="text-green">₹${s.prizePool}</span></td>
+                        <td>${statusBadge}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ==================== WALLET EDIT IN MODAL ====================
+        function selectEditMode(mode) {
+            currentEditMode = mode;
+            const btnSet = document.getElementById('pillModeSet');
+            const btnAdjust = document.getElementById('pillModeAdjust');
+            const presetsAvail = document.getElementById('quickAvailPresets');
+            const presetsPrize = document.getElementById('quickPrizePresets');
+
+            if (mode === 'set') {
+                btnSet.classList.add('active');
+                btnAdjust.classList.remove('active');
+                presetsAvail.style.display = 'none';
+                presetsPrize.style.display = 'none';
+                document.getElementById('lblAvailInput').textContent = 'New Available Balance (₹):';
+                document.getElementById('lblPrizeInput').textContent = 'New Won PrizePool (₹):';
+
+                if (cachedUserData && cachedUserData.user && cachedUserData.user.wallet && cachedUserData.user.wallet.balance) {
+                    document.getElementById('inputAvail').value = Number(cachedUserData.user.wallet.balance.availableBalance) || 0;
+                    document.getElementById('inputPrize').value = Number(cachedUserData.user.wallet.balance.prizePool) || 0;
+                }
+            } else {
+                btnSet.classList.remove('active');
+                btnAdjust.classList.add('active');
+                presetsAvail.style.display = 'flex';
+                presetsPrize.style.display = 'flex';
+                document.getElementById('lblAvailInput').textContent = 'Amount to Add / Deduct (Available ₹):';
+                document.getElementById('lblPrizeInput').textContent = 'Amount to Add / Deduct (PrizePool ₹):';
+                document.getElementById('inputAvail').value = 0;
+                document.getElementById('inputPrize').value = 0;
+            }
+        }
+
+        function adjustQuickVal(inputId, delta) {
+            const input = document.getElementById(inputId);
+            let current = parseFloat(input.value) || 0;
+            input.value = current + delta;
+        }
+
+        async function submitModalWalletEdit(event) {
+            event.preventDefault();
+            if (!currentUserId) return;
+
+            const avail = parseFloat(document.getElementById('inputAvail').value);
+            const prize = parseFloat(document.getElementById('inputPrize').value);
+
+            if (isNaN(avail) || isNaN(prize)) {
+                alert('Please enter valid numeric amounts.');
+                return;
+            }
+
+            const btn = document.getElementById('btnSaveWallet');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const res = await fetch(`/admin/user/${currentUserId}/edit-wallet`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mode: currentEditMode,
+                        availableBalance: avail,
+                        prizePool: prize
+                    })
+                });
+
+                const result = await res.json();
+                if (res.ok && result.success) {
+                    alert(result.msg || 'Wallet updated successfully!');
+                    
+                    // Update cached user data
+                    if (cachedUserData && cachedUserData.user && cachedUserData.user.wallet) {
+                        cachedUserData.user.wallet.balance = result.wallet;
+                    }
+
+                    // Update modal UI
+                    document.getElementById('wAvail').textContent = '₹' + result.wallet.availableBalance;
+                    document.getElementById('wPrize').textContent = '₹' + result.wallet.prizePool;
+                    document.getElementById('wTotal').textContent = '₹' + result.totalBalance;
+
+                    // Update main table row if present
+                    const availSpan = document.querySelector(`.user-avail-${currentUserId}`);
+                    const prizeSpan = document.querySelector(`.user-prize-${currentUserId}`);
+                    const totalSpan = document.querySelector(`.user-total-${currentUserId}`);
+                    if (availSpan) availSpan.textContent = '₹' + result.wallet.availableBalance;
+                    if (prizeSpan) prizeSpan.textContent = '₹' + result.wallet.prizePool;
+                    if (totalSpan) totalSpan.textContent = '₹' + result.totalBalance;
+
+                    selectEditMode(currentEditMode);
+                } else {
+                    alert(result.msg || 'Failed to update wallet balance.');
+                }
+            } catch (err) {
+                console.error('Wallet update error:', err);
+                alert('Something went wrong while saving wallet changes.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+        // ==================== QUICK EDIT MODAL (FROM TABLE ROW) ====================
+        function openEditWalletModal(userId, teamName, avail, prize) {
+            document.getElementById('qUserId').value = userId;
+            document.getElementById('qTeamName').textContent = teamName;
+            document.getElementById('qCurrentAvail').textContent = '₹' + avail;
+            document.getElementById('qCurrentPrize').textContent = '₹' + prize;
+
+            selectQuickMode('set');
+            document.getElementById('qInputAvail').value = avail;
+            document.getElementById('qInputPrize').value = prize;
+
+            document.getElementById('quickEditModal').classList.add('open');
+        }
+
+        function selectQuickMode(mode) {
+            quickEditMode = mode;
+            const btnSet = document.getElementById('qPillSet');
+            const btnAdjust = document.getElementById('qPillAdjust');
+
+            if (mode === 'set') {
+                btnSet.classList.add('active');
+                btnAdjust.classList.remove('active');
+                document.getElementById('qLblAvail').textContent = 'New Available Balance (₹):';
+                document.getElementById('qLblPrize').textContent = 'New Won PrizePool (₹):';
+            } else {
+                btnSet.classList.remove('active');
+                btnAdjust.classList.add('active');
+                document.getElementById('qLblAvail').textContent = 'Amount to Add / Deduct (Available ₹):';
+                document.getElementById('qLblPrize').textContent = 'Amount to Add / Deduct (PrizePool ₹):';
+                document.getElementById('inputAvail').value = 0;
+                document.getElementById('inputPrize').value = 0;
+            }
+        }
+
+        async function submitQuickWalletEdit(event) {
+            event.preventDefault();
+            const userId = document.getElementById('qUserId').value;
+            const avail = parseFloat(document.getElementById('qInputAvail').value);
+            const prize = parseFloat(document.getElementById('qInputPrize').value);
+
+            if (!userId) return;
+            if (isNaN(avail) || isNaN(prize)) {
+                alert('Please enter valid numeric amounts.');
+                return;
+            }
+
+            const btn = document.getElementById('qBtnSave');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+
+            try {
+                const res = await fetch(`/admin/user/${userId}/edit-wallet`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mode: quickEditMode,
+                        availableBalance: avail,
+                        prizePool: prize
+                    })
+                });
+
+                const result = await res.json();
+                if (res.ok && result.success) {
+                    alert(result.msg || 'Wallet updated successfully!');
+                    closeModal('quickEditModal');
+
+                    // Update row in table
+                    const availSpan = document.querySelector(`.user-avail-${userId}`);
+                    const prizeSpan = document.querySelector(`.user-prize-${userId}`);
+                    const totalSpan = document.querySelector(`.user-total-${userId}`);
+                    if (availSpan) availSpan.textContent = '₹' + result.wallet.availableBalance;
+                    if (prizeSpan) prizeSpan.textContent = '₹' + result.wallet.prizePool;
+                    if (totalSpan) totalSpan.textContent = '₹' + result.totalBalance;
+                } else {
+                    alert(result.msg || 'Failed to update wallet.');
+                }
+            } catch (err) {
+                console.error('Quick wallet update error:', err);
+                alert('Something went wrong.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+    </script>
+</body>
+</html>
