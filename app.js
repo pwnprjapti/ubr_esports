@@ -563,6 +563,18 @@ app.get("/category/:id", async (req, res)=>{
             return res.status(404).send("Category not found");
         }
         const matches = getMatch[0].matches || [];
+        // Sort matches: available slots first, full slots at the bottom
+        matches.sort((a, b) => {
+            const aTeams = (a && a.teams && Array.isArray(a.teams)) ? a.teams.length : 0;
+            const aSlots = (a && Number(a.slots)) || 0;
+            const aFull = (aSlots > 0 && aTeams >= aSlots) ? 1 : 0;
+
+            const bTeams = (b && b.teams && Array.isArray(b.teams)) ? b.teams.length : 0;
+            const bSlots = (b && Number(b.slots)) || 0;
+            const bFull = (bSlots > 0 && bTeams >= bSlots) ? 1 : 0;
+
+            return aFull - bFull;
+        });
         if (matches.length > 0) {
             console.log(matches[0].date);
             if (matches[0].idpTimings) {
@@ -915,11 +927,35 @@ app.get("/admin/dashboard", adminAuthCheck,  async (req, res)=>{
     try{
         const users = await userModel.find();
         const categories = await categoryModel.find();
-        const withdrawal = await withdrawalModel.find({status:"pending"});
+        const rawWithdrawal = await withdrawalModel.find({status:"pending"});
 
-        res.render("admin/pages/dashboard", { users, categories, withdrawal });
+        const withdrawal = await Promise.all(rawWithdrawal.map(async (w) => {
+            const wObj = w.toObject();
+            const user = await userModel.findOne({ gglId: wObj.id });
+            if (user) {
+                const available = (user.wallet && user.wallet.balance && typeof user.wallet.balance.availableBalance !== 'undefined') ? Number(user.wallet.balance.availableBalance) : 0;
+                const prize = (user.wallet && user.wallet.balance && typeof user.wallet.balance.prizePool !== 'undefined') ? Number(user.wallet.balance.prizePool) : 0;
+                const total = available + prize;
+                
+                wObj.userTotalBalance = total;
+                if (wObj.isDeducted) {
+                    wObj.hasEnoughBalance = true;
+                } else {
+                    wObj.hasEnoughBalance = total >= wObj.amount;
+                }
+            } else {
+                wObj.userTotalBalance = 0;
+                wObj.hasEnoughBalance = wObj.isDeducted ? true : false;
+            }
+            return wObj;
+        }));
+
+        withdrawal.sort((a, b) => b._id.toString().localeCompare(a._id.toString()));
+
+        res.render("admin/pages/dashboard", { users, categories, withdrawal, baseurl });
     }catch(err){
         console.log(err)
+        res.status(500).send("Internal Server Error");
     }
 })
 

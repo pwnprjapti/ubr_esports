@@ -282,4 +282,22 @@ body {
     .sidebar-overlay.active {
         display: block;
     }
+
+    .admin-body {
+        padding: 1.15rem 1rem;
+    }
+
+    .admin-header {
+        padding: 0 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-body {
+        padding: 0.9rem 0.65rem;
+    }
+
+    .admin-header {
+        padding: 0 0.75rem;
+    }
 }

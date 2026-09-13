@@ -213,6 +213,15 @@
                 font-size: 0.85rem;
             }
         }
+
+        /* Scrim cards ordering: available slots first, full slots at the bottom */
+        .scrim-card {
+            order: 1;
+        }
+        .scrim-card.scrim-card-full {
+            order: 2;
+            opacity: 0.92;
+        }
     </style>
 </head>
 <body>
@@ -254,7 +263,21 @@
             <section class="scrim-grid" id="scrimGrid">
                 <!-- Scrim 1: Today -->
 
-            <% const hasMatches = Array.isArray(matches) && matches.length > 0; %>
+            <% 
+                const hasMatches = Array.isArray(matches) && matches.length > 0; 
+                // Sort matches: available slots first, full slots at the bottom
+                const sortedMatches = hasMatches ? [...matches].sort((a, b) => {
+                    const aTeams = (a && a.teams && Array.isArray(a.teams)) ? a.teams.length : 0;
+                    const aSlots = (a && Number(a.slots)) || 0;
+                    const aFull = (aSlots > 0 && aTeams >= aSlots) ? 1 : 0;
+
+                    const bTeams = (b && b.teams && Array.isArray(b.teams)) ? b.teams.length : 0;
+                    const bSlots = (b && Number(b.slots)) || 0;
+                    const bFull = (bSlots > 0 && bTeams >= bSlots) ? 1 : 0;
+
+                    return aFull - bFull;
+                }) : [];
+            %>
 
             <div class="no-scrims-card" id="noScrimsMsg" style="display: <%= hasMatches ? 'none' : 'block' %>;">
                 <div class="empty-icon"><i class="fa-regular fa-calendar-xmark"></i></div>
@@ -266,10 +289,11 @@
             </div>
 
             <% if (hasMatches) { %>
-                <% for (const match of matches) { %>
+                <% for (const match of sortedMatches) { %>
                     <% const approvedTeams = (match.teams || []).filter(t => t.status === "approved" || !t.status); %>
                     <% const registeredTeam = (typeof userTeamName !== 'undefined' && userTeamName && match.teams) ? match.teams.find(t => t.teamName && userTeamName && t.teamName.toString().trim().toLowerCase() === userTeamName.toString().trim().toLowerCase()) : null; %>
-                    <article class="scrim-card" data-date="<%= match.date %>" data-period="today">
+                    <% const isFull = Boolean(match.slots && (match.teams ? match.teams.length : 0) >= match.slots); %>
+                    <article class="scrim-card <%= isFull ? 'scrim-card-full' : '' %>" data-date="<%= match.date %>" data-period="today" data-full="<%= isFull ? 'true' : 'false' %>">
                         <h3 class="scrim-title"><%= match.title %></h3>
                         <div class="scrim-meta">
                             <div class="meta-item">
