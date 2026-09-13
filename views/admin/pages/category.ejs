@@ -92,6 +92,104 @@
             text-shadow: none;
             white-space: nowrap;
         }
+
+        /* Drag & Drop Reorder Styles */
+        .drag-handle {
+            position: absolute;
+            top: 0.75rem;
+            left: 0.75rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 0.25rem 0.55rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #b0b0b8;
+            cursor: grab;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+            z-index: 10;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .drag-handle:hover {
+            background: rgba(215, 38, 61, 0.25);
+            border-color: rgba(215, 38, 61, 0.5);
+            color: #ff455e;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .scrim-title {
+            margin-top: 1.6rem !important;
+            word-break: break-word;
+        }
+
+        .scrim-card.sortable-ghost {
+            opacity: 0.35;
+            border: 2px dashed #ff455e !important;
+            background: rgba(215, 38, 61, 0.08) !important;
+        }
+
+        .scrim-card.sortable-chosen {
+            border-color: #ff455e !important;
+            box-shadow: 0 10px 30px rgba(215, 38, 61, 0.35) !important;
+            cursor: grabbing !important;
+        }
+
+        .scrim-card.sortable-drag {
+            opacity: 0.95;
+            transform: scale(1.02);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7) !important;
+        }
+
+        /* Floating Toast for Reorder Status */
+        .reorder-toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #151720;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-size: 0.88rem;
+            font-weight: 700;
+            z-index: 9999;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        .reorder-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .reorder-toast.success {
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #4ade80;
+        }
+
+        .reorder-toast.error {
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #f87171;
+        }
+
+        .reorder-toast.loading {
+            border-color: rgba(255, 193, 7, 0.4);
+            color: #ffca28;
+        }
     </style>
 </head>
 <body>
@@ -150,7 +248,10 @@
 
                         <!-- Card 1 -->
                           <% for (const match of matches) { %>
-                         <article class="scrim-card" data-date="<%= match.date %>" style="position: relative;">
+                         <article class="scrim-card" data-id="<%= match._id %>" data-date="<%= match.date %>" style="position: relative;">
+                             <div class="drag-handle" title="Drag to reorder scrim">
+                                 <i class="fa-solid fa-grip-vertical"></i> <span>Drag</span>
+                             </div>
                              <button class="edit-scrim-btn" onclick="event.stopPropagation(); window.location.href='/admin/category/<%= id %>/scrim/edit/<%= match._id %>'" title="Edit Scrim">
                                  <i class="fa-solid fa-pen-to-square"></i>
                              </button>
@@ -328,6 +429,87 @@
                 }
             }
         }
+    </script>
+
+    <!-- Floating Notification Toast -->
+    <div id="reorderToast" class="reorder-toast"></div>
+
+    <!-- Drag & Drop Sortable Scripts -->
+    <script src="/js/sortable.min.js"></script>
+    <script>
+        if (typeof Sortable === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"><\/script>');
+        }
+    </script>
+    <script>
+        (function initDragAndDrop() {
+            const scrimGrid = document.getElementById('scrimGrid');
+            const toast = document.getElementById('reorderToast');
+            let toastTimeout = null;
+
+            function showToast(message, type, iconHtml) {
+                if (!toast) return;
+                if (toastTimeout) clearTimeout(toastTimeout);
+                toast.className = `reorder-toast show ${type}`;
+                toast.innerHTML = `${iconHtml || ''} <span>${message}</span>`;
+                if (type !== 'loading') {
+                    toastTimeout = setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 3000);
+                }
+            }
+
+            if (scrimGrid) {
+                const categoryId = '<%= id %>';
+                new Sortable(scrimGrid, {
+                    animation: 200,
+                    handle: '.drag-handle',
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    dragClass: 'sortable-drag',
+                    filter: '.edit-scrim-btn, .delete-scrim-btn, .slot-btn-full',
+                    preventOnFilter: false,
+                    onEnd: async function(evt) {
+                        if (evt.oldIndex === evt.newIndex) return;
+
+                        const customDatePicker = document.getElementById('customDatePicker');
+                        const isFiltered = customDatePicker && customDatePicker.value;
+                        let orderedIds;
+
+                        if (isFiltered) {
+                            // When date filter is active, get visible cards of that date in their new order
+                            const visibleCards = Array.from(scrimGrid.querySelectorAll('.scrim-card')).filter(card => card.style.display !== 'none');
+                            orderedIds = visibleCards.map(c => c.getAttribute('data-id')).filter(Boolean);
+                        } else {
+                            // When all dates are shown, get all cards
+                            const allCards = Array.from(scrimGrid.querySelectorAll('.scrim-card'));
+                            orderedIds = allCards.map(c => c.getAttribute('data-id')).filter(Boolean);
+                        }
+
+                        if (!orderedIds || orderedIds.length === 0) return;
+
+                        showToast('Saving new order...', 'loading', '<i class="fa-solid fa-spinner fa-spin"></i>');
+
+                        try {
+                            const response = await fetch(`/admin/category/${categoryId}/reorder-scrims`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ orderedIds })
+                            });
+                            const data = await response.json();
+                            if (response.ok && data.success) {
+                                showToast('Order saved successfully!', 'success', '<i class="fa-solid fa-circle-check"></i>');
+                            } else {
+                                showToast(data.msg || 'Failed to save order', 'error', '<i class="fa-solid fa-circle-exclamation"></i>');
+                            }
+                        } catch (err) {
+                            console.error('Error reordering scrims:', err);
+                            showToast('Network error while saving order', 'error', '<i class="fa-solid fa-triangle-exclamation"></i>');
+                        }
+                    }
+                });
+            }
+        })();
     </script>
 </body>
 </html>

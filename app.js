@@ -1409,6 +1409,64 @@ app.post("/admin/category/:id/scrim/delete/:mid", adminAuthCheck, async (req, re
     }
 })
 
+app.post("/admin/category/:id/reorder-scrims", adminAuthCheck, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { orderedIds } = req.body;
+
+        if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+            return res.status(400).json({ success: false, msg: "Invalid match order data" });
+        }
+
+        const category = await categoryModel.findById(id);
+        if (!category) {
+            return res.status(404).json({ success: false, msg: "Category not found" });
+        }
+
+        const matchMap = new Map();
+        category.matches.forEach(m => {
+            matchMap.set(m._id.toString(), m);
+        });
+
+        if (orderedIds.length >= category.matches.length) {
+            // Full reorder
+            const newMatches = [];
+            for (const mid of orderedIds) {
+                if (matchMap.has(mid)) {
+                    newMatches.push(matchMap.get(mid));
+                    matchMap.delete(mid);
+                }
+            }
+            for (const remaining of matchMap.values()) {
+                newMatches.push(remaining);
+            }
+            category.matches = newMatches;
+        } else {
+            // Partial reorder (e.g. within a specific date filter)
+            const positions = [];
+            category.matches.forEach((m, idx) => {
+                if (orderedIds.includes(m._id.toString())) {
+                    positions.push(idx);
+                }
+            });
+
+            let posIndex = 0;
+            for (const mid of orderedIds) {
+                if (matchMap.has(mid) && posIndex < positions.length) {
+                    category.matches[positions[posIndex]] = matchMap.get(mid);
+                    posIndex++;
+                }
+            }
+        }
+
+        await category.save();
+        return res.status(200).json({ success: true, msg: "Match order updated successfully" });
+    } catch (err) {
+        console.error("Error reordering scrims:", err);
+        return res.status(500).json({ success: false, msg: "Internal server error" });
+    }
+});
+
 app.get("/admin/category/:id/scrim/edit/:mid", adminAuthCheck, async (req, res)=>{
     try {
         const { id, mid } = req.params;

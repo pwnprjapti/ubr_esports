@@ -266,15 +266,7 @@
             </div>
 
             <% if (hasMatches) { %>
-               <% 
-                    // Available matches pehle (0), Full matches baad me (1)
-                    const sortedMatches = [...matches].sort((a, b) => {
-                      const aFull = (a.teams && a.teams.length >= a.slots) ? 1 : 0;
-                      const bFull = (b.teams && b.teams.length >= b.slots) ? 1 : 0;
-                      return aFull - bFull;
-                    });
-                %>
-                <% for (const match of sortedMatches) { %>
+                <% for (const match of matches) { %>
                     <% const approvedTeams = (match.teams || []).filter(t => t.status === "approved" || !t.status); %>
                     <% const registeredTeam = (typeof userTeamName !== 'undefined' && userTeamName && match.teams) ? match.teams.find(t => t.teamName && userTeamName && t.teamName.toString().trim().toLowerCase() === userTeamName.toString().trim().toLowerCase()) : null; %>
                     <article class="scrim-card" data-date="<%= match.date %>" data-period="today">
