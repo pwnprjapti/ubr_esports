@@ -24,9 +24,20 @@ export const uploadToCloudinary = async (localFilePath, folder = 'ubr_esports') 
     try {
         if (!localFilePath) return null;
 
-        if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+        const cloudName = (process.env.CLOUDINARY_CLOUD_NAME || "").trim();
+        const apiKey = (process.env.CLOUDINARY_API_KEY || "").trim();
+        const apiSecret = (process.env.CLOUDINARY_API_SECRET || "").trim();
+
+        if (!cloudName || !apiKey || !apiSecret) {
             throw new Error("Cloudinary credentials missing on server. Please configure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your hosting environment variables.");
         }
+
+        // Ensure config is applied with fresh, trimmed values
+        cloudinary.config({
+            cloud_name: cloudName,
+            api_key: apiKey,
+            api_secret: apiSecret
+        });
         
         // Upload the file to cloudinary
         const response = await cloudinary.uploader.upload(localFilePath, {
@@ -49,6 +60,10 @@ export const uploadToCloudinary = async (localFilePath, folder = 'ubr_esports') 
             } catch (e) {
                 console.error("Failed to delete local file on error:", e);
             }
+        }
+        if (error.message && error.message.toLowerCase().includes("cloud_name is disabled")) {
+            const currentName = (process.env.CLOUDINARY_CLOUD_NAME || "").trim();
+            throw new Error(`Cloudinary account '${currentName}' is disabled or suspended by Cloudinary. Please update CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your production hosting Environment Variables.`);
         }
         throw error;
     }
