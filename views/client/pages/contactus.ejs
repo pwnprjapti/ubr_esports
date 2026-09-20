@@ -7,9 +7,9 @@
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
     <meta name="description" content="Get in touch with UBR Esports support team for scrim queries, sponsorship, and custom rooms.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-    <link rel="stylesheet" href="/css/terms.css">
-    <link rel="stylesheet" href="/css/nav.css">
-    <link rel="stylesheet" href="/css/footer.css">
+    <link rel="stylesheet" href="/css/terms.css?v=restore">
+    <link rel="stylesheet" href="/css/nav.css?v=restore">
+    <link rel="stylesheet" href="/css/footer.css?v=restore">
     <style>
         .contact-grid {
             display: grid;
@@ -29,14 +29,14 @@
         }
         .contact-item:hover {
             background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(215, 38, 61, 0.3);
+            border-color: rgba(155, 7, 7, 0.3);
         }
         .contact-icon {
             width: 44px;
             height: 44px;
             min-width: 44px;
             border-radius: 12px;
-            background: rgba(215, 38, 61, 0.15);
+            background: rgba(155, 7, 7, 0.15);
             color: var(--accent-2);
             display: grid;
             place-items: center;
@@ -108,6 +108,7 @@
         </main>
 
         <%- include("../partials/footer") %>
+        <%- include("../partials/bottomNav") %>
     </div>
 </body>
 </html>

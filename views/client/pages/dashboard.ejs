@@ -4,58 +4,578 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>UBR Esports | Supporting Upcoming BGMI Talent</title>
+    <title>Gamer Profile | UBR Esports</title>
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
-    <meta name="description" content="UBR Esports is a premier platform for rising BGMI talent, daily competitive scrims, custom scrims, and fast prize withdrawals.">
+    <meta name="description" content="Manage your UBR Esports player profile, squad settings, wallet balance, payouts, and tactical drop coordinates.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-    <link rel="stylesheet" href="/css/home.css">
-    <link rel="stylesheet" href="/css/nav.css">
-    <link rel="stylesheet" href="/css/footer.css">
+    <link rel="stylesheet" href="/css/home.css?v=restore">
+    <link rel="stylesheet" href="/css/nav.css?v=restore">
+    <link rel="stylesheet" href="/css/profile.css?v=restore">
+    <link rel="stylesheet" href="/css/footer.css?v=restore">
 </head>
 <body>
     <div class="page-shell">
         <%- include("../partials/nav") %>
 
-        <main class="main-content">
-            <h1>Welcome Back, <span style="color:rgb(253, 31, 31);"><%= user.name %></span> </h1>
-             <%- include("../partials/wallet", { wallet:user.balance}) %>
-             
-            <!-- <section class="hero">
-                <div class="hero-badge">
-                    <span class="pulse-dot"></span>
-                    <span>Live BGMI Scrims</span>
-                </div>
-                <h1>SUPPORTING UPCOMING BGMI TALENT</h1>
-                <p>UBR Esports is creating a dedicated arena for rising BGMI players, competitive squads, and passionate esports fans to compete, earn, and dominate the battleground.</p>
-            </section> -->
+        <main class="profile-dashboard-page">
 
-            <section class="section-title">
-                <h4>OUR TOP CATEGORIES</h4>
-                <h2>Explore What We Offer</h2>
+            <!-- 1. Profile Hero Card -->
+            <section class="profile-hero-card">
+                <div class="profile-banner"></div>
+                <div class="profile-hero-body">
+                    <div class="profile-user-group">
+                        <div class="profile-avatar-box">
+                            <% if (user.dp) { %>
+                                <img src="<%= user.dp %>" alt="<%= user.name %>" class="profile-avatar-img" referrerpolicy="no-referrer" onerror="this.style.display='none'; const fb = document.getElementById('profileHeroFallback'); if(fb) fb.style.display='flex';">
+                                <div class="profile-avatar-fallback" id="profileHeroFallback" style="display: none;">
+                                    <i class="fa-solid fa-user-ninja"></i>
+                                </div>
+                            <% } else { %>
+                                <div class="profile-avatar-fallback">
+                                    <i class="fa-solid fa-user-ninja"></i>
+                                </div>
+                            <% } %>
+                            <span class="profile-online-badge" title="Online"></span>
+                        </div>
+
+                        <div class="profile-info">
+                            <h2 class="profile-name">
+                                <%= user.name %>
+                                <i class="fa-solid fa-circle-check profile-verified-icon" title="Verified BGMI Player"></i>
+                            </h2>
+                            <% if (user.email) { %>
+                                <p class="profile-email"><i class="fa-regular fa-envelope"></i> <%= user.email %></p>
+                            <% } %>
+
+                            <div class="profile-tags">
+                                <% if (user.team && user.team.teamName) { %>
+                                    <span class="tag-badge squad-active">
+                                        <i class="fa-solid fa-shield-halved"></i> <%= user.team.teamName %>
+                                    </span>
+                                <% } else { %>
+                                    <span class="tag-badge squad-none">
+                                        <i class="fa-solid fa-shield-halved"></i> No Squad Joined
+                                    </span>
+                                <% } %>
+                                <span class="tag-badge gamer-tier">
+                                    <i class="fa-solid fa-gamepad"></i> BGMI Competitor
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-hero-actions">
+                        <a href="/logout" class="logout-quick-btn">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Log Out
+                        </a>
+                    </div>
+                </div>
             </section>
 
-            <div class="categories">
-                <% for(category of categories) { %>
-                <div class="category-card">
-                    <div class="category-card-img">
-                        <% if(category.img) { %>
-                            <img src="<%= imageUrl(category.img) %>" alt="<%= category.title %>">
-                        <% } else { %>
-                            <i class="fa-solid fa-gamepad"></i>
-                        <% } %>
+            <!-- 2. Wallet Card Summary -->
+            <%- include("../partials/wallet", { wallet: user.balance }) %>
+
+            <!-- 3. Core Action Buttons (Team Settings, Withdrawal, Drop Details) -->
+            <div class="profile-section-header">
+                <h3><i class="fa-solid fa-sliders"></i> Account & Squad Controls</h3>
+            </div>
+
+            <div class="profile-actions-grid">
+                <!-- Action 1: Team Settings -->
+                <a href="/team-settings" class="profile-action-card card-team">
+                    <div class="action-card-top">
+                        <div class="action-icon-wrapper">
+                            <i class="fa-solid fa-users-gear"></i>
+                        </div>
+                        <i class="fa-solid fa-chevron-right action-arrow"></i>
                     </div>
-                    <h3><%= category.title %></h3>
-                    <p><%= category.description %></p>
-                    <a href="/category/<%= category._id %>" class="card-btn">
-                        <i class="fa-solid fa-calendar-days"></i>Explore
+                    <div class="action-card-content">
+                        <h4>Team Settings</h4>
+                        <p>Manage squad roster, change team name, upload logo, and update WhatsApp number.</p>
+                    </div>
+                    <div class="action-card-bottom">
+                        <% if (user.team && user.team.teamName) { %>
+                            <span class="action-status-pill pill-active">
+                                <i class="fa-solid fa-circle-check"></i> <%= user.team.teamName %>
+                            </span>
+                        <% } else { %>
+                            <span class="action-status-pill pill-pending">
+                                <i class="fa-solid fa-plus"></i> Setup Squad
+                            </span>
+                        <% } %>
+                        <span style="font-size: 0.8rem; color: #a0a0aa;">Configure &rarr;</span>
+                    </div>
+                </a>
+
+                <!-- Action 2: Withdrawal -->
+                <a href="/withdrawal" class="profile-action-card card-withdrawal">
+                    <div class="action-card-top">
+                        <div class="action-icon-wrapper">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                        <i class="fa-solid fa-chevron-right action-arrow"></i>
+                    </div>
+                    <div class="action-card-content">
+                        <h4>Withdrawal</h4>
+                        <p>Request instant payouts directly to your UPI ID or QR Code & track payout history.</p>
+                    </div>
+                    <div class="action-card-bottom">
+                        <span class="action-status-pill pill-active">
+                            <i class="fa-solid fa-indian-rupee-sign"></i> 
+                            ₹ <%= (user.balance ? ((user.balance.availableBalance || 0) + (user.balance.prizePool || 0)) : 0) %> Total
+                        </span>
+                        <span style="font-size: 0.8rem; color: #a0a0aa;">Payouts &rarr;</span>
+                    </div>
+                </a>
+
+                <!-- Action 3: Drop Details -->
+                <a href="/drop-details" class="profile-action-card card-drops">
+                    <div class="action-card-top">
+                        <div class="action-icon-wrapper">
+                            <i class="fa-solid fa-crosshairs"></i>
+                        </div>
+                        <i class="fa-solid fa-chevron-right action-arrow"></i>
+                    </div>
+                    <div class="action-card-content">
+                        <h4>Drop Details</h4>
+                        <p>Configure and save your official squad drop coordinates for Erangle, Miramar & Sanhok.</p>
+                    </div>
+                    <div class="action-card-bottom">
+                        <% if (user.dropDetails && (user.dropDetails.erangle || user.dropDetails.miramar || user.dropDetails.rando)) { %>
+                            <span class="action-status-pill pill-info">
+                                <i class="fa-solid fa-location-dot"></i> Coordinates Set
+                            </span>
+                        <% } else { %>
+                            <span class="action-status-pill pill-pending">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Not Configured
+                            </span>
+                        <% } %>
+                        <span style="font-size: 0.8rem; color: #a0a0aa;">Set Drops &rarr;</span>
+                    </div>
+                </a>
+
+                <!-- Action 4: My Matches -->
+                <a href="/my-matches" class="profile-action-card card-matches">
+                    <div class="action-card-top">
+                        <div class="action-icon-wrapper">
+                            <i class="fa-solid fa-gamepad"></i>
+                        </div>
+                        <i class="fa-solid fa-chevron-right action-arrow"></i>
+                    </div>
+                    <div class="action-card-content">
+                        <h4>My Matches</h4>
+                        <p>View all scrims joined by your squad, IDP WhatsApp group links, timings, and team rosters.</p>
+                    </div>
+                    <div class="action-card-bottom">
+                        <span class="action-status-pill pill-active">
+                            <i class="fa-solid fa-calendar-check"></i> Registered Scrims
+                        </span>
+                        <span style="font-size: 0.8rem; color: #a0a0aa;">View Matches &rarr;</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 4. Tactical Squad & Drops Summary Card -->
+            <section class="tactics-overview-card">
+                <div class="tactic-box-header">
+                    <h4 style="margin: 0; font-size: 1.1rem; font-weight: 500; color: #ffffff;">
+                        <i class="fa-solid fa-shield-halved" style="color: var(--profile-accent); margin-right: 0.4rem;"></i>
+                        Squad & Tactics Summary
+                    </h4>
+                    <a href="/team-settings" class="tactic-edit-link">
+                        <i class="fa-solid fa-pen-to-square"></i> Edit
                     </a>
                 </div>
-                <% }  %>
 
+                <div class="tactics-grid">
+                    <!-- Squad Box -->
+                    <div class="tactic-box">
+                        <div class="tactic-box-header">
+                            <span class="tactic-box-title"><i class="fa-solid fa-users"></i> Registered Squad & Standings</span>
+                            <% if (!user.team || !user.team.teamName) { %>
+                                <a href="/team-settings" class="tactic-edit-link">+ Create</a>
+                            <% } else { %>
+                                <a href="/team-settings" class="tactic-edit-link"><i class="fa-solid fa-gear"></i> Settings</a>
+                            <% } %>
+                        </div>
+                        <% if (user.team && user.team.teamName) { %>
+                            <div class="squad-detail-row" style="margin-bottom: 0.85rem;">
+                                <div class="squad-logo-mini">
+                                    <% if (user.team.teamLogo) { %>
+                                        <img src="<%= imageUrl(user.team.teamLogo) %>" alt="<%= user.team.teamName %>">
+                                    <% } else { %>
+                                        <i class="fa-solid fa-shield-halved"></i>
+                                    <% } %>
+                                </div>
+                                <div class="squad-detail-text">
+                                    <strong><%= user.team.teamName %></strong>
+                                    <% if (user.team.whatsappNumber) { %>
+                                        <span><i class="fa-brands fa-whatsapp" style="color: #25d366;"></i> +91 <%= user.team.whatsappNumber %></span>
+                                    <% } else { %>
+                                        <span style="color: #f59e0b;">No WhatsApp linked</span>
+                                    <% } %>
+                                </div>
+                            </div>
+
+                            <!-- Competitive Performance Stats -->
+                            <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.85rem 1rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 0.5rem;">
+                                    <span style="font-size: 0.8rem; font-weight: 700; color: #9e9ea7; text-transform: uppercase; letter-spacing: 0.05em;">
+                                        <i class="fa-solid fa-chart-simple" style="color: var(--accent-2, #D41B23);"></i> Squad Performance
+                                    </span>
+                                    <a href="/leaderboard" style="color: #f59e0b; text-decoration: none; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                        <i class="fa-solid fa-ranking-star"></i> Leaderboard &rarr;
+                                    </a>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; text-align: center;">
+                                    <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 0.5rem 0.25rem;">
+                                        <div style="font-size: 1.15rem; font-weight: 800; color: #fbbf24;"><%= user.team.totalPoints || 0 %></div>
+                                        <div style="font-size: 0.68rem; color: #9e9ea7; font-weight: 700; text-transform: uppercase; margin-top: 0.15rem;">Total PTS</div>
+                                    </div>
+                                    <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 0.5rem 0.25rem;">
+                                        <div style="font-size: 1.15rem; font-weight: 800; color: #ff4d5e;"><%= user.team.totalFinishes || 0 %></div>
+                                        <div style="font-size: 0.68rem; color: #9e9ea7; font-weight: 700; text-transform: uppercase; margin-top: 0.15rem;">Finishes</div>
+                                    </div>
+                                    <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 0.5rem 0.25rem;">
+                                        <div style="font-size: 1.15rem; font-weight: 800; color: #38bdf8;"><%= user.team.placementPoints || 0 %></div>
+                                        <div style="font-size: 0.68rem; color: #9e9ea7; font-weight: 700; text-transform: uppercase; margin-top: 0.15rem;">Place PTS</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.65rem; padding-top: 0.45rem; border-top: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.8rem; color: #9e9ea7;">
+                                    <span><i class="fa-solid fa-gamepad" style="color: #9e9ea7; margin-right: 0.25rem;"></i> Matches: <strong style="color: #fff;"><%= user.team.matchesPlayed || 0 %></strong></span>
+                                    <span><i class="fa-solid fa-crown" style="color: #f59e0b; margin-right: 0.25rem;"></i> Wins (#1): <strong style="color: #22c55e;"><%= user.team.chickenDinners || 0 %></strong></span>
+                                </div>
+                            </div>
+                        <% } else { %>
+                            <div style="color: #9e9ea7; font-size: 0.88rem; padding: 0.5rem 0;">
+                                <p style="margin: 0;">No squad registered yet. Set your squad name and logo in Team Settings to track points and compete on the Leaderboard!</p>
+                            </div>
+                        <% } %>
+                    </div>
+
+                    <!-- Drop Spots Box -->
+                    <div class="tactic-box">
+                        <div class="tactic-box-header">
+                            <span class="tactic-box-title"><i class="fa-solid fa-map-location-dot"></i> Tactical Drop Spots</span>
+                            <a href="/drop-details" class="tactic-edit-link"><i class="fa-solid fa-pen"></i> Edit</a>
+                        </div>
+                        <div class="drops-list">
+                            <div class="drop-item">
+                                <span class="drop-map-name">Erangle</span>
+                                <span class="drop-spot-name"><%= (user.dropDetails && user.dropDetails.erangle) ? user.dropDetails.erangle : 'Not Set' %></span>
+                            </div>
+                            <div class="drop-item">
+                                <span class="drop-map-name">Miramar</span>
+                                <span class="drop-spot-name"><%= (user.dropDetails && user.dropDetails.miramar) ? user.dropDetails.miramar : 'Not Set' %></span>
+                            </div>
+                            <div class="drop-item">
+                                <span class="drop-map-name">Sanhok / Rando</span>
+                                <span class="drop-spot-name"><%= (user.dropDetails && user.dropDetails.rando) ? user.dropDetails.rando : 'Not Set' %></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Referral & Earn Section -->
+            <div id="referral-section" class="profile-section-header" style="margin-top: 0.5rem;">
+                <h3><i class="fa-solid fa-gift" style="color: #f59e0b;"></i> Refer & Earn ₹10</h3>
             </div>
+
+            <section class="referral-card">
+                <!-- Header -->
+                <div class="referral-header">
+                    <div class="referral-title-group">
+                        <div class="referral-icon-badge">
+                            <i class="fa-solid fa-gift"></i>
+                        </div>
+                        <div class="referral-headings">
+                            <h3>Invite Friends, Earn Real Cash</h3>
+                            <p>Get <strong>₹10 credited to your wallet</strong> when your referred friend books their first match or tournament slot!</p>
+                        </div>
+                    </div>
+                    <div class="referral-reward-pill">
+                        <i class="fa-solid fa-coins"></i> ₹10 Per Active Referral
+                    </div>
+                </div>
+
+                <!-- 3-Step Guide -->
+                <div class="referral-steps">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-text">
+                            <strong>Share Link / Code</strong>
+                            <span>Send your referral invite to squad mates</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-text">
+                            <strong>Friend Registers</strong>
+                            <span>They sign in using your referral link</span>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-text">
+                            <strong>Plays 1st Match</strong>
+                            <span>They book min. 1 slot & you get ₹10 instantly!</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Share Box -->
+                <div class="referral-share-grid">
+                    <!-- Referral Code Box -->
+                    <div class="ref-code-box">
+                        <span class="ref-box-label"><i class="fa-solid fa-hashtag"></i> Your Unique Referral Code</span>
+                        <div class="ref-code-display">
+                            <span class="ref-code-value" id="userReferralCode"><%= (typeof referralData !== 'undefined' && referralData.referralCode) ? referralData.referralCode : 'UBR...' %></span>
+                            <button type="button" class="ref-copy-btn" id="copyCodeBtn" onclick="copyReferralCode()">
+                                <i class="fa-regular fa-copy"></i> <span>Copy Code</span>
+                            </button>
+                        </div>
+                        <span style="font-size: 0.74rem; color: #a0a0aa;">Friends can enter this code in their dashboard.</span>
+                    </div>
+
+                    <!-- Share Link Box -->
+                    <div class="ref-link-box">
+                        <span class="ref-box-label"><i class="fa-solid fa-share-nodes"></i> Shareable Referral Link</span>
+                        <% const shareUrl = ((typeof referralData !== 'undefined' && referralData.siteUrl) ? referralData.siteUrl : '') + '/?ref=' + ((typeof referralData !== 'undefined' && referralData.referralCode) ? referralData.referralCode : ''); %>
+                        <div class="ref-link-input-group">
+                            <input type="text" readonly id="referralShareLink" class="ref-link-input" value="<%= shareUrl %>">
+                            <button type="button" class="ref-link-copy-btn" id="copyLinkBtn" onclick="copyReferralLink()">
+                                <i class="fa-solid fa-copy"></i> <span>Copy Link</span>
+                            </button>
+                        </div>
+                        <div class="ref-share-actions">
+                            <% const waText = encodeURIComponent("Join me on UBR Esports for daily BGMI scrims and tournaments! Sign up using my referral link and let's play: " + shareUrl); %>
+                            <a href="https://api.whatsapp.com/send?text=<%= waText %>" target="_blank" rel="noopener noreferrer" class="ref-share-btn whatsapp">
+                                <i class="fa-brands fa-whatsapp" style="font-size: 1.1rem;"></i> Share on WhatsApp
+                            </a>
+                            <button type="button" class="ref-share-btn native-share" onclick="shareReferralNative('<%= shareUrl %>', '<%= (typeof referralData !== 'undefined' && referralData.referralCode) ? referralData.referralCode : '' %>')">
+                                <i class="fa-solid fa-arrow-up-from-bracket"></i> More Options
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="referral-stats-grid">
+                    <div class="ref-stat-card invited">
+                        <div class="ref-stat-val"><%= (typeof referralData !== 'undefined') ? referralData.totalReferrals : 0 %></div>
+                        <div class="ref-stat-label"><i class="fa-solid fa-users"></i> Total Invited</div>
+                    </div>
+                    <div class="ref-stat-card earned">
+                        <div class="ref-stat-val"><%= (typeof referralData !== 'undefined') ? referralData.completedReferrals : 0 %></div>
+                        <div class="ref-stat-label"><i class="fa-solid fa-circle-check"></i> 1st Match Done</div>
+                    </div>
+                    <div class="ref-stat-card pending">
+                        <div class="ref-stat-val"><%= (typeof referralData !== 'undefined') ? referralData.pendingReferrals : 0 %></div>
+                        <div class="ref-stat-label"><i class="fa-solid fa-clock"></i> Match Pending</div>
+                    </div>
+                    <div class="ref-stat-card earned">
+                        <div class="ref-stat-val" style="color: #fbbf24;">₹ <%= (typeof referralData !== 'undefined') ? referralData.totalEarned : 0 %></div>
+                        <div class="ref-stat-label"><i class="fa-solid fa-wallet"></i> Total Earned</div>
+                    </div>
+                </div>
+
+                <!-- Apply Referral Code Box (if not already referred) -->
+                <% if (typeof referralData !== 'undefined' && !referralData.referredBy) { %>
+                    <div class="ref-apply-container" id="applyReferralContainer">
+                        <div class="ref-apply-info">
+                            <h5><i class="fa-solid fa-ticket" style="color: #D41B23; margin-right: 0.35rem;"></i> Have a Referral Code?</h5>
+                            <p>Enter your friend's code before joining your first match to link accounts.</p>
+                        </div>
+                        <form class="ref-apply-form" onsubmit="handleApplyReferral(event)">
+                            <input type="text" id="inputReferralCode" class="ref-apply-input" placeholder="ENTER CODE (e.g. UBR7M4K9)" required maxlength="12" autocomplete="off" spellcheck="false" autocapitalize="characters">
+                            <button type="submit" id="btnApplyRef" class="ref-apply-btn">
+                                <i class="fa-solid fa-check"></i> Apply Code
+                            </button>
+                        </form>
+                    </div>
+                    <div id="applyRefFeedback" style="display: none; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700;"></div>
+                <% } else if (typeof referralData !== 'undefined' && referralData.referredBy) { %>
+                    <div style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 12px; padding: 0.75rem 1.15rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+                        <span style="font-size: 0.85rem; color: #ffffff; font-weight: 700;">
+                            <i class="fa-solid fa-circle-check" style="color: #22c55e; margin-right: 0.35rem;"></i> Referred by: <strong style="color: #22c55e;"><%= referralData.referrerName || 'Squad Member' %></strong>
+                        </span>
+                        <span style="font-size: 0.75rem; color: #a0a0aa; background: rgba(255, 255, 255, 0.05); padding: 0.25rem 0.65rem; border-radius: 999px;">Linked</span>
+                    </div>
+                <% } %>
+
+                <!-- Invited Players History -->
+                <div class="ref-history-box">
+                    <div class="ref-history-header">
+                        <span class="ref-history-title">
+                            <i class="fa-solid fa-list-check" style="color: #f59e0b;"></i> Invited Friends (<%= (typeof referralData !== 'undefined' && referralData.list) ? referralData.list.length : 0 %>)
+                        </span>
+                        <span style="font-size: 0.78rem; color: #9e9ea7;">₹10 added on 1st match/slot</span>
+                    </div>
+
+                    <% if (typeof referralData !== 'undefined' && referralData.list && referralData.list.length > 0) { %>
+                        <div class="ref-list">
+                            <% referralData.list.forEach(item => { %>
+                                <% 
+                                    const refUser = item.referee || {};
+                                    let refImg = refUser.avatar || '';
+                                    if (!refImg && refUser.team && refUser.team.teamLogo) {
+                                        refImg = imageUrl(refUser.team.teamLogo);
+                                    }
+                                    const refName = refUser.name || 'UBR Player';
+                                    const refInitial = (refName.trim().charAt(0) || 'U').toUpperCase();
+                                %>
+                                <div class="ref-item">
+                                    <div class="ref-item-user">
+                                        <div class="ref-item-avatar">
+                                            <% if (refImg) { %>
+                                                <img src="<%= refImg %>" alt="<%= refName %>" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                                                <div class="ref-item-avatar-fallback" style="display: none;">
+                                                    <span><%= refInitial %></span>
+                                                </div>
+                                            <% } else { %>
+                                                <div class="ref-item-avatar-fallback">
+                                                    <span><%= refInitial %></span>
+                                                </div>
+                                            <% } %>
+                                        </div>
+                                        <div class="ref-item-details">
+                                            <strong><%= refName %></strong>
+                                            <span>
+                                                Joined <%= new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <% if (item.status === 'completed') { %>
+                                            <span class="ref-badge completed" title="Friend booked min. 1 match/slot">
+                                                <i class="fa-solid fa-circle-check"></i> ₹10 Credited (1st Match Done)
+                                            </span>
+                                        <% } else { %>
+                                            <span class="ref-badge pending" title="Waiting for player to book 1st match">
+                                                <i class="fa-solid fa-hourglass-half"></i> Pending (1st Match Required)
+                                            </span>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    <% } else { %>
+                        <div class="ref-empty-state">
+                            <i class="fa-solid fa-users"></i>
+                            <p style="margin: 0;">You haven't referred anyone yet.<br>Share your code or link with your squad mates to earn ₹10 whenever they play their first match!</p>
+                        </div>
+                    <% } %>
+                </div>
+            </section>
+
+            <!-- Referral Scripts -->
+            <script>
+                function copyReferralCode() {
+                    const codeEl = document.getElementById('userReferralCode');
+                    if (!codeEl) return;
+                    const code = codeEl.innerText.trim();
+                    navigator.clipboard.writeText(code).then(() => {
+                        const btn = document.getElementById('copyCodeBtn');
+                        const orig = btn.innerHTML;
+                        btn.innerHTML = '<i class="fa-regular fa-circle-check"></i> <span>Copied!</span>';
+                        btn.style.borderColor = '#22c55e';
+                        btn.style.color = '#22c55e';
+                        setTimeout(() => {
+                            btn.innerHTML = orig;
+                            btn.style.borderColor = '';
+                            btn.style.color = '';
+                        }, 2000);
+                    }).catch(() => {
+                        alert("Referral Code: " + code);
+                    });
+                }
+
+                function copyReferralLink() {
+                    const input = document.getElementById('referralShareLink');
+                    if (!input) return;
+                    input.select();
+                    input.setSelectionRange(0, 99999);
+                    navigator.clipboard.writeText(input.value).then(() => {
+                        const btn = document.getElementById('copyLinkBtn');
+                        const orig = btn.innerHTML;
+                        btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>Copied!</span>';
+                        btn.style.background = '#15803d';
+                        setTimeout(() => {
+                            btn.innerHTML = orig;
+                            btn.style.background = '';
+                        }, 2000);
+                    }).catch(() => {
+                        alert("Link copied: " + input.value);
+                    });
+                }
+
+                function shareReferralNative(url, code) {
+                    if (navigator.share) {
+                        navigator.share({
+                            title: 'Join UBR Esports',
+                            text: 'Join me on UBR Esports for daily BGMI scrims and tournaments! Sign up using my referral code: ' + code,
+                            url: url
+                        }).catch(e => console.log('Share dismissed', e));
+                    } else {
+                        copyReferralLink();
+                    }
+                }
+
+                async function handleApplyReferral(e) {
+                    e.preventDefault();
+                    const input = document.getElementById('inputReferralCode');
+                    const btn = document.getElementById('btnApplyRef');
+                    const feedback = document.getElementById('applyRefFeedback');
+                    const code = input.value.trim().toUpperCase();
+
+                    if (!code) return;
+
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Applying...';
+
+                    try {
+                        const res = await fetch('/api/referral/apply', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ code })
+                        });
+                        const data = await res.json();
+
+                        feedback.style.display = 'block';
+                        if (res.ok && data.success) {
+                            feedback.style.background = 'rgba(34, 197, 94, 0.15)';
+                            feedback.style.border = '1px solid rgba(34, 197, 94, 0.35)';
+                            feedback.style.color = '#22c55e';
+                            feedback.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + data.msg;
+                            document.getElementById('applyReferralContainer').style.display = 'none';
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            feedback.style.background = 'rgba(239, 68, 68, 0.15)';
+                            feedback.style.border = '1px solid rgba(239, 68, 68, 0.35)';
+                            feedback.style.color = '#f87171';
+                            feedback.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + (data.msg || 'Failed to apply code');
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fa-solid fa-check"></i> Apply Code';
+                        }
+                    } catch (err) {
+                        feedback.style.display = 'block';
+                        feedback.style.background = 'rgba(239, 68, 68, 0.15)';
+                        feedback.style.border = '1px solid rgba(239, 68, 68, 0.35)';
+                        feedback.style.color = '#f87171';
+                        feedback.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Network error. Please try again.';
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-check"></i> Apply Code';
+                    }
+                }
+            </script>
+
         </main>
 
         <%- include("../partials/footer") %>
+        <%- include("../partials/bottomNav") %>
     </div>
 </body>
 </html>

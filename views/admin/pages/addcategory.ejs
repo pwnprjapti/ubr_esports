@@ -6,8 +6,8 @@
     <title>Add Category | UBR Esports Admin</title>
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-    <link rel="stylesheet" href="/css/admin/adminLayout.css">
-    <link rel="stylesheet" href="/css/addcategory.css">
+    <link rel="stylesheet" href="/css/admin/adminLayout.css?v=restore">
+    <link rel="stylesheet" href="/css/addcategory.css?v=restore">
 </head>
 <body>
     <div class="admin-layout">
@@ -48,6 +48,48 @@
                                 >
                             </div>
 
+                            <!-- Teams, Prize Pool & Entry Fee Fields -->
+                            <div class="form-grid-3">
+                                <div class="form-group">
+                                    <label for="categoryTeams">Teams</label>
+                                    <input 
+                                        type="text" 
+                                        id="categoryTeams" 
+                                        name="categoryTeams" 
+                                        class="form-input" 
+                                        placeholder="e.g. 16-18" 
+                                        value="16-18"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="categoryPrizePool">Prize Pool</label>
+                                    <input 
+                                        type="text" 
+                                        id="categoryPrizePool" 
+                                        name="categoryPrizePool" 
+                                        class="form-input" 
+                                        placeholder="e.g. 1000" 
+                                        value="1000"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="categoryEntryFee">Entry Fee</label>
+                                    <input 
+                                        type="text" 
+                                        id="categoryEntryFee" 
+                                        name="categoryEntryFee" 
+                                        class="form-input" 
+                                        placeholder="e.g. 60" 
+                                        value="60"
+                                        required
+                                    >
+                                </div>
+                            </div>
+
                             <!-- 3. Category Description Field -->
                             <div class="form-group">
                                 <label for="categoryDescription">Category Description</label>
@@ -78,6 +120,9 @@
     <script>
         const categoryName = document.getElementById("categoryName");
         const categoryPicture = document.getElementById("categoryPicture");
+        const categoryTeams = document.getElementById("categoryTeams");
+        const categoryPrizePool = document.getElementById("categoryPrizePool");
+        const categoryEntryFee = document.getElementById("categoryEntryFee");
         const categoryDescription = document.getElementById("categoryDescription");
         const submitButton = document.getElementById("submitButton");
         const baseurl = "<%= baseurl %>";
@@ -92,6 +137,9 @@
                 const formData = new FormData();
                 formData.append("title", categoryName.value);
                 formData.append("description", categoryDescription.value);
+                formData.append("teams", categoryTeams.value);
+                formData.append("prizePool", categoryPrizePool.value);
+                formData.append("entryFee", categoryEntryFee.value);
                 if (categoryPicture.files[0]) {
                     formData.append("categoryPicture", categoryPicture.files[0]);
                 } else {

@@ -7,12 +7,16 @@
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
     <meta name="description" content="Sign in to your UBR Esports account with Google to join BGMI scrims, access daily scrims, and manage your wallet.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-    <link rel="stylesheet" href="/css/home.css">
-    <link rel="stylesheet" href="/css/nav.css">
-    <link rel="stylesheet" href="/css/footer.css">
+    <link rel="stylesheet" href="/css/home.css?v=restore">
+    <link rel="stylesheet" href="/css/nav.css?v=restore">
+    <link rel="stylesheet" href="/css/footer.css?v=restore">
     <style>
         *, *::before, *::after {
             box-sizing: border-box;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 500;
         }
 
         .auth-page {
@@ -41,7 +45,7 @@
             transform: translate(-50%, -50%);
             width: 90%;
             height: 90%;
-            background: radial-gradient(circle, rgba(215, 38, 61, 0.22) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(155, 7, 7, 0.22) 0%, transparent 70%);
             filter: blur(40px);
             pointer-events: none;
             z-index: 0;
@@ -66,9 +70,9 @@
             gap: 0.45rem;
             padding: 0.35rem 0.85rem;
             border-radius: 999px;
-            background: rgba(215, 38, 61, 0.12);
-            border: 1px solid rgba(215, 38, 61, 0.25);
-            color: var(--accent-2, #ff455e);
+            background: rgba(155, 7, 7, 0.12);
+            border: 1px solid rgba(155, 7, 7, 0.25);
+            color: var(--accent-2, #D41B23);
             font-size: 0.78rem;
             font-weight: 800;
             text-transform: uppercase;
@@ -81,19 +85,19 @@
             height: 64px;
             margin: 0 auto 1.25rem;
             border-radius: 50%;
-            background: linear-gradient(135deg, rgba(215, 38, 61, 0.2), rgba(255, 69, 94, 0.1));
-            border: 1px solid rgba(215, 38, 61, 0.35);
+            background: linear-gradient(135deg, rgba(155, 7, 7, 0.2), rgba(212, 27, 35, 0.1));
+            border: 1px solid rgba(155, 7, 7, 0.35);
             display: grid;
             place-items: center;
-            color: var(--accent-2, #ff455e);
+            color: var(--accent-2, #D41B23);
             font-size: 1.75rem;
-            box-shadow: 0 0 24px rgba(215, 38, 61, 0.3);
+            box-shadow: 0 0 24px rgba(155, 7, 7, 0.3);
         }
 
         .auth-card h1 {
             margin: 0 0 0.5rem;
             font-size: clamp(1.45rem, 4vw, 1.85rem);
-            font-weight: 900;
+            font-weight: 500;
             color: #ffffff;
             letter-spacing: -0.01em;
         }
@@ -189,7 +193,7 @@
         }
 
         .auth-footer-note a {
-            color: var(--accent-2, #ff455e);
+            color: var(--accent-2, #D41B23);
             text-decoration: underline;
             text-underline-offset: 2px;
         }
@@ -328,6 +332,7 @@
         </main>
 
         <%- include("../partials/footer") %>
+        <%- include("../partials/bottomNav") %>
     </div>
 </body>
 </html>

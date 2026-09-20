@@ -6,8 +6,8 @@
     <title>Categories | UBR Esports Admin</title>
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-    <link rel="stylesheet" href="/css/admin/adminLayout.css">
-    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/admin/adminLayout.css?v=restore">
+    <link rel="stylesheet" href="/css/home.css?v=restore">
     <style>
         .admin-categories-page {
             width: 100%;
@@ -25,7 +25,7 @@
 
         .category-card:hover {
             transform: translateY(-4px);
-            border-color: rgba(215, 38, 61, 0.4);
+            border-color: rgba(155, 7, 7, 0.4);
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
         }
 
@@ -38,7 +38,7 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 1rem;
-            color: #ff455e;
+            color: #D41B23;
             font-size: 2.5rem;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
@@ -69,7 +69,7 @@
             border: none;
             border-radius: 10px;
             padding: 0.75rem 1rem;
-            background: linear-gradient(135deg, #d7263d, #ff455e);
+            background: linear-gradient(180deg, #D41B23, #9B0707);
             color: #ffffff !important;
             font-weight: 700;
             font-size: 0.9rem;
@@ -79,7 +79,7 @@
             gap: 0.5rem;
             text-decoration: none;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(215, 38, 61, 0.35);
+            box-shadow: 0 4px 14px rgba(155, 7, 7, 0.35);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             width: 100%;
             box-sizing: border-box;
@@ -87,12 +87,12 @@
 
         .card-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(215, 38, 61, 0.5);
+            box-shadow: 0 6px 20px rgba(155, 7, 7, 0.5);
         }
 
         .add-category-top-btn {
             padding: 0.65rem 1.25rem;
-            background: linear-gradient(135deg, #d7263d, #ff455e);
+            background: linear-gradient(180deg, #D41B23, #9B0707);
             color: #ffffff !important;
             border-radius: 10px;
             font-weight: 700;
@@ -101,20 +101,20 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            box-shadow: 0 4px 14px rgba(215, 38, 61, 0.35);
+            box-shadow: 0 4px 14px rgba(155, 7, 7, 0.35);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .add-category-top-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(215, 38, 61, 0.5);
+            box-shadow: 0 6px 20px rgba(155, 7, 7, 0.5);
         }
 
         .delete-category-btn {
             position: absolute;
             top: 0.75rem;
             right: 0.75rem;
-            background: rgba(215, 38, 61, 0.85);
+            background: rgba(155, 7, 7, 0.85);
             border: none;
             border-radius: 50% !important;
             width: 34px !important;
@@ -133,8 +133,8 @@
 
         .delete-category-btn:hover {
             transform: scale(1.1);
-            background-color: #ff455e;
-            box-shadow: 0 4px 12px rgba(215, 38, 61, 0.5);
+            background-color: #D41B23;
+            box-shadow: 0 4px 12px rgba(155, 7, 7, 0.5);
         }
 
         .edit-category-btn {
@@ -162,6 +162,99 @@
             transform: scale(1.1);
             background-color: #ffca28;
             box-shadow: 0 4px 12px rgba(255, 193, 7, 0.5);
+        }
+
+        /* Drag & Drop Reorder Styles */
+        .drag-handle {
+            position: absolute;
+            top: 0.75rem;
+            left: 0.75rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 0.25rem 0.55rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #b0b0b8;
+            cursor: grab;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+            z-index: 10;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .drag-handle:hover {
+            background: rgba(155, 7, 7, 0.25);
+            border-color: rgba(155, 7, 7, 0.5);
+            color: #D41B23;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .category-card.sortable-ghost {
+            opacity: 0.35;
+            border: 2px dashed #D41B23 !important;
+            background: rgba(155, 7, 7, 0.08) !important;
+        }
+
+        .category-card.sortable-chosen {
+            border-color: #D41B23 !important;
+            box-shadow: 0 10px 30px rgba(155, 7, 7, 0.35) !important;
+            cursor: grabbing !important;
+        }
+
+        .category-card.sortable-drag {
+            opacity: 0.95;
+            transform: scale(1.02);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7) !important;
+        }
+
+        /* Floating Toast for Reorder Status */
+        .reorder-toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #151720;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-size: 0.88rem;
+            font-weight: 700;
+            z-index: 9999;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        .reorder-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .reorder-toast.success {
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #4ade80;
+        }
+
+        .reorder-toast.error {
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #f87171;
+        }
+
+        .reorder-toast.loading {
+            border-color: rgba(255, 193, 7, 0.4);
+            color: #ffca28;
         }
 
         @media (max-width: 600px) {
@@ -204,10 +297,14 @@
                         </a>
                     </div>
 
-                    <div class="categories">
+                    <div class="categories" id="categoriesGrid">
 
                       <% for(element of categories ) { %>
-                         <div class="category-card" style="position: relative;">
+                         <div class="category-card" style="position: relative;" data-id="<%= element._id %>">
+                             <div class="drag-handle" title="Drag to reorder category">
+                                 <i class="fa-solid fa-grip-vertical"></i>
+                                 <span>Drag</span>
+                             </div>
                              <button class="edit-category-btn" onclick="event.stopPropagation(); window.location.href='/admin/editcategory/<%= element._id %>'" title="Edit Category">
                                  <i class="fa-solid fa-pen-to-square"></i>
                              </button>
@@ -223,6 +320,11 @@
                             </div>
                             <h3><%= element.title %></h3>
                             <p><%= element.description %></p>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; font-size: 0.8rem; color: #a0a0aa;">
+                                <span style="background: rgba(255, 255, 255, 0.05); padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.08);" title="Teams"><i class="fa-solid fa-users" style="color: #60a5fa; margin-right: 4px;"></i> <%= element.teams || '16-18' %></span>
+                                <span style="background: rgba(255, 255, 255, 0.05); padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.08);" title="Entry Fee"><i class="fa-solid fa-indian-rupee-sign" style="color: #4ade80; margin-right: 4px;"></i> <%= element.entryFee || '60' %></span>
+                                <span style="background: rgba(255, 255, 255, 0.05); padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.08);" title="Prize Pool"><i class="fa-solid fa-trophy" style="color: #facc15; margin-right: 4px;"></i> <%= element.prizePool || '1000' %></span>
+                            </div>
                             <button class="card-btn" onclick="window.location.href='/admin/category/<%= element._id %>'">
                                 <i class="fa-solid fa-eye"></i> View Details
                             </button>
@@ -267,6 +369,75 @@
                 }
             }
         }
+    </script>
+
+    <!-- Floating Notification Toast -->
+    <div id="reorderToast" class="reorder-toast"></div>
+
+    <!-- Drag & Drop Sortable Scripts -->
+    <script src="/js/sortable.min.js"></script>
+    <script>
+        if (typeof Sortable === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"><\/script>');
+        }
+    </script>
+    <script>
+        (function initCategoryDragAndDrop() {
+            const categoriesGrid = document.getElementById('categoriesGrid');
+            const toast = document.getElementById('reorderToast');
+            let toastTimeout = null;
+
+            function showToast(message, type, iconHtml) {
+                if (!toast) return;
+                if (toastTimeout) clearTimeout(toastTimeout);
+                toast.className = `reorder-toast show ${type}`;
+                toast.innerHTML = `${iconHtml || ''} <span>${message}</span>`;
+                if (type !== 'loading') {
+                    toastTimeout = setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 3000);
+                }
+            }
+
+            if (categoriesGrid) {
+                new Sortable(categoriesGrid, {
+                    animation: 200,
+                    handle: '.drag-handle',
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    dragClass: 'sortable-drag',
+                    filter: '.edit-category-btn, .delete-category-btn, .card-btn',
+                    preventOnFilter: false,
+                    onEnd: async function(evt) {
+                        if (evt.oldIndex === evt.newIndex) return;
+
+                        const allCards = Array.from(categoriesGrid.querySelectorAll('.category-card'));
+                        const orderedIds = allCards.map(c => c.getAttribute('data-id')).filter(Boolean);
+
+                        if (!orderedIds || orderedIds.length === 0) return;
+
+                        showToast('Saving new order...', 'loading', '<i class="fa-solid fa-spinner fa-spin"></i>');
+
+                        try {
+                            const response = await fetch('/admin/categories/reorder', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ orderedIds })
+                            });
+                            const data = await response.json();
+                            if (response.ok && data.success) {
+                                showToast('Category order saved successfully!', 'success', '<i class="fa-solid fa-circle-check"></i>');
+                            } else {
+                                showToast(data.msg || 'Failed to save order', 'error', '<i class="fa-solid fa-circle-exclamation"></i>');
+                            }
+                        } catch (err) {
+                            console.error('Error reordering categories:', err);
+                            showToast('Network error while saving order', 'error', '<i class="fa-solid fa-triangle-exclamation"></i>');
+                        }
+                    }
+                });
+            }
+        })();
     </script>
 </body>
 </html>

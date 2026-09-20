@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Overall Standings | UBR Esports Leaderboard</title>
+    <link rel="icon" type="image/png" href="/images/ubrLogo.png">
+    <meta name="description" content="Official BGMI Overall Standings and Team Rankings based on total points and kills on UBR Esports.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/home.css?v=restore">
+    <link rel="stylesheet" href="/css/nav.css?v=restore">
+    <link rel="stylesheet" href="/css/footer.css?v=restore">
+    <style>
+        :root {
+            --brand-red: #D41B23;
+            --brand-red-bright: #ff2a35;
+            --brand-red-glow: rgba(212, 27, 35, 0.4);
+            --gold: #f59e0b;
+            --gold-bright: #fbbf24;
+            --silver: #cbd5e1;
+            --bronze: #d97706;
+            --bg-deep: #07080c;
+            --card-bg: #0e1017;
+            --card-border: rgba(255, 255, 255, 0.07);
+            --text-muted: #8e93a5;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 500;
+        }
+
+        html {
+            background-color: var(--bg-deep);
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            overflow-x: clip;
+            overflow-x: hidden;
+            max-width: 100%;
+            width: 100%;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: clip;
+            overflow-x: hidden;
+            overflow-y: auto;
+            max-width: 100%;
+            width: 100%;
+            position: relative;
+        }
+
+        .page-shell {
+            overflow-x: clip;
+            overflow-x: hidden;
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .leaderboard-container {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 1.25rem 1rem 5rem;
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: clip;
+            overflow-x: hidden;
+        }
+
+        #standingsView {
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* ===================================================
+           1. HERO BANNER (OVERALL STANDINGS)
+           =================================================== */
+        .standings-hero {
+            position: relative;
+            background-image: url('/images/leaderboardback.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            aspect-ratio: 1074 / 366;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 0;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+
+        /* Ambient fog overlay disabled so custom banner graphics remain clear and bright */
+        .standings-hero::before {
+            display: none;
+        }
+
+        .hero-left-content {
+            position: relative;
+            z-index: 2;
+            max-width: 600px;
+        }
+
+        /* BGMI Angled Pill Badge */
+        .bgmi-pill-badge {
+            display: inline-block;
+            background: var(--brand-red);
+            color: #ffffff;
+            font-size: 0.78rem;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            padding: 0.28rem 0.9rem;
+            border-radius: 4px;
+            transform: skewX(-14deg);
+            box-shadow: 0 4px 12px rgba(212, 27, 35, 0.5);
+            margin-bottom: 0.85rem;
+        }
+
+        .bgmi-pill-badge span {
+            display: inline-block;
+            transform: skewX(14deg);
+        }
+
+        /* Dual-tone Standings Title */
+        .standings-main-title {
+            margin: 0;
+            line-height: 0.92;
+            text-transform: uppercase;
+        }
+
+        .title-overall {
+            display: block;
+            font-size: clamp(2.4rem, 5.5vw, 4.4rem);
+            font-weight: 500;
+            color: #ffffff;
+            letter-spacing: -0.01em;
+        }
+
+        .title-standings {
+            display: block;
+            font-size: clamp(2.8rem, 6.5vw, 5rem);
+            font-weight: 500;
+            font-style: italic;
+            color: var(--brand-red-bright);
+            letter-spacing: 0.02em;
+            text-shadow: 0 0 25px rgba(255, 42, 53, 0.55);
+            margin-top: 0.15rem;
+        }
+
+        .standings-sub-tag {
+            margin: 1.1rem 0 0;
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        /* Hero Right Soldier Graphic */
+        .hero-character-wrap {
+            position: absolute;
+            right: 25px;
+            bottom: 0;
+            top: 0;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 1;
+            pointer-events: none;
+            width: 380px;
+        }
+
+        .hero-bgmi-watermark {
+            position: absolute;
+            top: 25px;
+            right: 20px;
+            font-size: 7.5rem;
+            font-weight: 900;
+            font-style: italic;
+            color: rgba(212, 27, 35, 0.28);
+            line-height: 1;
+            user-select: none;
+            pointer-events: none;
+            letter-spacing: 0.05em;
+            transform: rotate(-5deg);
+        }
+
+        .hero-character-img {
+            max-height: 320px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 0 30px rgba(212, 27, 35, 0.45));
+            mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+        }
+
+        /* ===================================================
+           2. FILTER TABS & CATEGORIES BAR
+           =================================================== */
+        .filter-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .time-filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: #11131a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #d1d5db;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 0.65rem 1.35rem;
+            border-radius: 10px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .filter-btn.active {
+            background: var(--brand-red);
+            border-color: var(--brand-red-bright);
+            color: #ffffff;
+            box-shadow: 0 4px 18px rgba(212, 27, 35, 0.4);
+        }
+
+        .filter-secondary-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        /* Category Dropdown */
+        .category-select-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .category-select {
+            background: #11131a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 0.65rem 2.2rem 0.65rem 1.1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            transition: all 0.2s ease;
+        }
+
+        .category-select:hover, .category-select:focus {
+            border-color: rgba(255, 255, 255, 0.25);
+            background: #151822;
+        }
+
+        .category-select-icon {
+            position: absolute;
+            right: 0.85rem;
+            pointer-events: none;
+            color: #8e93a5;
+            font-size: 0.8rem;
+        }
+
+        /* Search input */
+        .search-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #11131a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 0.6rem 0.95rem;
+        }
+
+        .search-input-wrap i {
+            color: #8e93a5;
+            font-size: 0.88rem;
+        }
+
+        .search-input-wrap input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 0.88rem;
+            width: 150px;
+        }
+
+        /* ===================================================
+           3. STANDINGS TABLE HEADER
+           =================================================== */
+        .standings-header-row {
+            display: grid;
+            grid-template-columns: 44px minmax(140px, 1.2fr) 65px 75px 75px 95px;
+            align-items: center;
+            padding: 0.5rem 1.1rem;
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.35rem;
+            user-select: none;
+        }
+
+        .col-center {
+            text-align: center;
+        }
+
+        .col-right {
+            text-align: right;
+        }
+
+        .col-total-header {
+            text-align: right;
+            color: var(--brand-red-bright);
+        }
+
+        /* ===================================================
+           4. STANDING ROW CARDS
+           =================================================== */
+        .standings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.32rem;
+        }
+
+        .standing-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 0.48rem 1.1rem;
+            display: grid;
+            grid-template-columns: 44px minmax(140px, 1.2fr) 65px 75px 75px 95px;
+            align-items: center;
+            transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .standing-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.16);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+        }
+
+        /* ===================================================
+           TOP 3 SPECIAL CARD STYLING & COMPACT BLINK AURAS
+           =================================================== */
+
+        /* #1 Champion Card */
+        .standing-card.is-rank-1 {
+            border: 1px solid rgba(245, 158, 11, 0.65);
+            border-left: 3px solid #f59e0b;
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.14) 0%, rgba(17, 19, 28, 0.96) 35%);
+            animation: cardBlinkGold 2s infinite ease-in-out;
+        }
+
+        @keyframes cardBlinkGold {
+            0%, 100% {
+                border-color: rgba(245, 158, 11, 0.4);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            }
+            50% {
+                border-color: rgba(251, 191, 36, 0.85);
+                box-shadow: 0 0 5px rgba(251, 191, 36, 0.35), inset 0 0 10px rgba(245, 158, 11, 0.12);
+            }
+        }
+
+        .standing-card.is-rank-1:hover {
+            box-shadow: 0 0 8px rgba(251, 191, 36, 0.35), 0 4px 12px rgba(0, 0, 0, 0.5);
+            border-color: var(--gold-bright);
+        }
+
+        /* #2 Runner Up Card */
+        .standing-card.is-rank-2 {
+            border: 1px solid rgba(148, 163, 184, 0.55);
+            border-left: 3px solid #cbd5e1;
+            background: linear-gradient(90deg, rgba(226, 232, 240, 0.09) 0%, rgba(17, 19, 28, 0.96) 35%);
+            animation: cardBlinkSilver 2.2s infinite ease-in-out;
+        }
+
+        @keyframes cardBlinkSilver {
+            0%, 100% {
+                border-color: rgba(148, 163, 184, 0.35);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            }
+            50% {
+                border-color: rgba(255, 255, 255, 0.85);
+                box-shadow: 0 0 5px rgba(226, 232, 240, 0.35), inset 0 0 10px rgba(226, 232, 240, 0.1);
+            }
+        }
+
+        .standing-card.is-rank-2:hover {
+            box-shadow: 0 0 8px rgba(226, 232, 240, 0.35), 0 4px 12px rgba(0, 0, 0, 0.5);
+            border-color: #ffffff;
+        }
+
+        /* #3 Third Place Card */
+        .standing-card.is-rank-3 {
+            border: 1px solid rgba(217, 119, 6, 0.55);
+            border-left: 3px solid #d97706;
+            background: linear-gradient(90deg, rgba(217, 119, 6, 0.1) 0%, rgba(17, 19, 28, 0.96) 35%);
+            animation: cardBlinkBronze 2.4s infinite ease-in-out;
+        }
+
+        @keyframes cardBlinkBronze {
+            0%, 100% {
+                border-color: rgba(180, 83, 9, 0.35);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            }
+            50% {
+                border-color: rgba(245, 158, 11, 0.85);
+                box-shadow: 0 0 5px rgba(245, 158, 11, 0.35), inset 0 0 10px rgba(180, 83, 9, 0.1);
+            }
+        }
+
+        .standing-card.is-rank-3:hover {
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.35), 0 4px 12px rgba(0, 0, 0, 0.5);
+            border-color: #f59e0b;
+        }
+
+        /* User Squad Highlight */
+        .standing-card.is-user-squad {
+            border-color: rgba(212, 27, 35, 0.45);
+            background: linear-gradient(90deg, rgba(212, 27, 35, 0.1) 0%, rgba(14, 16, 23, 0.95) 40%);
+        }
+
+        /* Rank Column */
+        .rank-col {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        /* ===================================================
+           ESPORTS TOURNAMENT SHIELD BADGES & RANKING SYSTEM
+           =================================================== */
+        .esports-shield-badge {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 38px;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        /* Continuous 360-degree Blinking Aura matching the exact shield geometry */
+        .shield-aura {
+            position: absolute;
+            inset: -2px;
+            clip-path: polygon(50% 0%, 100% 20%, 100% 74%, 50% 100%, 0% 74%, 0% 20%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .aura-gold {
+            background: radial-gradient(circle at 50% 50%, rgba(254, 240, 138, 0.9) 0%, rgba(245, 158, 11, 0.7) 45%, rgba(180, 83, 9, 0) 75%);
+            animation: shieldPulseGold 1.5s infinite ease-in-out;
+        }
+
+        @keyframes shieldPulseGold {
+            0%, 100% {
+                opacity: 0.35;
+                transform: scale(0.98);
+                filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.4));
+            }
+            50% {
+                opacity: 0.95;
+                transform: scale(1.03);
+                filter: drop-shadow(0 0 3px rgba(251, 191, 36, 0.85)) drop-shadow(0 0 6px rgba(245, 158, 11, 0.55));
+            }
+        }
+
+        .aura-silver {
+            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 0%, rgba(203, 213, 225, 0.7) 45%, rgba(100, 116, 139, 0) 75%);
+            animation: shieldPulseSilver 1.6s infinite ease-in-out;
+        }
+
+        @keyframes shieldPulseSilver {
+            0%, 100% {
+                opacity: 0.35;
+                transform: scale(0.98);
+                filter: drop-shadow(0 0 2px rgba(148, 163, 184, 0.4));
+            }
+            50% {
+                opacity: 0.95;
+                transform: scale(1.03);
+                filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.85)) drop-shadow(0 0 6px rgba(148, 163, 184, 0.55));
+            }
+        }
+
+        .aura-bronze {
+            background: radial-gradient(circle at 50% 50%, rgba(254, 215, 170, 0.9) 0%, rgba(217, 119, 6, 0.7) 45%, rgba(120, 53, 15, 0) 75%);
+            animation: shieldPulseBronze 1.7s infinite ease-in-out;
+        }
+
+        @keyframes shieldPulseBronze {
+            0%, 100% {
+                opacity: 0.35;
+                transform: scale(0.98);
+                filter: drop-shadow(0 0 2px rgba(180, 83, 9, 0.4));
+            }
+            50% {
+                opacity: 0.95;
+                transform: scale(1.03);
+                filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.85)) drop-shadow(0 0 6px rgba(180, 83, 9, 0.55));
+            }
+        }
+
+        /* Metallic Bezel Rim */
+        .shield-bezel {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            clip-path: polygon(50% 0%, 100% 20%, 100% 74%, 50% 100%, 0% 74%, 0% 20%);
+            padding: 2.2px;
+            box-sizing: border-box;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+        }
+
+        .bezel-gold {
+            background: linear-gradient(145deg, #fff7a1 0%, #f59e0b 35%, #92400e 70%, #fff7a1 100%);
+        }
+
+        .bezel-silver {
+            background: linear-gradient(145deg, #ffffff 0%, #cbd5e1 35%, #475569 70%, #ffffff 100%);
+        }
+
+        .bezel-bronze {
+            background: linear-gradient(145deg, #fed7aa 0%, #d97706 35%, #78350f 70%, #fed7aa 100%);
+        }
+
+        /* Inner Shield Face Plate */
+        .shield-face {
+            width: 100%;
+            height: 100%;
+            clip-path: polygon(50% 0%, 100% 20%, 100% 74%, 50% 100%, 0% 74%, 0% 20%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .face-gold {
+            background: radial-gradient(circle at 50% 25%, #3d2305 0%, #171108 60%, #0d0a06 100%);
+            box-shadow: inset 0 0 8px rgba(245, 158, 11, 0.45);
+        }
+
+        .face-silver {
+            background: radial-gradient(circle at 50% 25%, #232a36 0%, #11141c 60%, #0a0c12 100%);
+            box-shadow: inset 0 0 8px rgba(226, 232, 240, 0.4);
+        }
+
+        .face-bronze {
+            background: radial-gradient(circle at 50% 25%, #381a07 0%, #1a0f08 60%, #0d0805 100%);
+            box-shadow: inset 0 0 8px rgba(217, 119, 6, 0.4);
+        }
+
+        /* Diagonal Glass Sheen */
+        .shield-glare {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 52%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.36) 0%, rgba(255, 255, 255, 0.05) 75%, transparent 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Floating Top Icon */
+        .shield-icon {
+            position: relative;
+            z-index: 2;
+            font-size: 0.62rem;
+            line-height: 1;
+            margin-top: 1px;
+        }
+
+        .face-gold .shield-icon {
+            color: #fef08a;
+            filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.95));
+            animation: crownFloat 2.2s infinite ease-in-out;
+        }
+
+        @keyframes crownFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-1.5px); }
+        }
+
+        .face-silver .shield-icon {
+            color: #ffffff;
+            filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
+        }
+
+        .face-bronze .shield-icon {
+            color: #fed7aa;
+            filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.9));
+        }
+
+        /* Embossed Esports Numeral */
+        .shield-rank-num {
+            position: relative;
+            z-index: 2;
+            font-size: 1.05rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-top: 1px;
+            font-family: inherit;
+        }
+
+        .face-gold .shield-rank-num {
+            background: linear-gradient(180deg, #ffffff 10%, #fde047 50%, #d97706 90%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+        }
+
+        .face-silver .shield-rank-num {
+            background: linear-gradient(180deg, #ffffff 15%, #e2e8f0 55%, #94a3b8 90%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+        }
+
+        .face-bronze .shield-rank-num {
+            background: linear-gradient(180deg, #ffffff 10%, #fcd34d 50%, #b45309 90%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+        }
+
+        /* Top 10 Contenders Badge (Ranks 4 - 10) */
+        .rank-contender-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            background: linear-gradient(145deg, #191c28, #0e1017);
+            border: 1px solid rgba(212, 27, 35, 0.4);
+            box-shadow: 0 0 10px rgba(212, 27, 35, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 0.88rem;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .rank-contender-badge:hover {
+            border-color: rgba(212, 27, 35, 0.7);
+            box-shadow: 0 0 14px rgba(212, 27, 35, 0.35);
+        }
+
+        /* Standard Badge for Ranks 11+ */
+        .rank-standard-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8e93a5;
+            font-weight: 700;
+            font-size: 0.82rem;
+            user-select: none;
+        }
+
+        /* Team Info Column */
+        .team-info-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            min-width: 0;
+            padding-right: 0.5rem;
+        }
+
+        .team-avatar-box {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: #171924;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--brand-red-bright);
+            overflow: hidden;
+            flex-shrink: 0;
+            font-size: 1rem;
+        }
+
+        .team-avatar-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .team-meta {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+            flex: 1;
+        }
+
+        .team-name-row {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: nowrap;
+        }
+
+        .team-title {
+            margin: 0;
+            font-size: 0.84rem;
+            font-weight: 500;
+            color: #ffffff;
+            letter-spacing: 0.01em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .you-pill {
+            background: var(--brand-red);
+            color: #ffffff;
+            font-size: 0.62rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            letter-spacing: 0.05em;
+            flex-shrink: 0;
+        }
+
+        .team-matches-txt {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* Stat Cells */
+        .stat-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-sublabel {
+            font-size: 0.58rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 0.1rem;
+        }
+
+        .stat-val {
+            font-size: 0.88rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        /* Total PTS Cell */
+        .stat-total {
+            align-items: flex-end;
+            text-align: right;
+        }
+
+        .stat-total .stat-sublabel {
+            color: var(--brand-red-bright);
+        }
+
+        .total-pts-row {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .total-pts-number {
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: var(--brand-red-bright);
+            letter-spacing: -0.01em;
+            text-shadow: 0 0 12px rgba(255, 42, 53, 0.4);
+        }
+
+        .chevron-icon {
+            font-size: 0.82rem;
+            color: var(--brand-red-bright);
+            opacity: 0.8;
+            transition: transform 0.15s ease;
+        }
+
+        .standing-card:hover .chevron-icon {
+            transform: translateX(3px);
+            opacity: 1;
+        }
+
+        /* ===================================================
+           5. POINT TABLES VIEW MODAL / VIEW
+           =================================================== */
+        #pointTablesSection {
+            margin-top: 1rem;
+        }
+
+        .pt-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1rem;
+        }
+
+        .pt-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 1.15rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .pt-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Lightbox modal */
+        .lightbox-modal {
+            display: none;
+            position: fixed;
+            z-index: 99999;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .lightbox-img {
+            max-width: 95%;
+            max-height: 90vh;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 2rem;
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 2.2rem;
+            cursor: pointer;
+        }
+
+        /* ===================================================
+           6. RESPONSIVE DESIGN
+           =================================================== */
+        @media (max-width: 900px) {
+            .hero-character-wrap {
+                width: 250px;
+                opacity: 0.75;
+            }
+            .hero-character-img {
+                max-height: 240px;
+            }
+            .hero-bgmi-watermark {
+                font-size: 5rem;
+            }
+        }
+
+        /* Horizontal Scroll Table Container for Standings */
+        .standings-table-wrapper {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box;
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+            -webkit-overflow-scrolling: touch !important;
+            overscroll-behavior-x: contain !important;
+            overscroll-behavior-y: auto !important;
+            touch-action: pan-y pan-x !important;
+            padding-bottom: 0.8rem;
+            display: block;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(212, 27, 35, 0.45) rgba(255, 255, 255, 0.04);
+        }
+
+        .standings-table-wrapper::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .standings-table-wrapper::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+        }
+
+        .standings-table-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(212, 27, 35, 0.45);
+            border-radius: 6px;
+        }
+
+        .standings-table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: var(--brand-red-bright);
+        }
+
+        .standings-table-inner {
+            min-width: 490px;
+            width: 100%;
+        }
+
+        /* Standings Refresh Time Indicator */
+        .standings-refresh-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin: 0.35rem 0 0.75rem 0;
+            text-align: center;
+        }
+
+        .standings-refresh-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            font-size: 0.74rem;
+            color: #9e9ea7;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 9999px;
+            padding: 0.35rem 0.95rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+
+        .standings-refresh-pill i {
+            color: #fbbf24;
+            font-size: 0.78rem;
+        }
+
+        .standings-refresh-pill strong {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        /* ===================================================
+           PAGINATION BAR
+           =================================================== */
+        .leaderboard-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding: 0.65rem 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+        }
+
+        .pagination-info {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .pagination-info span {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .pag-btn {
+            background: #131620;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            color: #cbd5e1;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.38rem 0.75rem;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-family: inherit;
+        }
+
+        .pag-btn:hover:not(:disabled) {
+            background: #1f2333;
+            border-color: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+        }
+
+        .pag-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .pag-pages-list {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .pag-num-btn {
+            min-width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #131620;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            color: #cbd5e1;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            padding: 0 0.3rem;
+            font-family: inherit;
+        }
+
+        .pag-num-btn:hover {
+            background: #232738;
+            color: #ffffff;
+        }
+
+        .pag-num-btn.active {
+            background: var(--brand-red);
+            border-color: var(--brand-red-bright);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(212, 27, 35, 0.45);
+        }
+
+        .pag-ellipsis {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            padding: 0 0.15rem;
+        }
+
+        @media (max-width: 768px) {
+            .leaderboard-container {
+                padding: 0.65rem 0.5rem 4rem;
+                overflow-x: hidden !important;
+            }
+
+            .standings-table-wrapper {
+                overflow-x: auto !important;
+                overflow-y: visible !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box;
+                touch-action: pan-y pan-x !important;
+                -webkit-overflow-scrolling: touch !important;
+                overscroll-behavior-x: contain !important;
+                overscroll-behavior-y: auto !important;
+                position: relative;
+            }
+
+            .standings-table-inner {
+                min-width: 520px;
+                width: 100%;
+            }
+
+            .standings-hero {
+                padding: 0;
+                border-radius: 12px;
+                margin-bottom: 0.85rem;
+                aspect-ratio: 1074 / 366;
+                width: 100%;
+                min-height: auto;
+                background-size: cover;
+                background-position: center;
+            }
+
+            .bgmi-pill-badge {
+                font-size: 0.62rem;
+                padding: 0.18rem 0.55rem;
+                margin-bottom: 0.3rem;
+            }
+
+            .title-overall {
+                font-size: 1.25rem;
+            }
+
+            .title-standings {
+                font-size: 1.45rem;
+            }
+
+            .standings-sub-tag {
+                font-size: 0.58rem;
+                margin: 0.25rem 0 0;
+                letter-spacing: 0.12em;
+            }
+
+            .hero-character-wrap {
+                display: flex;
+                width: 105px;
+                right: -10px;
+                opacity: 0.22;
+            }
+
+            .hero-character-img {
+                max-height: 110px;
+            }
+
+            .hero-bgmi-watermark {
+                font-size: 2.5rem;
+                right: 5px;
+                top: 8px;
+            }
+
+            .filter-toolbar {
+                gap: 0.4rem;
+                margin-bottom: 0.55rem;
+            }
+
+            .filter-btn {
+                padding: 0.32rem 0.6rem;
+                font-size: 0.7rem;
+                border-radius: 6px;
+            }
+
+            .category-select {
+                padding: 0.32rem 1.5rem 0.32rem 0.6rem;
+                font-size: 0.7rem;
+                border-radius: 6px;
+            }
+
+            .search-input-wrap {
+                width: 100%;
+                padding: 0.32rem 0.6rem;
+                border-radius: 6px;
+            }
+
+            .search-input-wrap input {
+                width: 100%;
+                font-size: 0.75rem;
+            }
+
+            .standings-refresh-wrap {
+                margin: 0.2rem 0 0.55rem 0;
+                justify-content: center !important;
+                width: 100% !important;
+            }
+
+            .standings-refresh-pill {
+                font-size: 0.68rem;
+                padding: 0.3rem 0.75rem;
+                gap: 0.38rem;
+                max-width: 96%;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .standings-refresh-pill i {
+                font-size: 0.72rem;
+            }
+
+            .standings-header-row {
+                padding: 0.35rem 0.65rem;
+                font-size: 0.62rem;
+                margin-bottom: 0.2rem;
+                grid-template-columns: 36px minmax(200px, 1fr) 52px 62px 62px 78px;
+            }
+
+            .standings-list {
+                gap: 0.22rem;
+            }
+
+            .standing-card {
+                padding: 0.35rem 0.65rem;
+                border-radius: 8px;
+                grid-template-columns: 36px minmax(200px, 1fr) 52px 62px 62px 78px;
+            }
+
+            .esports-shield-badge {
+                width: 28px;
+                height: 32px;
+            }
+
+            .shield-aura {
+                inset: -1.5px;
+            }
+
+            .shield-icon {
+                font-size: 0.48rem;
+            }
+
+            .shield-rank-num {
+                font-size: 0.82rem;
+            }
+
+            .rank-contender-badge {
+                width: 27px;
+                height: 27px;
+                font-size: 0.78rem;
+                border-radius: 7px;
+            }
+
+            .rank-standard-badge {
+                width: 24px;
+                height: 24px;
+                font-size: 0.72rem;
+                border-radius: 6px;
+            }
+
+            .team-info-cell {
+                gap: 0.5rem;
+            }
+
+            .team-avatar-box {
+                width: 28px;
+                height: 28px;
+                border-radius: 6px;
+                font-size: 0.82rem;
+            }
+
+            .team-title {
+                font-size: 0.76rem;
+                font-weight: 500;
+                white-space: nowrap;
+            }
+
+            .team-matches-txt {
+                font-size: 0.62rem;
+            }
+
+            .you-pill {
+                font-size: 0.5rem;
+                padding: 0.08rem 0.3rem;
+            }
+
+            .stat-sublabel {
+                font-size: 0.5rem;
+                margin-bottom: 0.05rem;
+            }
+
+            .stat-val {
+                font-size: 0.78rem;
+            }
+
+            .total-pts-number {
+                font-size: 0.95rem;
+            }
+
+            .chevron-icon {
+                font-size: 0.7rem;
+            }
+
+            .leaderboard-pagination {
+                justify-content: center;
+                flex-direction: column;
+                gap: 0.55rem;
+                padding: 0.55rem 0.75rem;
+            }
+
+            .pagination-info {
+                font-size: 0.72rem;
+            }
+
+            .pag-btn {
+                padding: 0.3rem 0.55rem;
+                font-size: 0.7rem;
+            }
+
+            .pag-num-btn {
+                min-width: 25px;
+                height: 25px;
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+        <%- include("../partials/nav") %>
+
+        <main class="leaderboard-container">
+
+            <section class="standings-hero" style="background-image: url('/images/leaderboardback.jpg');" aria-label="UBR Esports Leaderboard Banner">
+                <!-- <div class="hero-left-content">
+                    <div class="bgmi-pill-badge">
+                        <span>BGMI</span>
+                    </div>
+                    <h1 class="standings-main-title">
+                        <span class="title-overall">OVERALL</span>
+                        <span class="title-standings">STANDINGS</span>
+                    </h1>
+                    <p class="standings-sub-tag">RANKINGS BASED ON TOTAL POINTS</p>
+                </div>
+
+                <div class="hero-character-wrap">
+                    <div class="hero-bgmi-watermark">BGMI</div>
+                    <img src="/images/bgmi_exact_character.png" alt="BGMI Helmet Warrior" class="hero-character-img">
+                </div> -->
+            </section>
+
+                 <!-- 2. FILTER PILLS & CATEGORIES BAR -->
+
+            <div class="filter-toolbar">
+                <div class="time-filter-group">
+                    <button type="button" class="filter-btn active" id="filterBtnOverall" onclick="setTimeframeFilter('overall')">
+                        <i class="fa-solid fa-ranking-star"></i> Overall
+                    </button>
+                    <button type="button" class="filter-btn" id="filterBtnWeekly" onclick="setTimeframeFilter('weekly')">
+                        <i class="fa-regular fa-calendar-days"></i> Weekly
+                    </button>
+                    <button type="button" class="filter-btn" id="filterBtnMonthly" onclick="setTimeframeFilter('monthly')">
+                        <i class="fa-regular fa-calendar-days"></i> Monthly
+                    </button>
+                </div>
+
+                <!-- <div class="filter-secondary-group">
+                    <div class="category-select-wrap">
+                        <select id="categorySelectFilter" class="category-select" onchange="filterByCategory(this.value)">
+                            <option value="all">⊞ All Categories</option>
+                            <option value="scrims">🎯 Daily Scrims</option>
+                            <option value="tournaments">🏆 Tournaments</option>
+                            <% if (typeof categories !== 'undefined' && categories && categories.length > 0) { %>
+                                <% categories.forEach(cat => { %>
+                                    <option value="<%= cat.title %>"><%= cat.title %></option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                        <i class="fa-solid fa-chevron-down category-select-icon"></i>
+                    </div>
+
+                    <div class="search-input-wrap">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="squadSearchInput" placeholder="Search team..." autocomplete="off">
+                    </div>
+                </div>
+            </div> -->
+
+            
+                 <!-- 3. STANDINGS LIST VIEW -->
+                  
+            <div id="standingsView">
+                <!-- Overall Standings Refresh Time Indicator (Centered in Mobile & Desktop) -->
+                <div class="standings-refresh-wrap">
+                    <div class="standings-refresh-pill">
+                        <i class="fa-regular fa-clock"></i>
+                        <span>Overall Standing Refresh Time: <strong>Daily 5:30 AM IST</strong></span>
+                    </div>
+                </div>
+
+                <div class="standings-table-wrapper">
+                    <div class="standings-table-inner">
+                        <!-- Header Labels Row -->
+                        <div class="standings-header-row">
+                            <div>#</div>
+                            <div>TEAM</div>
+                            <div class="col-center"><i class="fa-solid fa-crown" style="color: #ff3333; margin-right: 0.25rem;"></i> WWCD</div>
+                            <div class="col-center">PLACE PTS</div>
+                            <div class="col-center">FINISH PTS</div>
+                            <div class="col-total-header">TOTAL PTS</div>
+                        </div>
+
+                <!-- Squad Cards List -->
+                <div class="standings-list" id="standingsList">
+                    <% if (rankedTeams && rankedTeams.length > 0) { %>
+                        <% rankedTeams.forEach(team => { %>
+                            <% const isMySquad = Boolean(userTeamName && team.teamName && userTeamName.trim().toLowerCase() === team.teamName.trim().toLowerCase()); %>
+                            <div class="standing-card <%= team.rank === 1 ? 'is-rank-1' : (team.rank === 2 ? 'is-rank-2' : (team.rank === 3 ? 'is-rank-3' : '')) %> <%= isMySquad ? 'is-user-squad' : '' %>" data-team-name="<%= team.teamName.toLowerCase() %>">
+                                
+                                <!-- 1. Rank Column -->
+                                <div class="rank-col">
+                                    <% if (team.rank === 1) { %>
+                                        <div class="esports-shield-badge rank-1-badge" title="Champion #1">
+                                            <div class="shield-aura aura-gold"></div>
+                                            <div class="shield-bezel bezel-gold">
+                                                <div class="shield-face face-gold">
+                                                    <div class="shield-glare"></div>
+                                                    <div class="shield-icon"><i class="fa-solid fa-crown"></i></div>
+                                                    <span class="shield-rank-num">1</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <% } else if (team.rank === 2) { %>
+                                        <div class="esports-shield-badge rank-2-badge" title="Runner Up #2">
+                                            <div class="shield-aura aura-silver"></div>
+                                            <div class="shield-bezel bezel-silver">
+                                                <div class="shield-face face-silver">
+                                                    <div class="shield-glare"></div>
+                                                    <div class="shield-icon"><i class="fa-solid fa-star"></i></div>
+                                                    <span class="shield-rank-num">2</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <% } else if (team.rank === 3) { %>
+                                        <div class="esports-shield-badge rank-3-badge" title="3rd Place #3">
+                                            <div class="shield-aura aura-bronze"></div>
+                                            <div class="shield-bezel bezel-bronze">
+                                                <div class="shield-face face-bronze">
+                                                    <div class="shield-glare"></div>
+                                                    <div class="shield-icon"><i class="fa-solid fa-award"></i></div>
+                                                    <span class="shield-rank-num">3</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <% } else if (team.rank <= 10) { %>
+                                        <div class="rank-contender-badge" title="Top 10 Contender">
+                                            <span><%= team.rank %></span>
+                                        </div>
+                                    <% } else { %>
+                                        <div class="rank-standard-badge" title="Rank <%= team.rank %>">
+                                            <span><%= team.rank %></span>
+                                        </div>
+                                    <% } %>
+                                </div>
+
+                                <!-- 2. Team Info Column -->
+                                <div class="team-info-cell">
+                                    <div class="team-avatar-box">
+                                        <% if (team.teamLogo) { %>
+                                            <img src="<%= imageUrl(team.teamLogo) %>" alt="<%= team.teamName %>">
+                                        <% } else { %>
+                                            <i class="fa-solid fa-shield-halved"></i>
+                                        <% } %>
+                                    </div>
+                                    <div class="team-meta">
+                                        <div class="team-name-row">
+                                            <h3 class="team-title" title="<%= team.teamName %>"><%= team.teamName %></h3>
+                                            <% if (isMySquad) { %>
+                                                <span class="you-pill">YOU</span>
+                                            <% } %>
+                                        </div>
+                                        <span class="team-matches-txt"><%= team.matchesPlayed %> Matches</span>
+                                    </div>
+                                </div>
+
+                                <!-- 3. WWCD (Wins) -->
+                                <div class="stat-cell stat-wwcd">
+                                    <span class="stat-sublabel">WWCD</span>
+                                    <span class="stat-val"><%= team.chickenDinners || 0 %></span>
+                                </div>
+
+                                <!-- 4. PLACE PTS -->
+                                <div class="stat-cell stat-place">
+                                    <span class="stat-sublabel">PLACE PTS</span>
+                                    <span class="stat-val"><%= team.placementPoints || 0 %></span>
+                                </div>
+
+                                <!-- 5. FINISH PTS -->
+                                <div class="stat-cell stat-finish">
+                                    <span class="stat-sublabel">FINISH PTS</span>
+                                    <span class="stat-val"><%= team.totalFinishes || 0 %></span>
+                                </div>
+
+                                <!-- 6. TOTAL PTS -->
+                                <div class="stat-cell stat-total">
+                                    <span class="stat-sublabel">TOTAL PTS</span>
+                                    <div class="total-pts-row">
+                                        <span class="total-pts-number"><%= team.totalPoints || 0 %></span>
+                                        <i class="fa-solid fa-chevron-right chevron-icon"></i>
+                                    </div>
+                                </div>
+
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <div style="text-align: center; padding: 4rem 1rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; color: var(--text-muted);">
+                            <i class="fa-solid fa-users-slash" style="font-size: 2.6rem; color: var(--brand-red-bright); margin-bottom: 0.8rem; display: block; opacity: 0.5;"></i>
+                            <h3 style="color: #ffffff; margin: 0 0 0.35rem; font-size: 1.2rem;">No Teams Ranked Yet</h3>
+                            <p style="margin: 0; font-size: 0.92rem;">Register your squad, participate in scrims or tournaments, and earn points to see your team on the standings!</p>
+                        </div>
+                    <% } %>
+                </div>
+
+                    </div>
+                </div>
+
+                <!-- Standings Pagination Controls -->
+                <div class="leaderboard-pagination" id="leaderboardPagination">
+                    <div class="pagination-info" id="paginationInfo">
+                        Showing <span id="pagStart">1</span>–<span id="pagEnd">10</span> of <span id="pagTotal">0</span> Teams
+                    </div>
+                    <div class="pagination-controls">
+                        <button type="button" class="pag-btn" id="pagPrevBtn" onclick="changePage(currentPage - 1)">
+                            <i class="fa-solid fa-chevron-left"></i> Prev
+                        </button>
+                        <div class="pag-pages-list" id="pagPagesList"></div>
+                        <button type="button" class="pag-btn" id="pagNextBtn" onclick="changePage(currentPage + 1)">
+                            Next <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- No Search Results Found Message -->
+                <div id="noSearchSquadMsg" style="display: none; text-align: center; padding: 3rem 1rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; color: var(--text-muted); margin-top: 1rem;">
+                    <i class="fa-solid fa-magnifying-glass" style="font-size: 2rem; color: var(--brand-red-bright); margin-bottom: 0.65rem; display: block;"></i>
+                    <h4 style="color: #ffffff; margin: 0 0 0.25rem;">No Squads Found</h4>
+                    <p style="margin: 0; font-size: 0.88rem;">Try checking the squad name or clear the search query.</p>
+                </div>
+            </div>
+
+            <!-- ==============================================
+                 4. POINT TABLES VIEW (TOGGLED VIA TAB)
+                 ============================================== -->
+            <div id="pointTablesSection" style="display: none;">
+                <% if (!pointTables || pointTables.length === 0) { %>
+                    <div style="text-align: center; padding: 4rem 1rem; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; color: var(--text-muted);">
+                        <i class="fa-solid fa-table-list" style="font-size: 3rem; color: var(--brand-red-bright); margin-bottom: 1rem; display: block; opacity: 0.5;"></i>
+                        <h3 style="margin: 0; color: #ffffff; font-size: 1.25rem;">No Point Tables Available</h3>
+                        <p style="margin: 0.5rem 0 0; font-size: 0.95rem;">Official match standings will be uploaded as soon as matches finish.</p>
+                    </div>
+                <% } else { %>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                        <h2 style="margin: 0; font-size: 1.35rem; font-weight: 500; color: #ffffff; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fa-solid fa-table-cells" style="color: var(--brand-red-bright);"></i> Official Match Result Tables
+                        </h2>
+
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="date" id="ptDateFilter" style="background: #11131a; color: #fff; border: 1px solid rgba(255,255,255,0.12); padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.85rem; cursor: pointer; color-scheme: dark;">
+                            <button type="button" onclick="resetPtDate()" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer;">
+                                <i class="fa-solid fa-rotate-left"></i> All
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pt-grid">
+                        <% pointTables.forEach(pt => { %>
+                            <div class="pt-card" data-date="<%= pt.date || '' %>" onclick="openPtLightbox('<%= imageUrl(pt.pointTableImage) %>')">
+                                <div style="display: flex; align-items: center; gap: 0.85rem; min-width: 0;">
+                                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(212, 27, 35, 0.15); display: flex; align-items: center; justify-content: center; color: var(--brand-red-bright); flex-shrink: 0; font-size: 1.25rem;">
+                                        <i class="fa-solid fa-ranking-star"></i>
+                                    </div>
+                                    <div style="min-width: 0;">
+                                        <h4 style="margin: 0; font-size: 1.02rem; font-weight: 500; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><%= pt.matchTitle %></h4>
+                                        <p style="margin: 0.2rem 0 0; font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            <%= pt.categoryTitle %><% if (pt.date) { %> • <%= pt.date %><% } %>
+                                        </p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-arrow-up-right-from-square" style="color: var(--text-muted); font-size: 0.95rem; flex-shrink: 0;"></i>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } %>
+            </div>
+        </main>
+
+        <%- include("../partials/footer") %>
+        <%- include("../partials/bottomNav") %>
+    </div>
+
+    <!-- Lightbox Modal for Point Table Images -->
+    <div id="ptLightboxModal" class="lightbox-modal" onclick="closePtLightbox()">
+        <button class="lightbox-close" onclick="closePtLightbox()">&times;</button>
+        <img id="ptLightboxImage" class="lightbox-img" src="" alt="Official Point Table" onclick="event.stopPropagation()">
+    </div>
+
+    <script>
+        // Pagination & Filter state
+        let currentPage = 1;
+        const pageSize = 10;
+        let currentTimeframe = 'overall';
+        let isShowingPt = false;
+
+        function setTimeframeFilter(timeframe) {
+            currentTimeframe = timeframe;
+            isShowingPt = false;
+            currentPage = 1;
+
+            const btnOverall = document.getElementById('filterBtnOverall');
+            const btnWeekly = document.getElementById('filterBtnWeekly');
+            const btnMonthly = document.getElementById('filterBtnMonthly');
+            const btnPt = document.getElementById('filterBtnPointTables');
+            const standingsView = document.getElementById('standingsView');
+            const ptSection = document.getElementById('pointTablesSection');
+
+            [btnOverall, btnWeekly, btnMonthly, btnPt].forEach(b => b && b.classList.remove('active'));
+
+            if (timeframe === 'overall' && btnOverall) btnOverall.classList.add('active');
+            if (timeframe === 'weekly' && btnWeekly) btnWeekly.classList.add('active');
+            if (timeframe === 'monthly' && btnMonthly) btnMonthly.classList.add('active');
+
+            if (standingsView) standingsView.style.display = 'block';
+            if (ptSection) ptSection.style.display = 'none';
+
+            applyFilters();
+        }
+
+        function togglePointTablesView() {
+            isShowingPt = !isShowingPt;
+            const btnPt = document.getElementById('filterBtnPointTables');
+            const btnOverall = document.getElementById('filterBtnOverall');
+            const btnWeekly = document.getElementById('filterBtnWeekly');
+            const btnMonthly = document.getElementById('filterBtnMonthly');
+            const standingsView = document.getElementById('standingsView');
+            const ptSection = document.getElementById('pointTablesSection');
+
+            if (isShowingPt) {
+                [btnOverall, btnWeekly, btnMonthly].forEach(b => b && b.classList.remove('active'));
+                if (btnPt) btnPt.classList.add('active');
+                if (standingsView) standingsView.style.display = 'none';
+                if (ptSection) ptSection.style.display = 'block';
+            } else {
+                setTimeframeFilter('overall');
+            }
+        }
+
+        // Live Squad Search & Pagination
+        const searchInput = document.getElementById('squadSearchInput');
+        const noSearchMsg = document.getElementById('noSearchSquadMsg');
+
+        function applyFilters() {
+            const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            const allCards = Array.from(document.querySelectorAll('#standingsList .standing-card'));
+            
+            const matchingCards = allCards.filter(card => {
+                const teamName = card.getAttribute('data-team-name') || '';
+                return !query || teamName.includes(query);
+            });
+
+            // Hide non-matching cards
+            allCards.forEach(card => {
+                if (!matchingCards.includes(card)) {
+                    card.style.display = 'none';
+                }
+            });
+
+            const totalMatching = matchingCards.length;
+            const totalPages = Math.ceil(totalMatching / pageSize) || 1;
+
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+
+            matchingCards.forEach((card, idx) => {
+                if (idx >= startIndex && idx < endIndex) {
+                    card.style.display = 'grid';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (noSearchMsg) {
+                noSearchMsg.style.display = (totalMatching === 0 && allCards.length > 0) ? 'block' : 'none';
+            }
+
+            renderPaginationUI(totalMatching, totalPages, startIndex, endIndex);
+        }
+
+        function renderPaginationUI(totalMatching, totalPages, startIndex, endIndex) {
+            const pagWrap = document.getElementById('leaderboardPagination');
+            const pagStart = document.getElementById('pagStart');
+            const pagEnd = document.getElementById('pagEnd');
+            const pagTotal = document.getElementById('pagTotal');
+            const prevBtn = document.getElementById('pagPrevBtn');
+            const nextBtn = document.getElementById('pagNextBtn');
+            const pagesList = document.getElementById('pagPagesList');
+
+            if (!pagWrap) return;
+
+            if (totalMatching <= 0) {
+                pagWrap.style.display = 'none';
+                return;
+            }
+
+            pagWrap.style.display = 'flex';
+            if (pagStart) pagStart.textContent = totalMatching > 0 ? (startIndex + 1) : 0;
+            if (pagEnd) pagEnd.textContent = Math.min(endIndex, totalMatching);
+            if (pagTotal) pagTotal.textContent = totalMatching;
+
+            if (prevBtn) prevBtn.disabled = (currentPage <= 1);
+            if (nextBtn) nextBtn.disabled = (currentPage >= totalPages);
+
+            if (pagesList) {
+                pagesList.innerHTML = '';
+
+                // Build compact list of pages (e.g. 1, 2, 3... totalPages)
+                const pagesToRender = [];
+                for (let i = 1; i <= totalPages; i++) {
+                    if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                        pagesToRender.push(i);
+                    }
+                }
+
+                let lastP = 0;
+                pagesToRender.forEach(p => {
+                    if (lastP && p - lastP > 1) {
+                        const ell = document.createElement('span');
+                        ell.className = 'pag-ellipsis';
+                        ell.textContent = '...';
+                        pagesList.appendChild(ell);
+                    }
+
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'pag-num-btn' + (p === currentPage ? ' active' : '');
+                    btn.textContent = p;
+                    btn.onclick = () => changePage(p);
+                    pagesList.appendChild(btn);
+
+                    lastP = p;
+                });
+            }
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            applyFilters();
+
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('page', page);
+                window.history.replaceState(null, '', url.toString());
+            } catch(e) {}
+
+            const tableWrap = document.querySelector('.standings-table-wrapper');
+            if (tableWrap) {
+                tableWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                currentPage = 1;
+                applyFilters();
+            });
+        }
+
+        function filterByCategory(val) {
+            currentPage = 1;
+            applyFilters();
+        }
+
+        // Initialize pagination on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const p = parseInt(urlParams.get('page'));
+            if (!isNaN(p) && p > 0) {
+                currentPage = p;
+            }
+            applyFilters();
+        });
+        applyFilters();
+
+        // Point Tables Date Filter
+        const ptDateInput = document.getElementById('ptDateFilter');
+        if (ptDateInput) {
+            ptDateInput.addEventListener('change', function() {
+                const selected = this.value;
+                const cards = document.querySelectorAll('.pt-card');
+                cards.forEach(c => {
+                    const d = c.getAttribute('data-date');
+                    if (!selected || d === selected) {
+                        c.style.display = 'flex';
+                    } else {
+                        c.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        function resetPtDate() {
+            if (ptDateInput) ptDateInput.value = '';
+            document.querySelectorAll('.pt-card').forEach(c => c.style.display = 'flex');
+        }
+
+        // Lightbox modal functions
+        function openPtLightbox(src) {
+            const modal = document.getElementById('ptLightboxModal');
+            const img = document.getElementById('ptLightboxImage');
+            if (modal && img) {
+                img.src = src;
+                modal.style.display = 'flex';
+            }
+        }
+
+        function closePtLightbox() {
+            const modal = document.getElementById('ptLightboxModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closePtLightbox();
+        });
+// Touch Drag & Swipe Controller for Mobile (overflow-x: hidden with smooth swipe)
+        (function initTableTouchSwipe() {
+            const wrapper = document.querySelector('.standings-table-wrapper');
+            if (!wrapper) return;
+
+            let isTouching = false;
+            let startX = 0;
+            let startScrollLeft = 0;
+
+            wrapper.addEventListener('touchstart', function(e) {
+                if (e.touches.length !== 1) return;
+                isTouching = true;
+                startX = e.touches[0].clientX;
+                startScrollLeft = wrapper.scrollLeft;
+            }, { passive: true });
+
+            wrapper.addEventListener('touchmove', function(e) {
+                if (!isTouching || e.touches.length !== 1) return;
+                const currentX = e.touches[0].clientX;
+                const diffX = currentX - startX;
+                wrapper.scrollLeft = startScrollLeft - diffX;
+            }, { passive: true });
+
+            wrapper.addEventListener('touchend', function() {
+                isTouching = false;
+            }, { passive: true });
+
+            wrapper.addEventListener('touchcancel', function() {
+                isTouching = false;
+            }, { passive: true });
+
+            // Mouse drag support for simulator testing
+            let isMouseDown = false;
+            let mouseStartX = 0;
+            let mouseStartScroll = 0;
+
+            wrapper.addEventListener('mousedown', function(e) {
+                isMouseDown = true;
+                mouseStartX = e.pageX - wrapper.offsetLeft;
+                mouseStartScroll = wrapper.scrollLeft;
+                wrapper.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mousemove', function(e) {
+                if (!isMouseDown) return;
+                e.preventDefault();
+                const x = e.pageX - wrapper.offsetLeft;
+                const walk = (x - mouseStartX);
+                wrapper.scrollLeft = mouseStartScroll - walk;
+            });
+
+            window.addEventListener('mouseup', function() {
+                if (isMouseDown) {
+                    isMouseDown = false;
+                    wrapper.style.cursor = 'default';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

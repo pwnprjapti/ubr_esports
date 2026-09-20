@@ -6,7 +6,10 @@
     <title>Admin Sign In | UBR Esports</title>
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-    <link rel="stylesheet" href="/css/admin/login.css">
+    <link rel="stylesheet" href="/css/admin/login.css?v=restore">
+    <link rel="stylesheet" href="/css/toast.css?v=restore">
+    <script src="/js/toast.js?v=restore"></script>
+    <script src="/js/tap-sound.js?v=2.0"></script>
 </head>
 <body>
     <div class="auth-container">
@@ -91,7 +94,9 @@
               alert(result.msg)
               
               if(result.status === true || result.msg === "Sign In successfull."){
-                window.location.href="/admin/login"
+                setTimeout(() => {
+                  window.location.href="/admin/login";
+                }, 1200);
               } else {
                 signinBtn.disabled = false;
                 signinBtn.innerHTML = originalBtnHtml;

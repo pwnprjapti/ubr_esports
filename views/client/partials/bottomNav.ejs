@@ -1,0 +1,112 @@
+<!-- Fixed Bottom Navigation Bar -->
+<link rel="stylesheet" href="/css/bottom-nav.css?v=restore">
+<nav class="bottom-nav" id="bottomNav" aria-label="Bottom Navigation">
+    <div class="bottom-nav-inner">
+        <!-- 1. Home (Active by Default) -->
+        <a href="/" class="bottom-nav-item active" id="bottomNavItemHome" data-tab="home">
+            <span class="nav-indicator"></span>
+            <div class="bottom-nav-icon">
+                <i class="fa-solid fa-house"></i>
+            </div>
+            <span class="bottom-nav-label">Home</span>
+        </a>
+
+        <!-- 2. My Matches -->
+        <a href="/my-matches" class="bottom-nav-item" id="bottomNavItemMatches" data-tab="matches">
+            <span class="nav-indicator"></span>
+            <div class="bottom-nav-icon">
+                <i class="fa-solid fa-gamepad"></i>
+            </div>
+            <span class="bottom-nav-label">My Matches</span>
+        </a>
+
+        <!-- 3. Leaderboard -->
+        <a href="/leaderboard" class="bottom-nav-item" id="bottomNavItemLeaderboard" data-tab="leaderboard">
+            <span class="nav-indicator"></span>
+            <div class="bottom-nav-icon">
+                <i class="fa-solid fa-ranking-star"></i>
+            </div>
+            <span class="bottom-nav-label">Leaderboard</span>
+        </a>
+
+        <!-- 4. Profile -->
+        <a href="/dashboard" class="bottom-nav-item" id="bottomNavItemProfile" data-tab="profile">
+            <span class="nav-indicator"></span>
+            <div class="bottom-nav-icon">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <span class="bottom-nav-label">Profile</span>
+        </a>
+    </div>
+</nav>
+
+<script>
+(function() {
+    function initBottomNav() {
+        const navItems = document.querySelectorAll('.bottom-nav-item');
+        if (!navItems.length) return;
+
+        const homeItem = document.getElementById('bottomNavItemHome');
+        const matchesItem = document.getElementById('bottomNavItemMatches');
+        const leaderboardItem = document.getElementById('bottomNavItemLeaderboard');
+        const profileItem = document.getElementById('bottomNavItemProfile');
+
+        function setActiveTab(tabName) {
+            navItems.forEach(item => {
+                if (item.dataset.tab === tabName) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        function updateActiveFromUrl() {
+            const path = window.location.pathname.toLowerCase();
+
+            if (path === '/point-table' || path === '/results' || path === '/leaderboard') {
+                setActiveTab('leaderboard');
+            } else if (
+                path.startsWith('/dashboard') ||
+                path.startsWith('/profile') ||
+                path.startsWith('/team-settings') ||
+                path.startsWith('/withdrawal') ||
+                path.startsWith('/drop-details') ||
+                path.startsWith('/signin')
+            ) {
+                setActiveTab('profile');
+            } else if (path.startsWith('/category') || path === '/scrims' || path === '/matches' || path === '/my-matches') {
+                setActiveTab('matches');
+            } else {
+                // By default on Home page or root, Home is ALWAYS active!
+                setActiveTab('home');
+            }
+        }
+
+
+        // Handle in-page smooth navigation for Home on the index page
+        if (homeItem) {
+            homeItem.addEventListener('click', function(e) {
+                const isHomePage = window.location.pathname === '/' || window.location.pathname === '';
+                if (isHomePage) {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    setActiveTab('home');
+                }
+            });
+        }
+
+        // Listen for browser back/forward navigation
+        window.addEventListener('popstate', updateActiveFromUrl);
+
+        // Initial tab activation (ensures Home is selected by default on /)
+        updateActiveFromUrl();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initBottomNav);
+    } else {
+        initBottomNav();
+    }
+})();
+</script>

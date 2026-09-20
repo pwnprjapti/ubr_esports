@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>My Matches | UBR Esports</title>
+    <link rel="icon" type="image/png" href="/images/ubrLogo.png">
+    <meta name="description" content="View and manage all your registered BGMI scrims, IDP WhatsApp groups, match timings, squad slot numbers, and team rosters on UBR Esports.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/home.css?v=restore">
+    <link rel="stylesheet" href="/css/nav.css?v=restore">
+    <link rel="stylesheet" href="/css/category.css?v=restore">
+    <link rel="stylesheet" href="/css/footer.css?v=restore">
+    <style>
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 500;
+        }
+
+        .my-matches-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem 3rem;
+            min-height: calc(100vh - 180px);
+        }
+
+        /* Hero Header */
+        .my-matches-header {
+            background: linear-gradient(135deg, rgba(26, 29, 41, 0.95), rgba(15, 17, 26, 0.95));
+            border: 1px solid rgba(212, 27, 35, 0.22);
+            border-radius: 16px;
+            padding: 1.5rem 1.75rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .my-matches-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(180deg, #9B0707, #D41B23);
+        }
+
+        .header-title-group {
+            display: flex;
+            align-items: center;
+            gap: 1.15rem;
+        }
+
+        .header-icon-box {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: rgba(212, 27, 35, 0.12);
+            border: 1px solid rgba(212, 27, 35, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            color: #D41B23;
+            box-shadow: 0 0 20px rgba(212, 27, 35, 0.25);
+            flex-shrink: 0;
+        }
+
+        .header-text h1 {
+            font-size: 1.6rem;
+            font-weight: 500;
+            margin: 0;
+            color: #ffffff;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .header-badge {
+            font-size: 0.78rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            background: rgba(212, 27, 35, 0.18);
+            border: 1px solid rgba(212, 27, 35, 0.4);
+            color: #D41B23;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .header-text p {
+            margin: 0.35rem 0 0;
+            color: #9e9ea7;
+            font-size: 0.9rem;
+        }
+
+        .squad-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.45rem 0.9rem;
+            border-radius: 999px;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.88rem;
+        }
+
+        .squad-pill i {
+            color: #D41B23;
+        }
+
+        /* My Matches Grid */
+        .my-matches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* Match Card */
+        .my-match-card {
+            background: linear-gradient(180deg, #181b24, #12141c);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 1.35rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .my-match-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(212, 27, 35, 0.35);
+            box-shadow: 0 14px 35px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 27, 35, 0.12);
+        }
+
+        .card-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .category-tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #D41B23;
+            background: rgba(212, 27, 35, 0.1);
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid rgba(212, 27, 35, 0.25);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .slot-assigned-badge {
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: #22c55e;
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            white-space: nowrap;
+        }
+
+        .slot-assigned-badge.full {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .card-match-title {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.35;
+        }
+
+        /* Metadata items */
+        .card-meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+            padding: 0.85rem;
+        }
+
+        .meta-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .meta-cell-label {
+            font-size: 0.74rem;
+            color: #8e909d;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .meta-cell-value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .meta-cell-value.highlight-date {
+            color: #D41B23;
+        }
+
+        .meta-cell-value.highlight-prize {
+            color: #4ade80;
+        }
+
+        /* IDP Timings & Maps row */
+        .idp-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .idp-label {
+            font-size: 0.78rem;
+            color: #a0a0aa;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .timings-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .timing-pill {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 0.3rem 0.65rem;
+            border-radius: 6px;
+        }
+
+        .map-pill {
+            background: rgba(212, 27, 35, 0.08);
+            border: 1px solid rgba(212, 27, 35, 0.2);
+            color: #ff94a2;
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 0.3rem 0.65rem;
+            border-radius: 6px;
+        }
+
+        /* Slots Bar */
+        .slot-progress-block {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .slot-progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #9e9ea7;
+        }
+
+        .slot-progress-header span:last-child {
+            color: #ffffff;
+        }
+
+        .slot-bar-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .slot-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            transition: width 0.3s ease;
+        }
+
+        /* WhatsApp IDP Group CTA */
+        .whatsapp-cta-box {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.35rem;
+        }
+
+        .whatsapp-join-btn {
+            width: 100%;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            background: #25d366;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 0.92rem;
+            border-radius: 10px;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.35);
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .whatsapp-join-btn:hover {
+            background: #1eb956;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(37, 211, 102, 0.45);
+            color: #ffffff;
+        }
+
+        .whatsapp-copy-btn {
+            width: 100%;
+            min-height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: rgba(37, 211, 102, 0.1);
+            border: 1px solid rgba(37, 211, 102, 0.35);
+            color: #25d366;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .whatsapp-copy-btn:hover {
+            background: rgba(37, 211, 102, 0.2);
+        }
+
+        .whatsapp-pending-badge {
+            width: 100%;
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            color: #9e9ea7;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border-radius: 8px;
+        }
+
+        /* Card Actions (View Teams & View Details) */
+        .card-secondary-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+        }
+
+        .secondary-btn {
+            min-height: 38px;
+            padding: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+
+        .secondary-btn:hover {
+            background: rgba(212, 27, 35, 0.12);
+            border-color: rgba(212, 27, 35, 0.4);
+            color: #D41B23;
+        }
+
+        /* Empty State */
+        .empty-matches-card {
+            background: linear-gradient(135deg, rgba(26, 29, 41, 0.75), rgba(15, 17, 26, 0.75));
+            border: 1px dashed rgba(212, 27, 35, 0.35);
+            border-radius: 18px;
+            padding: 3.5rem 1.5rem;
+            text-align: center;
+            max-width: 600px;
+            margin: 2rem auto;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .empty-icon-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(212, 27, 35, 0.1);
+            border: 1px solid rgba(212, 27, 35, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: #D41B23;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 0 25px rgba(212, 27, 35, 0.2);
+        }
+
+        .empty-matches-card h3 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin: 0 0 0.5rem;
+        }
+
+        .empty-matches-card p {
+            font-size: 0.95rem;
+            color: #9e9ea7;
+            margin: 0 0 1.75rem;
+            line-height: 1.5;
+        }
+
+        .browse-cta-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 0.85rem 1.75rem;
+            background: linear-gradient(180deg, #D41B23, #9B0707);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 0.95rem;
+            border-radius: 10px;
+            text-decoration: none;
+            box-shadow: 0 4px 18px rgba(212, 27, 35, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .browse-cta-btn:hover {
+            background: linear-gradient(180deg, #c0161e, #850505);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(212, 27, 35, 0.55);
+            color: #ffffff;
+        }
+
+        @media (max-width: 640px) {
+            .my-matches-page {
+                padding: 1rem 0.75rem 3rem;
+            }
+            .my-matches-header {
+                padding: 1.2rem;
+            }
+            .header-icon-box {
+                width: 48px;
+                height: 48px;
+                font-size: 1.4rem;
+            }
+            .header-text h1 {
+                font-size: 1.3rem;
+            }
+            .my-matches-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+        <%- include("../partials/nav") %>
+
+        <main class="my-matches-page">
+            <!-- Hero Section -->
+            <section class="my-matches-header">
+                <div class="header-title-group">
+                    <div class="header-icon-box">
+                        <i class="fa-solid fa-gamepad"></i>
+                    </div>
+                    <div class="header-text">
+                        <h1>
+                            My Matches
+                            <span class="header-badge"><%= matches.length %> Joined</span>
+                        </h1>
+                        <p>All scrims and tournaments registered by your squad.</p>
+                    </div>
+                </div>
+
+                <div class="header-squad-status">
+                    <% if (user.team && user.team.teamName) { %>
+                        <div class="squad-pill">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <span>Squad: <%= user.team.teamName %></span>
+                        </div>
+                    <% } else { %>
+                        <a href="/team-settings" class="squad-pill" style="border-color: rgba(212, 27, 35,0.4); color: #D41B23;">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>Set Squad Profile &rarr;</span>
+                        </a>
+                    <% } %>
+                </div>
+            </section>
+
+            <!-- Matches Listing or Empty State -->
+            <% if (matches && matches.length > 0) { %>
+                <div class="my-matches-grid">
+                    <% for (const match of matches) { %>
+                        <% const filledPct = Math.min(100, Math.round(((match.approvedTeams ? match.approvedTeams.length : match.teams.length) / (match.slots || 1)) * 100)); %>
+                        <% const remainingSlots = Math.max(0, (match.slots || 0) - (match.teams ? match.teams.length : 0)); %>
+                        <article class="my-match-card">
+                            <!-- Top Bar: Tournament / Scrim Badge + Remaining Slots -->
+                            <div class="card-top-bar" style="justify-content: space-between; display: flex; align-items: center; width: 100%;">
+                                <% if (match.isTournament) { %>
+                                    <span style="background: linear-gradient(135deg, #d97706, #b45309); color: #fff; font-size: 0.68rem; font-weight: 900; padding: 0.22rem 0.65rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);">
+                                        <i class="fa-solid fa-trophy"></i> Tournament
+                                    </span>
+                                <% } else { %>
+                                    <span style="background: rgba(212, 27, 35, 0.15); color: #ff4d56; border: 1px solid rgba(212, 27, 35, 0.35); font-size: 0.68rem; font-weight: 800; padding: 0.22rem 0.65rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                        <i class="fa-solid fa-crosshairs"></i> Daily Scrim
+                                    </span>
+                                <% } %>
+                                <% if (remainingSlots > 0) { %>
+                                    <span class="slot-assigned-badge">
+                                        <i class="fa-solid fa-users"></i> <%= remainingSlots %> <%= remainingSlots === 1 ? 'Slot' : 'Slots' %> Left
+                                    </span>
+                                <% } else { %>
+                                    <span class="slot-assigned-badge full">
+                                        <i class="fa-solid fa-ban"></i> Slots Full
+                                    </span>
+                                <% } %>
+                            </div>
+
+                            <!-- Match Title -->
+                            <h3 class="card-match-title"><%= match.title %></h3>
+
+                            <!-- Meta Details Grid -->
+                            <div class="card-meta-grid">
+                                <div class="meta-cell">
+                                    <span class="meta-cell-label"><i class="fa-regular fa-calendar"></i> Match Date</span>
+                                    <span class="meta-cell-value highlight-date"><%= match.date %></span>
+                                </div>
+                                <div class="meta-cell">
+                                    <span class="meta-cell-label"><i class="fa-solid fa-sack-dollar"></i> Prize Pool</span>
+                                    <span class="meta-cell-value highlight-prize">₹ <%= match.prizePool %></span>
+                                </div>
+                                <div class="meta-cell">
+                                    <span class="meta-cell-label"><i class="fa-solid fa-rupee-sign"></i> Entry Fee</span>
+                                    <span class="meta-cell-value">₹ <%= match.entryFee %></span>
+                                </div>
+                                <div class="meta-cell">
+                                    <span class="meta-cell-label"><i class="fa-solid fa-user-shield"></i> Your Squad</span>
+                                    <span class="meta-cell-value" style="font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><%= (match.userTeamData && match.userTeamData.teamName) ? match.userTeamData.teamName : ((user.team && user.team.teamName) ? user.team.teamName : 'Registered') %> <% if (match.userSlotNo) { %><span style="color: #9e9ea7; font-size: 0.76rem; font-weight: 600;">(Slot #<%= match.userSlotNo %>)</span><% } %></span>
+                                </div>
+                            </div>
+
+                            <!-- IDP Timings -->
+                            <div class="idp-section">
+                                <span class="idp-label"><i class="fa-regular fa-clock"></i> IDP Timings</span>
+                                <div class="timings-badges">
+                                    <% if (match.idpTimings) { %>
+                                        <% const times = match.idpTimings.split(","); %>
+                                        <% for (const time of times) { %>
+                                            <span class="timing-pill"><%= time.trim() %></span>
+                                        <% } %>
+                                    <% } else { %>
+                                        <span class="timing-pill">TBA</span>
+                                    <% } %>
+                                </div>
+                            </div>
+
+                            <!-- Maps -->
+                            <% if (match.maps) { %>
+                            <div class="idp-section">
+                                <span class="idp-label"><i class="fa-solid fa-map-location-dot"></i> Maps</span>
+                                <div class="timings-badges">
+                                    <% const mapsList = match.maps.split(","); %>
+                                    <% for (const mapName of mapsList) { %>
+                                        <span class="map-pill"><%= mapName.trim() %></span>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <% } %>
+
+                            <!-- Slots Filled Progress -->
+                            <div class="slot-progress-block">
+                                <div class="slot-progress-header">
+                                    <span><i class="fa-solid fa-users"></i> Slots Filled</span>
+                                    <span><%= match.teams.length %> / <%= match.slots %></span>
+                                </div>
+                                <div class="slot-bar-track">
+                                    <div class="slot-bar-fill" style="width: <%= filledPct %>%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- WhatsApp IDP Link CTA -->
+                            <div class="whatsapp-cta-box">
+                                <% if (match.whatsappGroupLink) { %>
+                                    <a href="<%= match.whatsappGroupLink %>" target="_blank" rel="noopener noreferrer" class="whatsapp-join-btn">
+                                        <i class="fa-brands fa-whatsapp" style="font-size: 1.15rem;"></i> TAP TO JOIN IDP GROUP
+                                    </a>
+                                    <button type="button" class="whatsapp-copy-btn" onclick="copyWhatsAppLink('<%= match.whatsappGroupLink %>', this)">
+                                        <i class="fa-regular fa-copy"></i> <span>Copy WhatsApp Link</span>
+                                    </button>
+                                <% } else { %>
+                                    <div class="whatsapp-pending-badge">
+                                        <i class="fa-solid fa-clock"></i> Room ID & Pass link will be updated soon
+                                    </div>
+                                <% } %>
+                            </div>
+
+                            <!-- Modals Trigger Buttons (View Teams & View Details) -->
+                            <div class="card-secondary-row">
+                                <button type="button" class="secondary-btn" data-booked="true" onclick="showTeams(this)">
+                                    <i class="fa-solid fa-users"></i> View Teams
+                                    <span class="teams-data" style="display: none;"><%- JSON.stringify(match.approvedTeams || match.teams) %></span>
+                                </button>
+                                <button type="button" class="secondary-btn" onclick="showDetails(this)">
+                                    <i class="fa-solid fa-circle-info"></i> View Details
+                                    <span class="match-data" style="display: none;"
+                                          data-title="<%= match.title %>"
+                                          data-date="<%= match.date %>"
+                                          data-prize="<%= match.prizePool %>"
+                                          data-slots="<%= match.slots %>"
+                                          data-registered="<%= match.approvedTeams ? match.approvedTeams.length : match.teams.length %>"
+                                          data-fee="<%= match.entryFee %>"
+                                          data-timings="<%= match.idpTimings %>"
+                                          data-maps="<%= match.maps || '' %>"
+                                          data-details="<%= match.details || '' %>"></span>
+                                </button>
+                            </div>
+                        </article>
+                    <% } %>
+                </div>
+            <% } else { %>
+                <!-- Empty State -->
+                <div class="empty-matches-card">
+                    <div class="empty-icon-circle">
+                        <i class="fa-solid fa-gamepad"></i>
+                    </div>
+                    <h3>No Matches Joined Yet</h3>
+                    <p>
+                        Aapne abhi tak koi match ya scrim join nahi kiya hai.<br>
+                        Apni squad ke saath compete karne ke liye upcoming scrims browse karein aur apna slot book karein!
+                    </p>
+                    <a href="/category/6a8a8ab55a9578bb26150e5e" class="browse-cta-btn">
+                        <i class="fa-solid fa-crosshairs"></i> Browse Upcoming Scrims
+                    </a>
+                </div>
+            <% } %>
+        </main>
+
+        <%- include("../partials/footer") %>
+        <%- include("../partials/bottomNav") %>
+    </div>
+
+    <!-- Info Modal (View Teams & Details) -->
+    <div id="infoModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Match Info</h3>
+                <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function closeModal() {
+            document.getElementById('infoModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('infoModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+
+        function copyWhatsAppLink(link, btn) {
+            if (!link) return;
+            const origHtml = btn.innerHTML;
+
+            function showSuccess() {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Copied!</span>';
+                btn.style.backgroundColor = '#25d366';
+                btn.style.color = '#ffffff';
+                setTimeout(() => {
+                    btn.innerHTML = origHtml;
+                    btn.style.backgroundColor = 'rgba(37, 211, 102, 0.1)';
+                    btn.style.color = '#25d366';
+                }, 2500);
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(link).then(showSuccess).catch(() => {
+                    fallbackCopyWhatsApp(link, showSuccess);
+                });
+            } else {
+                fallbackCopyWhatsApp(link, showSuccess);
+            }
+        }
+
+        function fallbackCopyWhatsApp(text, onSuccess) {
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                if (successful && onSuccess) {
+                    onSuccess();
+                } else {
+                    prompt('Copy WhatsApp Group Link:', text);
+                }
+            } catch (e) {
+                prompt('Copy WhatsApp Group Link:', text);
+            }
+        }
+
+        function showTeams(btn) {
+            const modal = document.getElementById('infoModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            const teamsJsonEl = btn.querySelector('.teams-data');
+            let teams = [];
+            try {
+                if (teamsJsonEl && teamsJsonEl.textContent) {
+                    teams = JSON.parse(teamsJsonEl.textContent.trim());
+                }
+            } catch(e) {
+                console.error("Error parsing teams data", e);
+            }
+
+            modalTitle.textContent = "Registered Teams";
+
+            if (teams.length === 0) {
+                modalBody.innerHTML = `
+                    <div style="text-align: center; padding: 2rem 1rem; color: #9e9ea7;">
+                        <i class="fa-solid fa-users-slash" style="font-size: 2.5rem; color: #D41B23; margin-bottom: 1rem; display: block;"></i>
+                        <p style="margin: 0; font-weight: 600;">No other teams registered yet.</p>
+                    </div>
+                `;
+            } else {
+                let listHtml = '<div class="modal-teams-list">';
+                teams.forEach((team, idx) => {
+                    const logoUrl = team.teamLogo 
+                        ? (team.teamLogo.startsWith('http://') || team.teamLogo.startsWith('https://') ? team.teamLogo : `/images/${team.teamLogo}`)
+                        : '';
+                    const logoHtml = logoUrl 
+                        ? `<img src="${logoUrl}" alt="${team.teamName}">`
+                        : `<i class="fa-solid fa-shield-halved"></i>`;
+
+                    listHtml += `
+                        <div class="modal-team-item">
+                            <div class="modal-team-logo">
+                                ${logoHtml}
+                            </div>
+                            <div class="modal-team-name">
+                                <span style="color: #D41B23; font-weight: 800; margin-right: 0.35rem;">#${idx + 1}</span>
+                                ${escapeHtml(team.teamName || 'Squad')}
+                            </div>
+                        </div>
+                    `;
+                });
+                listHtml += '</div>';
+                modalBody.innerHTML = listHtml;
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function showDetails(btn) {
+            const dataEl = btn.querySelector('.match-data');
+            if (!dataEl) return;
+
+            const modal = document.getElementById('infoModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            modalTitle.textContent = "Match Details & Rules";
+
+            const title = dataEl.getAttribute('data-title') || '';
+            const date = dataEl.getAttribute('data-date') || '';
+            const prize = dataEl.getAttribute('data-prize') || '';
+            const slots = dataEl.getAttribute('data-slots') || '';
+            const registered = dataEl.getAttribute('data-registered') || '';
+            const fee = dataEl.getAttribute('data-fee') || '';
+            const timings = dataEl.getAttribute('data-timings') || '';
+            const maps = dataEl.getAttribute('data-maps') || '';
+            const details = dataEl.getAttribute('data-details') || '';
+
+            modalBody.innerHTML = `
+                <div class="modal-details-container">
+                    <h4 style="color: #D41B23; margin: 0 0 1rem 0; font-size: 1.15rem; font-weight: 500;">${escapeHtml(title)}</h4>
+                    
+                    <div class="modal-details-grid">
+                        <div class="modal-detail-item">
+                            <span class="modal-detail-label"><i class="fa-regular fa-calendar"></i> Date:</span>
+                            <span class="modal-detail-value">${escapeHtml(date)}</span>
+                        </div>
+                        <div class="modal-detail-item">
+                            <span class="modal-detail-label"><i class="fa-solid fa-trophy"></i> Prize Pool:</span>
+                            <span class="modal-detail-value highlight">₹ ${escapeHtml(prize)}</span>
+                        </div>
+                        <div class="modal-detail-item">
+                            <span class="modal-detail-label"><i class="fa-solid fa-users"></i> Slots:</span>
+                            <span class="modal-detail-value">${escapeHtml(registered)} / ${escapeHtml(slots)}</span>
+                        </div>
+                        <div class="modal-detail-item">
+                            <span class="modal-detail-label"><i class="fa-solid fa-ticket"></i> Entry Fee:</span>
+                            <span class="modal-detail-value">₹ ${escapeHtml(fee)}</span>
+                        </div>
+                    </div>
+
+                    ${timings ? `
+                        <div style="margin-top: 1rem;">
+                            <span class="modal-detail-label" style="margin-bottom: 0.4rem;"><i class="fa-regular fa-clock"></i> IDP Timings:</span>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                ${timings.split(',').map(t => `<span class="timing-pill">${escapeHtml(t.trim())}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${maps ? `
+                        <div style="margin-top: 1rem;">
+                            <span class="modal-detail-label" style="margin-bottom: 0.4rem;"><i class="fa-solid fa-map"></i> Maps:</span>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                ${maps.split(',').map(m => `<span class="map-pill">${escapeHtml(m.trim())}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${details ? `
+                        <div style="margin-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
+                            <span class="modal-detail-label" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-list-check"></i> Rules & Guidelines:</span>
+                            <div style="color: #cbd5e1; font-size: 0.88rem; line-height: 1.6; white-space: pre-line; background: rgba(0,0,0,0.25); padding: 0.85rem; border-radius: 8px;">
+                                ${escapeHtml(details)}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            modal.style.display = 'flex';
+        }
+    </script>
+</body>
+</html>

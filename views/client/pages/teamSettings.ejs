@@ -5,123 +5,218 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Team Settings | UBR Esports</title>
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
-    <meta name="description" content="Manage your esports squad profile, team logo, and WhatsApp contact details for UBR scrims and scrims.">
+    <meta name="description" content="Manage your esports squad profiles, team logos, and WhatsApp contact details for UBR scrims and tournaments.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-    <link rel="stylesheet" href="/css/home.css">
-    <link rel="stylesheet" href="/css/nav.css">
-    <link rel="stylesheet" href="/css/teamSettings.css">
-    <link rel="stylesheet" href="/css/footer.css">
+    <link rel="stylesheet" href="/css/home.css?v=restore">
+    <link rel="stylesheet" href="/css/nav.css?v=restore">
+    <link rel="stylesheet" href="/css/teamSettings.css?v=restore">
+    <link rel="stylesheet" href="/css/footer.css?v=restore">
 </head>
 <body>
     <div class="page-shell">
         <%- include("../partials/nav") %>
 
         <main class="team-settings-page">
-            
             <div class="settings-container">
-                <%- include("../partials/wallet", { wallet:user.balance}) %>
-                <!-- Squad Information Card -->
+                <!-- Squad Management Card (Wallet partial removed) -->
                 <section class="settings-card">
                     <div class="card-heading">
-                        <div class="heading-icon">
-                            <i class="fa-solid fa-users-gear"></i>
+                        <div class="heading-left">
+                            <div class="heading-icon">
+                                <i class="fa-solid fa-users-gear"></i>
+                            </div>
+                            <div>
+                                <h2>Squad Management</h2>
+                                <p>Manage up to 4 teams for your scrims & tournaments</p>
+                            </div>
                         </div>
-                        <div>
-                            <h2>Squad Information</h2>
-                            <p>Update your team credentials for upcoming scrims</p>
+
+                        <div class="heading-actions">
+                            <span class="squad-counter-badge">
+                                <i class="fa-solid fa-shield-halved"></i> <%= (typeof teams !== 'undefined' ? teams.length : 0) %> / 4 Squads
+                            </span>
+                            <button 
+                                type="button" 
+                                class="add-squad-btn" 
+                                onclick="openAddTeamModal()" 
+                                <%= (typeof teams !== 'undefined' && teams.length >= 4) ? 'disabled title="Maximum 4 teams reached"' : '' %>
+                            >
+                                <i class="fa-solid fa-plus"></i> Add Squad
+                            </button>
                         </div>
                     </div>
 
-                    <form id="teamSettingsForm" class="settings-form" onsubmit="handleTeamSubmit(event)">
-                        <!-- Team Name Field -->
-                        <div class="form-group">
-                            <label for="teamName" class="form-label">
-                                Team Name <span class="required">*</span>
-                            </label>
-                            <div class="input-wrapper">
-                                <i class="fa-solid fa-shield-halved input-icon"></i>
-                                <input 
-                                    type="text" 
-                                    id="teamName" 
-                                    name="teamName" 
-                                    value="<%= team.teamName %>"
-                                    class="form-control" 
-                                    placeholder="Enter your team name" 
-                                    required 
-                                    maxlength="50"
-                                    autocomplete="off"
-                                >
-                            </div>
-                        </div>
-
-                        <!-- Team Logo Upload Field -->
-                        <div class="form-group">
-                            <label class="form-label">
-                                Team Logo <span class="required">*</span>
-                            </label>
-                            
-                            <div class="upload-box" id="uploadBox">
-                                <input 
-                                    type="file" 
-                                    id="teamLogo" 
-                                    name="teamLogo" 
-                                    class="file-input" 
-                                    accept="image/png, image/jpeg, image/webp"
-                                    <%= (team && team.teamLogo) ? '' : 'required' %>
-                                >
-                                
-                                <div class="upload-placeholder" id="uploadPlaceholder" style="<%= (team && team.teamLogo) ? 'display: none;' : '' %>">
-                                    <div class="upload-icon">
-                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <!-- Squads List / Grid -->
+                    <% if (typeof teams !== 'undefined' && teams.length > 0) { %>
+                        <div class="squads-grid">
+                            <% teams.forEach(function(t) { %>
+                                <div class="squad-card">
+                                    <div class="squad-card-header">
+                                        <div class="squad-logo-frame">
+                                            <% if (t.teamLogo) { %>
+                                                <img src="<%= imageUrl(t.teamLogo) %>" alt="<%= t.teamName %>" class="squad-logo-img">
+                                            <% } else { %>
+                                                <i class="fa-solid fa-shield-halved squad-logo-placeholder"></i>
+                                            <% } %>
+                                        </div>
+                                        <div class="squad-info">
+                                            <h3 class="squad-title" title="<%= t.teamName %>"><%= t.teamName %></h3>
+                                            <span class="squad-badge">
+                                                <i class="fa-brands fa-whatsapp"></i> +91 <%= t.whatsappNumber %>
+                                            </span>
+                                        </div>
                                     </div>
-                                    <p class="upload-text">Upload squad logo or <span>browse file</span></p>
-                                    <p class="upload-hint">PNG, JPG or WebP (Max 2MB)</p>
-                                </div>
 
-                                <div class="upload-preview-container <%= (team && team.teamLogo) ? 'active' : '' %>" id="uploadPreviewContainer">
-                                    <div class="logo-preview-wrapper">
-                                        <img id="logoPreviewImg" class="logo-preview-img" src="<%= (team && team.teamLogo) ? imageUrl(team.teamLogo) : '' %>" alt="Team Logo Preview">
+                                    <div class="squad-card-body">
+                                        <div class="squad-meta-row">
+                                            <span>Matches Played:</span>
+                                            <span class="squad-meta-val"><%= t.matchesPlayed || 0 %></span>
+                                        </div>
+                                        <div class="squad-meta-row">
+                                            <span>Total Points:</span>
+                                            <span class="squad-meta-val"><%= t.totalPoints || 0 %></span>
+                                        </div>
                                     </div>
-                                    <button type="button" class="remove-logo-btn" id="removeLogoBtn">
-                                        <i class="fa-solid fa-trash-can"></i> Change Logo
-                                    </button>
+
+                                    <div class="squad-card-actions">
+                                        <button 
+                                            type="button" 
+                                            class="squad-edit-btn" 
+                                            data-id="<%= t._id %>"
+                                            data-name="<%= t.teamName || '' %>"
+                                            data-whatsapp="<%= t.whatsappNumber || '' %>"
+                                            data-logo="<%= t.teamLogo ? imageUrl(t.teamLogo) : '' %>"
+                                            onclick="onEditTeamClick(this)"
+                                        >
+                                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            class="squad-delete-btn" 
+                                            data-id="<%= t._id %>"
+                                            data-name="<%= t.teamName || '' %>"
+                                            onclick="onDeleteTeamClick(this)"
+                                        >
+                                            <i class="fa-solid fa-trash-can"></i> Delete
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            <% }); %>
                         </div>
-
-                        <!-- WhatsApp Mobile Number Field -->
-                        <div class="form-group">
-                            <label for="whatsappNumber" class="form-label">
-                                WhatsApp Mobile Number <span class="required">*</span>
-                            </label>
-                            <div class="input-wrapper whatsapp-wrapper">
-                                <i class="fa-brands fa-whatsapp input-icon"></i>
-                                <span class="input-prefix">+91</span>
-                                <input 
-                                    type="tel" 
-                                    id="whatsappNumber" 
-                                    name="whatsappNumber" 
-                                    value="<%= team.whatsappNumber %>"
-                                    class="form-control whatsapp-input" 
-                                    placeholder="Enter 10 digit number" 
-                                    pattern="[0-9]{10}"
-                                    maxlength="10"
-                                    required
-                                    inputmode="numeric"
-                                >
+                    <% } else { %>
+                        <div class="empty-squads-box">
+                            <div class="empty-squads-icon">
+                                <i class="fa-solid fa-people-group"></i>
                             </div>
+                            <h3>No Squads Created Yet</h3>
+                            <p>You can create and manage up to 4 teams to register for daily scrims and tournaments.</p>
+                            <button type="button" class="add-squad-btn" style="margin: 0 auto;" onclick="openAddTeamModal()">
+                                <i class="fa-solid fa-plus"></i> Create Your First Squad
+                            </button>
                         </div>
-
-                        <!-- Submit Button -->
-                        <button type="submit" class="submit-btn" id="submitBtn">
-                            <i class="fa-solid fa-floppy-disk"></i> Submit
-                        </button>
-                    </form>
+                    <% } %>
                 </section>
             </div>
         </main>
 
         <%- include("../partials/footer") %>
+        <%- include("../partials/bottomNav") %>
+    </div>
+
+    <!-- Add / Edit Squad Modal -->
+    <div id="teamModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalSquadTitle">Add New Squad</h3>
+                <button type="button" class="modal-close-btn" onclick="closeTeamModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="teamModalForm" class="settings-form" onsubmit="handleTeamSubmit(event)">
+                    <input type="hidden" id="modalTeamId" name="teamId" value="">
+
+                    <!-- Team Name Field -->
+                    <div class="form-group">
+                        <label for="modalTeamName" class="form-label">
+                            Squad Name <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-shield-halved input-icon"></i>
+                            <input 
+                                type="text" 
+                                id="modalTeamName" 
+                                name="teamName" 
+                                class="form-control" 
+                                placeholder="Enter your squad name" 
+                                required 
+                                maxlength="50"
+                                autocomplete="off"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Team Logo Upload Field -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            Squad Logo <span class="required" id="logoRequiredStar">*</span>
+                        </label>
+                        
+                        <div class="upload-box" id="uploadBox">
+                            <input 
+                                type="file" 
+                                id="modalTeamLogo" 
+                                name="teamLogo" 
+                                class="file-input" 
+                                accept="image/png, image/jpeg, image/webp"
+                            >
+                            
+                            <div class="upload-placeholder" id="uploadPlaceholder">
+                                <div class="upload-icon">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                </div>
+                                <p class="upload-text">Upload squad logo or <span>browse</span></p>
+                                <p class="upload-hint">PNG, JPG or WebP (Max 2MB)</p>
+                            </div>
+
+                            <div class="upload-preview-container" id="uploadPreviewContainer">
+                                <div class="logo-preview-wrapper">
+                                    <img id="logoPreviewImg" class="logo-preview-img" src="" alt="Squad Logo Preview">
+                                </div>
+                                <button type="button" class="remove-logo-btn" id="removeLogoBtn">
+                                    <i class="fa-solid fa-trash-can"></i> Change Logo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WhatsApp Mobile Number Field -->
+                    <div class="form-group">
+                        <label for="modalWhatsappNumber" class="form-label">
+                            WhatsApp Mobile Number <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper whatsapp-wrapper">
+                            <i class="fa-brands fa-whatsapp input-icon"></i>
+                            <span class="input-prefix">+91</span>
+                            <input 
+                                type="tel" 
+                                id="modalWhatsappNumber" 
+                                name="whatsappNumber" 
+                                class="form-control whatsapp-input" 
+                                placeholder="Enter 10 digit number" 
+                                pattern="[0-9]{10}"
+                                maxlength="10"
+                                required
+                                inputmode="numeric"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="submit-btn" id="modalSubmitBtn">
+                        <i class="fa-solid fa-check"></i> Save Squad
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Success Toast Notification -->
@@ -129,24 +224,90 @@
         <div class="toast-icon">
             <i class="fa-solid fa-check"></i>
         </div>
-        <span>Team settings submitted successfully!</span>
+        <span id="toastMessage">Squad updated successfully!</span>
     </div>
 
     <script>
-        const teamLogoInput = document.getElementById('teamLogo');
-        const teamName = document.getElementById('teamName');
-        const whatsappNumber = document.getElementById('whatsappNumber');
-        const uploadBox = document.getElementById('uploadBox');
+        const teamModal = document.getElementById('teamModal');
+        const modalSquadTitle = document.getElementById('modalSquadTitle');
+        const modalTeamId = document.getElementById('modalTeamId');
+        const modalTeamName = document.getElementById('modalTeamName');
+        const modalWhatsappNumber = document.getElementById('modalWhatsappNumber');
+        const modalTeamLogo = document.getElementById('modalTeamLogo');
+        const logoRequiredStar = document.getElementById('logoRequiredStar');
         const uploadPlaceholder = document.getElementById('uploadPlaceholder');
         const uploadPreviewContainer = document.getElementById('uploadPreviewContainer');
         const logoPreviewImg = document.getElementById('logoPreviewImg');
         const removeLogoBtn = document.getElementById('removeLogoBtn');
-        const successToast = document.getElementById('successToast');
-        const submitBtn = document.getElementById('submitBtn');
-        const baseurl = "<%= baseurl %>";
+        const modalSubmitBtn = document.getElementById('modalSubmitBtn');
+        const baseurl = "<%= typeof baseurl !== 'undefined' ? baseurl : '' %>";
+
+        function openAddTeamModal() {
+            modalSquadTitle.textContent = "Add New Squad";
+            modalTeamId.value = "";
+            modalTeamName.value = "";
+            modalWhatsappNumber.value = "";
+            modalTeamLogo.value = "";
+            modalTeamLogo.required = true;
+            logoRequiredStar.style.display = "inline";
+            logoPreviewImg.src = "";
+            uploadPlaceholder.style.display = "flex";
+            uploadPreviewContainer.classList.remove("active");
+            modalSubmitBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Create Squad';
+            teamModal.style.display = "flex";
+        }
+
+        function onEditTeamClick(btn) {
+            const id = btn.getAttribute('data-id');
+            const name = btn.getAttribute('data-name');
+            const whatsapp = btn.getAttribute('data-whatsapp');
+            const logo = btn.getAttribute('data-logo');
+            openEditTeamModal(id, name, whatsapp, logo);
+        }
+
+        function onDeleteTeamClick(btn) {
+            const id = btn.getAttribute('data-id');
+            const name = btn.getAttribute('data-name');
+            deleteTeam(id, name);
+        }
+
+        function openEditTeamModal(id, name, whatsapp, logoUrl) {
+            modalSquadTitle.textContent = "Edit Squad";
+            modalTeamId.value = id;
+            modalTeamName.value = name;
+            modalWhatsappNumber.value = whatsapp;
+            modalTeamLogo.value = "";
+            modalTeamLogo.required = false;
+            logoRequiredStar.style.display = "none";
+
+            if (logoUrl) {
+                logoPreviewImg.src = logoUrl;
+                uploadPlaceholder.style.display = "none";
+                uploadPreviewContainer.classList.add("active");
+            } else {
+                logoPreviewImg.src = "";
+                uploadPlaceholder.style.display = "flex";
+                uploadPreviewContainer.classList.remove("active");
+            }
+
+            modalSubmitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Changes';
+            teamModal.style.display = "flex";
+        }
+
+        function closeTeamModal() {
+            teamModal.style.display = "none";
+            document.getElementById('teamModalForm').reset();
+        }
+
+        // Close modal on click outside
+        window.addEventListener('click', function(e) {
+            if (e.target === teamModal) {
+                closeTeamModal();
+            }
+        });
 
         // File upload change handler
-        teamLogoInput.addEventListener('change', function(e) {
+        modalTeamLogo.addEventListener('change', function(e) {
             handleFile(this.files[0]);
         });
 
@@ -157,11 +318,6 @@
                 alert('Please upload a valid image file (PNG, JPG, or WebP).');
                 return;
             }
-
-            // if (file.size > 2 * 1024 * 1024) {
-            //     alert('Image size should not exceed 2MB.');
-            //     return;
-            // }
 
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -175,69 +331,86 @@
         // Remove logo / re-upload
         removeLogoBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            teamLogoInput.value = '';
+            modalTeamLogo.value = '';
             logoPreviewImg.src = '';
             uploadPlaceholder.style.display = 'flex';
             uploadPreviewContainer.classList.remove('active');
-            teamLogoInput.click();
+            modalTeamLogo.click();
         });
 
         // Form Submit Handler
-       async function handleTeamSubmit(e) {
+        async function handleTeamSubmit(e) {
             e.preventDefault();
             
-            if (!teamName.value.trim() || !whatsappNumber.value.trim()) {
+            if (!modalTeamName.value.trim() || !modalWhatsappNumber.value.trim()) {
                 alert("Please fill all required fields.");
                 return;
             }
 
             const formData = new FormData();
-            formData.append("teamName", teamName.value.trim());
-            formData.append("whatsappNumber", whatsappNumber.value.trim());
-            if (teamLogoInput.files[0]) {
-                formData.append("teamLogo", teamLogoInput.files[0]);
+            if (modalTeamId.value) {
+                formData.append("teamId", modalTeamId.value);
+            }
+            formData.append("teamName", modalTeamName.value.trim());
+            formData.append("whatsappNumber", modalWhatsappNumber.value.trim());
+            if (modalTeamLogo.files[0]) {
+                formData.append("teamLogo", modalTeamLogo.files[0]);
             }
 
-            try{
-               const originalBtnHtml = '<i class="fa-solid fa-floppy-disk"></i> Submit';
-               submitBtn.disabled = true;
-               submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            const originalBtnHtml = modalSubmitBtn.innerHTML;
+            try {
+                modalSubmitBtn.disabled = true;
+                modalSubmitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
 
-               console.log("hello")
-               const res = await fetch(`${baseurl}/team-settings`, {
-                method:'POST',
-                body: formData
-               });
+                const res = await fetch(`${baseurl}/team-settings`, {
+                    method: 'POST',
+                    body: formData
+                });
 
-               const result = await res.json();
-               alert(result.msg);
-               console.log(result);
+                const result = await res.json();
+                alert(result.msg);
 
-               submitBtn.disabled = false;
-               submitBtn.innerHTML = originalBtnHtml;
-               if (res.status === 200) {
-                   window.location.reload();
-               }
-            } catch (err){
-                console.log(err);
-                if (typeof submitBtn !== 'undefined') {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Submit';
+                if (res.status === 200) {
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1200);
+                } else {
+                    modalSubmitBtn.disabled = false;
+                    modalSubmitBtn.innerHTML = originalBtnHtml;
                 }
+            } catch (err) {
+                console.error("Error submitting squad:", err);
+                alert("Something went wrong. Please try again.");
+                modalSubmitBtn.disabled = false;
+                modalSubmitBtn.innerHTML = originalBtnHtml;
             }
-            // setTimeout(() => {
-            //     submitBtn.disabled = false;
-            //     submitBtn.innerHTML = originalBtnHtml;
-
-            //     // Show toast
-            //     successToast.classList.add('show');
-            //     setTimeout(() => {
-            //         successToast.classList.remove('show');
-            //     }, 3500);
-            // }, 600);
         }
 
-        submitBtn.addEventListener("click", handleTeamSubmit);
+        // Delete Squad Handler
+        async function deleteTeam(teamId, teamName) {
+            if (!confirm(`Are you sure you want to delete squad '${teamName}'?`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${baseurl}/team-settings/delete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teamId })
+                });
+
+                const result = await res.json();
+                alert(result.msg);
+                if (res.status === 200) {
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1200);
+                }
+            } catch (err) {
+                console.error("Error deleting squad:", err);
+                alert("Failed to delete squad. Please try again.");
+            }
+        }
     </script>
 </body>
 </html>

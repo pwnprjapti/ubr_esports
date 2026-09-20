@@ -1,0 +1,162 @@
+/* ===================================================
+   UBR ESPORTS - FIXED BOTTOM NAVIGATION BAR
+   =================================================== */
+
+:root {
+  --bnav-bg: rgba(11, 13, 19, 0.92);
+  --bnav-border: rgba(255, 255, 255, 0.08);
+  --bnav-text: #8e909d;
+  --bnav-text-hover: #ffffff;
+  --bnav-accent: #D41B23;
+  --bnav-accent-glow: rgba(212, 27, 35, 0.35);
+  --bnav-height: 62px;
+}
+
+/* Ensure page content can smoothly scroll underneath without bottom elements being hidden */
+body {
+  padding-bottom: calc(var(--bnav-height) + env(safe-area-inset-bottom, 0px) + 14px) !important;
+}
+
+/* Bottom Navigation Container */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 1000;
+  background: var(--bnav-bg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid var(--bnav-border);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.65), 0 -1px 0 rgba(212, 27, 35, 0.12);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  transition: transform 0.3s ease, background-color 0.3s ease;
+  user-select: none;
+}
+
+/* Centered Inner Wrapper */
+.bottom-nav-inner {
+  max-width: 540px;
+  margin: 0 auto;
+  height: var(--bnav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 0.5rem;
+  position: relative;
+}
+
+/* Navigation Item */
+.bottom-nav-item {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--bnav-text);
+  position: relative;
+  transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  padding: 4px 2px 2px;
+}
+
+.bottom-nav-item:hover {
+  color: var(--bnav-text-hover);
+}
+
+.bottom-nav-item:active {
+  transform: scale(0.92);
+}
+
+/* Icon Container */
+.bottom-nav-icon {
+  width: 36px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  border-radius: 10px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* Label */
+.bottom-nav-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+  transition: color 0.2s ease, font-weight 0.2s ease;
+  white-space: nowrap;
+}
+
+/* Top Active Pill Indicator */
+.nav-indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 28px;
+  height: 3px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(90deg, #9B0707, #D41B23);
+  box-shadow: 0 2px 10px rgba(212, 27, 35, 0.9);
+  opacity: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+
+/* Active State */
+.bottom-nav-item.active {
+  color: #ffffff;
+}
+
+.bottom-nav-item.active .bottom-nav-icon {
+  color: var(--bnav-accent);
+  background: rgba(212, 27, 35, 0.14);
+  box-shadow: 0 0 14px var(--bnav-accent-glow);
+  transform: translateY(-2px);
+}
+
+.bottom-nav-item.active .bottom-nav-label {
+  color: #ffffff;
+  font-weight: 700;
+  text-shadow: 0 0 12px rgba(212, 27, 35, 0.4);
+}
+
+.bottom-nav-item.active .nav-indicator {
+  transform: translateX(-50%) scaleX(1);
+  opacity: 1;
+}
+
+/* Subtle pulse dot on active tab */
+.bottom-nav-item.active .bottom-nav-icon::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--bnav-accent);
+  box-shadow: 0 0 6px var(--bnav-accent);
+}
+
+/* Responsive adjustments */
+@media (max-width: 420px) {
+  .bottom-nav-inner {
+    padding: 0 0.25rem;
+  }
+  
+  .bottom-nav-icon {
+    font-size: 1.05rem;
+    height: 26px;
+  }
+  
+  .bottom-nav-label {
+    font-size: 0.68rem;
+  }
+}

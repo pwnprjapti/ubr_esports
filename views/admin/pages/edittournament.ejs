@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Edit Tournament | UBR Esports Admin</title>
+    <link rel="icon" type="image/png" href="/images/ubrLogo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css?v=restore">
+    <link rel="stylesheet" href="/css/addscrim.css?v=restore">
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="add-scrim-wrapper">
+                    <div class="add-scrim-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h1 style="margin: 0;"><i class="fa-solid fa-pen-to-square" style="color: var(--accent); margin-right: 0.5rem;"></i> Edit Tournament</h1>
+                            <a href="/admin/tournaments" style="color: #9e9ea7; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.35rem;">
+                                <i class="fa-solid fa-arrow-left"></i> Back to Tournaments
+                            </a>
+                        </div>
+
+                        <form class="scrim-form" id="editTournamentForm">
+                            <!-- Tournament Title -->
+                            <div class="form-group">
+                                <label for="tournamentTitle">Tournament Title</label>
+                                <input 
+                                    type="text" 
+                                    id="tournamentTitle" 
+                                    name="title" 
+                                    class="form-input" 
+                                    value="<%= tournament.title %>"
+                                    required
+                                >
+                            </div>
+
+                            <!-- Match Date -->
+                            <div class="form-group">
+                                <label for="matchDate">Tournament Date</label>
+                                <input 
+                                    type="date" 
+                                    id="matchDate" 
+                                    name="date" 
+                                    class="form-input" 
+                                    value="<%= tournament.date %>"
+                                    required
+                                >
+                            </div>
+
+                            <!-- Total Slots & Entry Fee -->
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="totalSlots">Total Slots</label>
+                                    <input 
+                                        type="number" 
+                                        id="totalSlots" 
+                                        name="slots" 
+                                        class="form-input" 
+                                        value="<%= tournament.slots %>" 
+                                        min="1"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="entryFee">Entry Fee (₹)</label>
+                                    <input 
+                                        type="number" 
+                                        id="entryFee" 
+                                        name="entryFee" 
+                                        class="form-input" 
+                                        value="<%= tournament.entryFee %>"
+                                        min="0"
+                                        required
+                                    >
+                                </div>
+                            </div>
+
+                            <!-- Prize Pool -->
+                            <div class="form-group">
+                                <label for="prizePool">Prize Pool (₹)</label>
+                                <input 
+                                    type="number" 
+                                    id="prizePool" 
+                                    name="prizePool" 
+                                    class="form-input" 
+                                    value="<%= tournament.prizePool %>"
+                                    min="0"
+                                    required
+                                >
+                            </div>
+
+                            <!-- IDP Timing -->
+                            <div class="form-group">
+                                <label for="idpTiming">IDP Timing (Room Schedule)</label>
+                                <input 
+                                    type="text" 
+                                    id="idpTiming" 
+                                    name="idpTimings" 
+                                    class="form-input" 
+                                    value="<%= tournament.idpTimings || '' %>"
+                                    required
+                                >
+                            </div>
+
+                            <!-- Maps -->
+                            <div class="form-group">
+                                <label for="maps">Maps</label>
+                                <input 
+                                    type="text" 
+                                    id="maps" 
+                                    name="maps" 
+                                    class="form-input" 
+                                    value="<%= tournament.maps || '' %>"
+                                    required
+                                >
+                            </div>
+
+                            <!-- Details & Rules -->
+                            <div class="form-group">
+                                <label for="details">Tournament Details & Rules</label>
+                                <textarea 
+                                    id="details" 
+                                    name="details" 
+                                    class="form-input" 
+                                    rows="4"
+                                    style="resize: vertical; font-family: inherit; width: 100%;"
+                                    required
+                                ><%= tournament.details || '' %></textarea>
+                            </div>
+
+                            <!-- WhatsApp Group Link -->
+                            <div class="form-group">
+                                <label for="whatsappGroupLink">WhatsApp Group Link</label>
+                                <input 
+                                    type="url" 
+                                    id="whatsappGroupLink" 
+                                    name="whatsappGroupLink" 
+                                    class="form-input" 
+                                    value="<%= tournament.whatsappGroupLink || '' %>"
+                                >
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" id="submitbtn" class="submit-btn" style="background: linear-gradient(180deg, var(--accent-2, #D41B23), var(--accent, #9B0707));">
+                                <i class="fa-solid fa-floppy-disk"></i> Update Tournament
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById("editTournamentForm");
+        const submitbtn = document.getElementById("submitbtn");
+        const tournamentId = "<%= tournament._id %>";
+
+        form.addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            const data = {
+                title: document.getElementById("tournamentTitle").value,
+                date: document.getElementById("matchDate").value,
+                slots: Number(document.getElementById("totalSlots").value) || 20,
+                entryFee: Number(document.getElementById("entryFee").value) || 0,
+                prizePool: Number(document.getElementById("prizePool").value) || 0,
+                idpTimings: document.getElementById("idpTiming").value,
+                maps: document.getElementById("maps").value,
+                details: document.getElementById("details").value,
+                whatsappGroupLink: document.getElementById("whatsappGroupLink").value
+            };
+
+            const originalBtnHtml = submitbtn.innerHTML;
+            submitbtn.disabled = true;
+            submitbtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const res = await fetch(`/admin/edittournament/${tournamentId}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (res.ok) {
+                    alert(result.msg || "Tournament updated successfully!");
+                    window.location.href = "/admin/tournaments";
+                } else {
+                    alert(result.msg || "Failed to update tournament.");
+                    submitbtn.disabled = false;
+                    submitbtn.innerHTML = originalBtnHtml;
+                }
+            } catch(err) {
+                console.error("Error updating tournament:", err);
+                alert("Something went wrong. Please try again.");
+                submitbtn.disabled = false;
+                submitbtn.innerHTML = originalBtnHtml;
+            }
+        });
+    </script>
+</body>
+</html>

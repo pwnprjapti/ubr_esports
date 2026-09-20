@@ -6,8 +6,8 @@
     <title><%= (user.team && user.team.teamName) ? user.team.teamName : 'User Details' %> | UBR Esports Admin</title>
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-    <link rel="stylesheet" href="/css/admin/adminLayout.css">
-    <link rel="stylesheet" href="/css/admin/dashboard.css">
+    <link rel="stylesheet" href="/css/admin/adminLayout.css?v=restore">
+    <link rel="stylesheet" href="/css/admin/dashboard.css?v=restore">
     <style>
         .back-nav-bar {
             display: flex;
@@ -57,12 +57,12 @@
             width: 70px;
             height: 70px;
             border-radius: 50%;
-            background: rgba(215, 38, 61, 0.2);
+            background: rgba(155, 7, 7, 0.2);
             border: 2px solid var(--accent-light);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #ff455e;
+            color: #D41B23;
             font-size: 1.8rem;
             overflow: hidden;
             flex-shrink: 0;
@@ -87,7 +87,7 @@
             transition: all 0.2s ease;
         }
         .copy-badge:hover {
-            background: rgba(215, 38, 61, 0.2);
+            background: rgba(155, 7, 7, 0.2);
             border-color: var(--accent-light);
             color: #fff;
         }

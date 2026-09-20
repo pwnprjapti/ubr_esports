@@ -6,14 +6,14 @@
     <title>Category | UBR Esports Admin</title>
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-    <link rel="stylesheet" href="/css/admin/adminLayout.css">
-    <link rel="stylesheet" href="/css/admin/category.css">
+    <link rel="stylesheet" href="/css/admin/adminLayout.css?v=restore">
+    <link rel="stylesheet" href="/css/admin/category.css?v=restore">
     <style>
         .delete-scrim-btn {
             position: absolute;
             top: 0.75rem;
             right: 0.75rem;
-            background: rgba(215, 38, 61, 0.85);
+            background: rgba(155, 7, 7, 0.85);
             border: none;
             border-radius: 50% !important;
             width: 34px !important;
@@ -32,8 +32,8 @@
 
         .delete-scrim-btn:hover {
             transform: scale(1.1);
-            background-color: #ff455e;
-            box-shadow: 0 4px 12px rgba(215, 38, 61, 0.5);
+            background-color: #D41B23;
+            box-shadow: 0 4px 12px rgba(155, 7, 7, 0.5);
         }
 
         .edit-scrim-btn {
@@ -77,11 +77,11 @@
         .selected-date-banner .line {
             flex: 1;
             height: 1px;
-            background: rgba(255, 69, 94, 0.4);
+            background: rgba(212, 27, 35, 0.4);
         }
 
         .selected-date-banner .date-text {
-            color: #ff455e;
+            color: #D41B23;
             font-size: 0.85rem;
             font-weight: 700;
             letter-spacing: 0.08em;
@@ -116,9 +116,9 @@
         }
 
         .drag-handle:hover {
-            background: rgba(215, 38, 61, 0.25);
-            border-color: rgba(215, 38, 61, 0.5);
-            color: #ff455e;
+            background: rgba(155, 7, 7, 0.25);
+            border-color: rgba(155, 7, 7, 0.5);
+            color: #D41B23;
         }
 
         .drag-handle:active {
@@ -132,13 +132,13 @@
 
         .scrim-card.sortable-ghost {
             opacity: 0.35;
-            border: 2px dashed #ff455e !important;
-            background: rgba(215, 38, 61, 0.08) !important;
+            border: 2px dashed #D41B23 !important;
+            background: rgba(155, 7, 7, 0.08) !important;
         }
 
         .scrim-card.sortable-chosen {
-            border-color: #ff455e !important;
-            box-shadow: 0 10px 30px rgba(215, 38, 61, 0.35) !important;
+            border-color: #D41B23 !important;
+            box-shadow: 0 10px 30px rgba(155, 7, 7, 0.35) !important;
             cursor: grabbing !important;
         }
 
@@ -204,7 +204,7 @@
                     <!-- Hero Header -->
                     <section class="category-hero">
                         <div class="hero-text">
-                            <!-- <div class="hero-badge" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.65rem; background: rgba(215,38,61,0.15); border: 1px solid rgba(215,38,61,0.3); border-radius: 999px; font-size: 0.75rem; font-weight: 700; color: #ff455e; margin-bottom: 0.5rem;">
+                            <!-- <div class="hero-badge" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.65rem; background: rgba(155, 7, 7,0.15); border: 1px solid rgba(155, 7, 7,0.3); border-radius: 999px; font-size: 0.75rem; font-weight: 700; color: #D41B23; margin-bottom: 0.5rem;">
                                 <i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> Date-Wise Category Schedule
                             </div> -->
                         <div class="hero-text" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">

@@ -27,6 +27,8 @@ import depositModel from "./models/deposit.model.js"
 import adminModel from "./models/admin.model.js"
 import pointTableModel from "./models/pointtable.model.js"
 import pointTableCoverModel from "./models/pointtablecover.model.js"
+import tournamentModel from "./models/tournament.model.js"
+import referralModel from "./models/referral.model.js"
 import { uploadToCloudinary, deleteFromCloudinary } from "./utils/cloudinary.js"
 
 const app = express();
@@ -43,8 +45,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Serve static assets BEFORE session & passport so static requests don't hit MongoDB!
-app.use(express.static(path.join(__dirname, 'assets'), { maxAge: '1d' }));
-app.use('/images', express.static(path.join(__dirname, 'public', 'images'), { maxAge: '1d' }));
+app.use('/assets', express.static(path.join(__dirname, 'assets'), { maxAge: 0, etag: false }));
+app.use(express.static(path.join(__dirname, 'assets'), { maxAge: 0, etag: false }));
+app.use('/images', express.static(path.join(__dirname, 'public', 'images'), { maxAge: 0, etag: false }));
+app.use('/images', express.static(path.join(__dirname, 'assets', 'images'), { maxAge: 0, etag: false }));
 
 app.use(express.json({
     verify: (req, res, buf) => {
@@ -82,6 +86,24 @@ app.use(session({
 
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Capture ?ref=CODE from query parameter and store in session & cookie
+app.use((req, res, next) => {
+    if (req.query && req.query.ref) {
+        const refCode = req.query.ref.toString().trim().toUpperCase();
+        if (refCode) {
+            if (req.session) {
+                req.session.referralCode = refCode;
+            }
+            res.cookie('ubr_ref', refCode, { 
+                maxAge: 30 * 24 * 60 * 60 * 1000, 
+                httpOnly: false,
+                sameSite: 'lax'
+            });
+        }
+    }
+    next();
+});
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -129,50 +151,591 @@ function adminAuthCheck(req, res, next){
 
 const baseurl = process.env.BASE_URL;
 
+// ==========================================
+// REFERRAL SYSTEM HELPERS & LOGIC
+// ==========================================
+async function generateUniqueReferralCode() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let isUnique = false;
+    let code = "";
+    while (!isUnique) {
+        code = "UBR";
+        for (let i = 0; i < 5; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        const existing = await userModel.findOne({ referralCode: code });
+        if (!existing) {
+            isUnique = true;
+        }
+    }
+    return code;
+}
+
+async function linkReferral(refereeUser, referralCode) {
+    try {
+        if (!referralCode || !refereeUser) return { success: false, msg: "Invalid referral details." };
+        const code = referralCode.toString().trim().toUpperCase();
+
+        if (refereeUser.referralCode && refereeUser.referralCode === code) {
+            return { success: false, msg: "You cannot use your own referral code." };
+        }
+
+        if (refereeUser.referredBy) {
+            return { success: false, msg: "A referral code is already linked to this account." };
+        }
+
+        const referrer = await userModel.findOne({ referralCode: code });
+        if (!referrer) {
+            return { success: false, msg: "Referral code not found. Please check and try again." };
+        }
+
+        if (referrer._id.toString() === refereeUser._id.toString()) {
+            return { success: false, msg: "You cannot use your own referral code." };
+        }
+
+        const existingRef = await referralModel.findOne({ referee: refereeUser._id });
+        if (existingRef) {
+            return { success: false, msg: "Referral already recorded for this user." };
+        }
+
+        await referralModel.create({
+            referrer: referrer._id,
+            referee: refereeUser._id,
+            referralCode: code,
+            status: "pending",
+            rewardAmount: 10
+        });
+
+        refereeUser.referredBy = referrer._id;
+        await refereeUser.save();
+
+        return { 
+            success: true, 
+            msg: `Referral applied! ₹10 will be awarded to ${referrer.name || 'your friend'} when you join your first match or tournament.` 
+        };
+    } catch (err) {
+        console.error("[Referral] Error in linkReferral:", err);
+        return { success: false, msg: "Failed to link referral code." };
+    }
+}
+
+async function checkAndRewardReferral(refereeUserId, matchId, matchType) {
+    try {
+        if (!refereeUserId) return;
+
+        // Atomically find a pending referral and update to completed
+        const referral = await referralModel.findOneAndUpdate(
+            { referee: refereeUserId, status: "pending" },
+            { 
+                status: "completed", 
+                rewardedAt: new Date(),
+                firstMatchId: matchId ? matchId.toString() : "",
+                firstMatchType: matchType || "scrim"
+            },
+            { returnDocument: 'after' }
+        );
+
+        if (!referral) {
+            // Either user was not referred, or already received reward on a prior match
+            return;
+        }
+
+        const rewardAmount = referral.rewardAmount || 10;
+
+        // Atomically credit ₹10 to referrer's availableBalance
+        await userModel.findByIdAndUpdate(
+            referral.referrer,
+            { 
+                $inc: { "wallet.balance.availableBalance": rewardAmount } 
+            }
+        );
+
+        // Mark referee as rewarded
+        await userModel.findByIdAndUpdate(refereeUserId, {
+            isReferralRewarded: true
+        });
+
+        console.log(`[Referral Reward] Successfully credited ₹${rewardAmount} to referrer ${referral.referrer} because referee ${refereeUserId} booked 1st ${matchType} (${matchId}).`);
+    } catch (err) {
+        console.error("[Referral Reward] Error in checkAndRewardReferral:", err);
+    }
+}
+
+// Redirect and capture route for /ref/:code
+app.get("/ref/:code", (req, res) => {
+    const code = req.params.code ? req.params.code.toString().trim().toUpperCase() : "";
+    if (code) {
+        if (req.session) {
+            req.session.referralCode = code;
+        }
+        res.cookie('ubr_ref', code, { 
+            maxAge: 30 * 24 * 60 * 60 * 1000, 
+            httpOnly: false,
+            sameSite: 'lax'
+        });
+    }
+    if (req.isAuthenticated && req.isAuthenticated()) {
+        return res.redirect("/dashboard");
+    }
+    return res.redirect("/signin");
+});
+
+// Manual referral code apply endpoint
+app.post("/api/referral/apply", authCheck, async (req, res) => {
+    try {
+        const { code } = req.body;
+        if (!code || !code.trim()) {
+            return res.status(400).json({ success: false, msg: "Please enter a valid referral code." });
+        }
+
+        const user = await userModel.findOne({ gglId: req.user.id });
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found." });
+        }
+
+        if (user.referredBy) {
+            return res.status(400).json({ success: false, msg: "You have already linked a referral code." });
+        }
+
+        if (user.isReferralRewarded) {
+            return res.status(400).json({ success: false, msg: "Referral code can only be applied before playing your first match." });
+        }
+
+        const result = await linkReferral(user, code);
+        if (!result.success) {
+            return res.status(400).json(result);
+        }
+
+        return res.status(200).json(result);
+    } catch (err) {
+        console.error("Error in /api/referral/apply:", err);
+        return res.status(500).json({ success: false, msg: "Internal server error applying referral code." });
+    }
+});
+
 /* Client Routes */
 
 app.get("/checksignin", async (req, res)=>{
     if (req.isAuthenticated()) {
         const user = await userModel.findOne({ gglId: req.user.id });
-        const hasTeam = !!(user && user.team && user.team.teamName);
+        if (!user) {
+            return res.status(401).json({ authenticated: false });
+        }
+
+        // Auto-migrate legacy user.team to user.teams if teams is empty
+        if (user.team && user.team.teamName && (!user.teams || user.teams.length === 0)) {
+            user.teams = [{
+                _id: user.team._id || new mongoose.Types.ObjectId(),
+                teamName: user.team.teamName,
+                teamLogo: user.team.teamLogo || "",
+                whatsappNumber: user.team.whatsappNumber || null,
+                totalPoints: user.team.totalPoints || 0,
+                totalFinishes: user.team.totalFinishes || 0,
+                placementPoints: user.team.placementPoints || 0,
+                matchesPlayed: user.team.matchesPlayed || 0,
+                chickenDinners: user.team.chickenDinners || 0
+            }];
+            await user.save().catch(e => console.error("Migration error in checksignin:", e));
+        }
+
+        const userTeams = (user.teams && Array.isArray(user.teams) && user.teams.length > 0)
+            ? user.teams
+            : ((user.team && user.team.teamName) ? [user.team] : []);
+
+        const hasTeam = userTeams.length > 0 && userTeams.some(t => t.teamName);
         const hasDrop = !!(user && user.dropDetails && (user.dropDetails.erangle || user.dropDetails.miramar || user.dropDetails.rando));
         
-        let isAlreadyRegistered = false;
-        const { categoryId, matchTitle } = req.query;
-        if (categoryId && matchTitle && hasTeam) {
+        let matchTeams = [];
+        const { categoryId, matchTitle, matchId, tournamentId, id, title } = req.query;
+        const catId = categoryId || id;
+        const mTitle = matchTitle || title;
+        const mId = matchId;
+
+        if (catId && (mTitle || mId)) {
             try {
-                const category = await categoryModel.findOne({ _id: categoryId });
-                if (category) {
-                    const match = category.matches.find(m => m.title === matchTitle);
+                const category = await categoryModel.findOne({ _id: catId });
+                if (category && category.matches) {
+                    const match = category.matches.find(m => (mId && m._id.toString() === mId.toString()) || (mTitle && m.title === mTitle));
                     if (match && match.teams) {
-                        isAlreadyRegistered = match.teams.some(t => t.teamName === user.team.teamName);
+                        matchTeams = match.teams;
                     }
                 }
             } catch(err) {
                 console.error("Error checking pre-registration:", err);
             }
+        } else if (tournamentId) {
+            try {
+                const tournament = await tournamentModel.findById(tournamentId);
+                if (tournament && tournament.teams) {
+                    matchTeams = tournament.teams;
+                }
+            } catch(err) {
+                console.error("Error checking tournament pre-registration:", err);
+            }
         }
+
+        const registeredTeamNames = [];
+        const registeredTeamIds = [];
+
+        if (matchTeams.length > 0 && userTeams.length > 0) {
+            for (const ut of userTeams) {
+                const utName = ut.teamName ? ut.teamName.trim().toLowerCase() : "";
+                const utId = ut._id ? ut._id.toString() : "";
+                const isReg = matchTeams.some(t => 
+                    (utId && t._id && t._id.toString() === utId) ||
+                    (utName && t.teamName && t.teamName.trim().toLowerCase() === utName)
+                );
+                if (isReg) {
+                    if (ut.teamName) registeredTeamNames.push(ut.teamName);
+                    if (ut._id) registeredTeamIds.push(ut._id.toString());
+                }
+            }
+        }
+
+        // Teams available to book for this match (excluding already registered ones)
+        const availableTeams = userTeams.filter(ut => {
+            const utName = ut.teamName ? ut.teamName.trim().toLowerCase() : "";
+            const utId = ut._id ? ut._id.toString() : "";
+            const isReg = registeredTeamIds.includes(utId) || registeredTeamNames.some(rn => rn.trim().toLowerCase() === utName);
+            return !isReg && ut.teamName;
+        });
+
+        const isAlreadyRegistered = registeredTeamNames.length > 0;
+        const allRegistered = hasTeam && availableTeams.length === 0;
+
+        const availableBalance = (user && user.wallet && user.wallet.balance && typeof user.wallet.balance.availableBalance !== 'undefined') ? Number(user.wallet.balance.availableBalance) : 0;
+        const prizePool = (user && user.wallet && user.wallet.balance && typeof user.wallet.balance.prizePool !== 'undefined') ? Number(user.wallet.balance.prizePool) : 0;
+        const totalBalance = availableBalance + prizePool;
 
         return res.status(200).json({ 
             authenticated: true, 
             hasTeam, 
             hasDrop,
-            isAlreadyRegistered
+            isAlreadyRegistered,
+            allRegistered,
+            canBookMore: availableTeams.length > 0,
+            userTeams,
+            availableTeams,
+            registeredTeamNames,
+            registeredTeamIds,
+            totalBalance,
+            wallet: {
+                availableBalance,
+                prizePool,
+                totalBalance
+            }
         });
     }
     return res.status(401).json({ authenticated: false });
 });
 app.get("/", async (req, res)=>{
     try {
-        const categories = await categoryModel.find().select("title description img _id");
+        const categories = await categoryModel.find().select("-matches").sort({ order: 1, _id: 1 });
+        const tournaments = await tournamentModel.find().sort({ createdAt: -1 });
         const coverDoc = await pointTableCoverModel.findOne();
         const pointTableCover = coverDoc ? coverDoc.image : null;
-        res.render("index", { categories, pointTableCover });
+
+        let userTeamName = null;
+        let userTeamNames = [];
+        let userTeams = [];
+        let wallet = null;
+
+        if (req.isAuthenticated()) {
+            const details = await userModel.findOne({ gglId: req.user.id });
+            if (details) {
+                if (details.teams && Array.isArray(details.teams) && details.teams.length > 0) {
+                    userTeams = details.teams;
+                    userTeamNames = details.teams.map(t => t.teamName).filter(Boolean);
+                    userTeamName = userTeamNames[0] || null;
+                } else if (details.team && details.team.teamName) {
+                    userTeamName = details.team.teamName;
+                    userTeamNames = [details.team.teamName];
+                    userTeams = [details.team];
+                }
+                wallet = details.wallet;
+            }
+        }
+
+        res.render("index", { categories, tournaments, pointTableCover, userTeamName, userTeamNames, userTeams, wallet, baseurl });
     } catch (err) {
         console.error("Error in home route:", err);
         res.status(500).send("Internal Server Error");
     }
 })
+
+app.get("/scrims", (req, res) => {
+    res.redirect("/category/6a8a8ab55a9578bb26150e5e");
+});
+
+app.get("/results", (req, res) => {
+    res.redirect("/leaderboard");
+});
+
+// BGMI Revised Point System Calculator (Official rules from image)
+// #1=10, #2=6, #3=5, #4=4, #5=3, #6=2, #7=1, #8=1, #9+=0, 1 finish = 1 pt
+function calculatePlacementPoints(rank) {
+    const r = Number(rank);
+    if (r === 1) return 10;
+    if (r === 2) return 6;
+    if (r === 3) return 5;
+    if (r === 4) return 4;
+    if (r === 5) return 3;
+    if (r === 6) return 2;
+    if (r === 7 || r === 8) return 1;
+    return 0; // Rank 9 to 16+ get 0 placement points
+}
+
+// Sync overall performance statistics (Points, Finishes, Placement Pts, Matches, Chicken Dinners) to userModel
+async function syncTeamStats(teamName) {
+    if (!teamName || typeof teamName !== 'string') return;
+    const targetName = teamName.trim().toLowerCase();
+    if (!targetName) return;
+
+    try {
+        const categories = await categoryModel.find({ "matches.teams.teamName": { $regex: new RegExp("^" + teamName.trim() + "$", "i") } }).select("matches");
+        const tournaments = await tournamentModel.find({ "teams.teamName": { $regex: new RegExp("^" + teamName.trim() + "$", "i") } }).select("teams");
+
+        let totalFinishes = 0;
+        let placementPoints = 0;
+        let totalPoints = 0;
+        let matchesPlayed = 0;
+        let chickenDinners = 0;
+
+        function processTeam(t) {
+            if (!t || !t.teamName || t.teamName.trim().toLowerCase() !== targetName) return;
+            if (t.matchScores && Array.isArray(t.matchScores) && t.matchScores.length > 0) {
+                matchesPlayed += t.matchScores.length;
+                t.matchScores.forEach(ms => {
+                    if (ms.rank) {
+                        if (Number(ms.rank) === 1) chickenDinners++;
+                        const pPoints = typeof ms.placementPoints !== 'undefined' && ms.placementPoints !== null ? Number(ms.placementPoints) : calculatePlacementPoints(ms.rank);
+                        const fPoints = typeof ms.finishPoints !== 'undefined' && ms.finishPoints !== null ? Number(ms.finishPoints) : (Number(ms.finishes) || 0);
+                        placementPoints += pPoints;
+                        totalFinishes += Number(ms.finishes) || 0;
+                        totalPoints += (typeof ms.totalPoints !== 'undefined' && ms.totalPoints !== null) ? Number(ms.totalPoints) : (pPoints + fPoints);
+                    }
+                });
+            } else if (t.rank) {
+                matchesPlayed++;
+                if (Number(t.rank) === 1) chickenDinners++;
+                const pPoints = typeof t.placementPoints !== 'undefined' && t.placementPoints !== null ? Number(t.placementPoints) : calculatePlacementPoints(t.rank);
+                const fPoints = typeof t.finishPoints !== 'undefined' && t.finishPoints !== null ? Number(t.finishPoints) : (Number(t.finishes) || 0);
+                placementPoints += pPoints;
+                totalFinishes += Number(t.finishes) || 0;
+                totalPoints += (typeof t.totalPoints !== 'undefined' && t.totalPoints !== null) ? Number(t.totalPoints) : (pPoints + fPoints);
+            } else {
+                matchesPlayed++;
+            }
+        }
+
+        categories.forEach(cat => {
+            (cat.matches || []).forEach(m => {
+                (m.teams || []).forEach(t => processTeam(t));
+            });
+        });
+
+        tournaments.forEach(tourn => {
+            (tourn.teams || []).forEach(t => processTeam(t));
+        });
+
+        // Update legacy user.team
+        await userModel.updateMany(
+            { "team.teamName": { $regex: new RegExp("^" + teamName.trim() + "$", "i") } },
+            {
+                $set: {
+                    "team.totalPoints": totalPoints,
+                    "team.totalFinishes": totalFinishes,
+                    "team.placementPoints": placementPoints,
+                    "team.matchesPlayed": matchesPlayed,
+                    "team.chickenDinners": chickenDinners
+                }
+            }
+        );
+
+        // Also update multi-squad user.teams array
+        await userModel.updateMany(
+            { "teams.teamName": { $regex: new RegExp("^" + teamName.trim() + "$", "i") } },
+            {
+                $set: {
+                    "teams.$[elem].totalPoints": totalPoints,
+                    "teams.$[elem].totalFinishes": totalFinishes,
+                    "teams.$[elem].placementPoints": placementPoints,
+                    "teams.$[elem].matchesPlayed": matchesPlayed,
+                    "teams.$[elem].chickenDinners": chickenDinners
+                }
+            },
+            {
+                arrayFilters: [{ "elem.teamName": { $regex: new RegExp("^" + teamName.trim() + "$", "i") } }]
+            }
+        );
+    } catch (err) {
+        console.error("Error syncing team stats for:", teamName, err);
+    }
+}
+
+app.get("/leaderboard", async (req, res) => {
+    try {
+        const usersWithTeams = await userModel.find({ "team.teamName": { $exists: true, $ne: "" } }).select("team wallet");
+        const categories = await categoryModel.find().select("matches");
+        const tournaments = await tournamentModel.find().select("teams");
+
+        const statsMap = {};
+        let totalMatchesCount = 0;
+
+        function recordTeamStats(t) {
+            if (!t || !t.teamName) return;
+            const name = t.teamName.trim().toLowerCase();
+            if (!name) return;
+
+            if (!statsMap[name]) {
+                statsMap[name] = {
+                    teamName: t.teamName.trim(),
+                    teamLogo: t.teamLogo || "",
+                    matchesPlayed: 0,
+                    totalFinishes: 0,
+                    placementPoints: 0,
+                    totalPoints: 0,
+                    chickenDinners: 0
+                };
+            }
+
+            const s = statsMap[name];
+            if (t.teamLogo && !s.teamLogo) s.teamLogo = t.teamLogo;
+
+            if (t.matchScores && Array.isArray(t.matchScores) && t.matchScores.length > 0) {
+                s.matchesPlayed += t.matchScores.length;
+                t.matchScores.forEach(ms => {
+                    if (ms.rank) {
+                        if (Number(ms.rank) === 1) s.chickenDinners += 1;
+                        const pPoints = typeof ms.placementPoints !== 'undefined' && ms.placementPoints !== null ? Number(ms.placementPoints) : calculatePlacementPoints(ms.rank);
+                        const fPoints = typeof ms.finishPoints !== 'undefined' && ms.finishPoints !== null ? Number(ms.finishPoints) : (Number(ms.finishes) || 0);
+                        const tot = typeof ms.totalPoints !== 'undefined' && ms.totalPoints !== null ? Number(ms.totalPoints) : (pPoints + fPoints);
+
+                        s.placementPoints += pPoints;
+                        s.totalFinishes += Number(ms.finishes) || 0;
+                        s.totalPoints += tot;
+                    }
+                });
+            } else if (t.rank) {
+                s.matchesPlayed += 1;
+                if (Number(t.rank) === 1) s.chickenDinners += 1;
+                const pPoints = typeof t.placementPoints !== 'undefined' && t.placementPoints !== null ? Number(t.placementPoints) : calculatePlacementPoints(t.rank);
+                const fPoints = typeof t.finishPoints !== 'undefined' && t.finishPoints !== null ? Number(t.finishPoints) : (Number(t.finishes) || 0);
+                const tot = typeof t.totalPoints !== 'undefined' && t.totalPoints !== null ? Number(t.totalPoints) : (pPoints + fPoints);
+
+                s.placementPoints += pPoints;
+                s.totalFinishes += Number(t.finishes) || 0;
+                s.totalPoints += tot;
+            } else {
+                s.matchesPlayed += 1;
+            }
+        }
+
+        categories.forEach(cat => {
+            if (cat.matches && Array.isArray(cat.matches)) {
+                totalMatchesCount += cat.matches.length;
+                cat.matches.forEach(m => {
+                    if (m.teams && Array.isArray(m.teams)) {
+                        m.teams.forEach(t => recordTeamStats(t));
+                    }
+                });
+            }
+        });
+
+        tournaments.forEach(tourn => {
+            totalMatchesCount += 1;
+            if (tourn.teams && Array.isArray(tourn.teams)) {
+                tourn.teams.forEach(t => recordTeamStats(t));
+            }
+        });
+
+        const teamList = usersWithTeams.map(u => {
+            const teamName = (u.team && u.team.teamName) ? u.team.teamName.trim() : "";
+            const teamLogo = (u.team && u.team.teamLogo) ? u.team.teamLogo : "";
+            const prizePoolWon = (u.wallet && u.wallet.balance && typeof u.wallet.balance.prizePool !== 'undefined') ? Number(u.wallet.balance.prizePool) : 0;
+            const lower = teamName.toLowerCase();
+            const stats = statsMap[lower] || {
+                matchesPlayed: u.team.matchesPlayed || 0,
+                totalFinishes: u.team.totalFinishes || 0,
+                placementPoints: u.team.placementPoints || 0,
+                totalPoints: u.team.totalPoints || 0,
+                chickenDinners: u.team.chickenDinners || 0
+            };
+
+            return {
+                teamName,
+                teamLogo: teamLogo || stats.teamLogo || "",
+                prizePoolWon,
+                matchesPlayed: stats.matchesPlayed || 0,
+                totalFinishes: stats.totalFinishes || 0,
+                placementPoints: stats.placementPoints || 0,
+                totalPoints: stats.totalPoints || 0,
+                chickenDinners: stats.chickenDinners || 0
+            };
+        }).filter(t => t.teamName);
+
+        const registeredNames = new Set(teamList.map(t => t.teamName.toLowerCase()));
+
+        // Include any unregistered tournament/scrim teams from statsMap
+        Object.keys(statsMap).forEach(lower => {
+            if (!registeredNames.has(lower)) {
+                const s = statsMap[lower];
+                teamList.push({
+                    teamName: s.teamName,
+                    teamLogo: s.teamLogo || "",
+                    prizePoolWon: 0,
+                    matchesPlayed: s.matchesPlayed,
+                    totalFinishes: s.totalFinishes,
+                    placementPoints: s.placementPoints,
+                    totalPoints: s.totalPoints,
+                    chickenDinners: s.chickenDinners
+                });
+            }
+        });
+
+        // Official esports sorting: Total Points desc, Total Finishes desc, Prize Pool desc, Matches desc
+        teamList.sort((a, b) => {
+            if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+            if (b.totalFinishes !== a.totalFinishes) return b.totalFinishes - a.totalFinishes;
+            if (b.prizePoolWon !== a.prizePoolWon) return b.prizePoolWon - a.prizePoolWon;
+            return b.matchesPlayed - a.matchesPlayed;
+        });
+
+        const rankedTeams = teamList.map((t, idx) => ({ ...t, rank: idx + 1 }));
+        const totalPrizeDistributed = rankedTeams.reduce((acc, curr) => acc + (curr.prizePoolWon || 0), 0);
+        const pointTables = await pointTableModel.find().sort({ _id: -1 });
+
+        let userTeamName = null;
+        let wallet = null;
+        if (req.isAuthenticated()) {
+            const details = await userModel.findOne({ gglId: req.user.id });
+            if (details) {
+                wallet = details.wallet;
+                if (details.team && details.team.teamName) {
+                    userTeamName = details.team.teamName;
+                }
+            }
+        }
+
+        res.render("client/pages/leaderboard", {
+            rankedTeams,
+            categories: (categories || []).map(c => ({ _id: c._id, title: c.title })),
+            totalMatchesCount,
+            totalPrizeDistributed,
+            pointTables,
+            userTeamName,
+            wallet,
+            baseurl
+        });
+    } catch (err) {
+        console.error("Leaderboard route error:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.get("/profile", (req, res) => {
+    res.redirect("/dashboard");
+});
 
 app.get("/terms", (req, res)=>{
     res.render("pages/terms");
@@ -583,19 +1146,26 @@ app.get("/category/:id", async (req, res)=>{
         }
         
         let userTeamName = null;
+        let userTeamNames = [];
+        let userTeams = [];
         let wallet = null;
 
         if (req.isAuthenticated()) {
             const details = await userModel.findOne({gglId:req.user.id});
             if (details) {
-                if (details.team && details.team.teamName) {
+                if (details.teams && Array.isArray(details.teams) && details.teams.length > 0) {
+                    userTeams = details.teams;
+                    userTeamNames = details.teams.map(t => t.teamName).filter(Boolean);
+                    userTeamName = userTeamNames[0] || null;
+                } else if (details.team && details.team.teamName) {
                     userTeamName = details.team.teamName;
+                    userTeamNames = [details.team.teamName];
+                    userTeams = [details.team];
                 }
                 wallet = details.wallet;
             }
         }
-        console.log(wallet)
-        res.render("pages/category", { matches, id, baseurl, userTeamName, wallet });
+        res.render("pages/category", { matches, id, baseurl, userTeamName, userTeamNames, userTeams, wallet });
     } catch (err) {
         console.error("Error fetching category matches:", err);
         res.status(500).send("Internal Server Error");
@@ -604,30 +1174,282 @@ app.get("/category/:id", async (req, res)=>{
 
 app.get("/dashboard", authCheck, async (req, res)=>{
     try {
-        const categories = await categoryModel.find().select("title description img _id");
-        console.log(categories);
+        const categories = await categoryModel.find().select("-matches").sort({ order: 1, _id: 1 });
 
         let isExist = await userModel.findOne({gglId:req.user.id});
-        console.log(isExist)
         if(!isExist){
-            const add = await userModel.create({gglId:req.user.id, wallet:{ balance:{availableBalance:0, prizePool:0}, withdrawal:[]}});
+            const newRefCode = await generateUniqueReferralCode();
+            const displayName = req.user.displayName || "";
+            const email = (req.user.emails && req.user.emails[0]) ? req.user.emails[0].value : (req.user._json && req.user._json.email ? req.user._json.email : "");
+            const avatar = (req.user.photos && req.user.photos[0]) ? req.user.photos[0].value : "";
+
+            const add = await userModel.create({
+                gglId: req.user.id,
+                name: displayName,
+                email: email,
+                avatar: avatar,
+                referralCode: newRefCode,
+                wallet: { balance: { availableBalance: 0, prizePool: 0 }, withdrawal: [] }
+            });
             isExist = await add.save();
-            console.log(isExist);
+        } else {
+            let needSave = false;
+            if (!isExist.referralCode) {
+                isExist.referralCode = await generateUniqueReferralCode();
+                needSave = true;
+            }
+            if (!isExist.name && req.user.displayName) {
+                isExist.name = req.user.displayName;
+                needSave = true;
+            }
+            if (!isExist.email && req.user.emails && req.user.emails[0]) {
+                isExist.email = req.user.emails[0].value;
+                needSave = true;
+            }
+            if (req.user.photos && req.user.photos[0] && (!isExist.avatar || isExist.avatar !== req.user.photos[0].value)) {
+                isExist.avatar = req.user.photos[0].value;
+                needSave = true;
+            }
+            if (needSave) {
+                await isExist.save();
+            }
         }
+
+        // Link referral if candidate referral code exists in session or cookie and not already linked
+        if (!isExist.referredBy) {
+            let candidateRef = (req.session && req.session.referralCode) ? req.session.referralCode : null;
+            if (!candidateRef && req.headers && req.headers.cookie) {
+                const match = req.headers.cookie.match(/(?:^|;\s*)ubr_ref=([^;]+)/);
+                if (match) candidateRef = decodeURIComponent(match[1]).trim().toUpperCase();
+            }
+            if (candidateRef) {
+                await linkReferral(isExist, candidateRef);
+                if (req.session) req.session.referralCode = null;
+                res.clearCookie("ubr_ref");
+                isExist = await userModel.findOne({ gglId: req.user.id });
+            }
+        }
+
+        if (isExist.teams && Array.isArray(isExist.teams) && isExist.teams.length > 0) {
+            for (const t of isExist.teams) {
+                if (t && t.teamName) await syncTeamStats(t.teamName);
+            }
+            isExist = await userModel.findOne({ gglId: req.user.id });
+        } else if (isExist.team && isExist.team.teamName) {
+            await syncTeamStats(isExist.team.teamName);
+            isExist = await userModel.findOne({ gglId: req.user.id });
+        }
+
+        // Fetch user's referral statistics & invited friends list
+        const referralList = await referralModel.find({ referrer: isExist._id })
+            .populate("referee", "name email avatar team createdAt")
+            .sort({ createdAt: -1 });
+
+        const totalReferrals = referralList.length;
+        const completedReferrals = referralList.filter(r => r.status === "completed").length;
+        const pendingReferrals = referralList.filter(r => r.status === "pending").length;
+        const totalEarned = completedReferrals * 10;
+
+        let referrerName = "";
+        if (isExist.referredBy) {
+            const refUser = await userModel.findById(isExist.referredBy).select("name");
+            if (refUser && refUser.name) referrerName = refUser.name;
+        }
+
+        const siteUrl = baseurl || (req.protocol + '://' + req.get('host'));
+
+        const referralData = {
+            referralCode: isExist.referralCode,
+            totalReferrals,
+            completedReferrals,
+            pendingReferrals,
+            totalEarned,
+            list: referralList,
+            referredBy: isExist.referredBy,
+            referrerName,
+            siteUrl
+        };
 
         const user = {
-            name:req.user.displayName,
-            dp:req.user.photos[0].value,
-            balance:isExist.wallet.balance
-        }
+            id: isExist._id,
+            name: req.user.displayName,
+            dp: (req.user.photos && req.user.photos[0]) ? req.user.photos[0].value : null,
+            email: (req.user.emails && req.user.emails[0]) ? req.user.emails[0].value : (req.user._json && req.user._json.email ? req.user._json.email : null),
+            balance: isExist.wallet.balance,
+            team: isExist.team || {},
+            dropDetails: isExist.dropDetails || {},
+            referralCode: isExist.referralCode,
+            referredBy: isExist.referredBy
+        };
 
-        console.log(user)
-        res.render("pages/dashboard", {user, categories });
+        res.render("pages/dashboard", { user, categories, referralData, baseurl: siteUrl });
     } catch (err) {
         console.error("Dashboard error:", err);
         res.status(500).send("Internal Server Error");
     }
 })
+
+app.get("/my-matches", authCheck, async (req, res) => {
+    try {
+        let isExist = await userModel.findOne({ gglId: req.user.id });
+        if (!isExist) {
+            const add = await userModel.create({
+                gglId: req.user.id,
+                wallet: { balance: { availableBalance: 0, prizePool: 0 }, withdrawal: [] }
+            });
+            isExist = await add.save();
+        }
+
+        const user = {
+            name: req.user.displayName,
+            dp: (req.user.photos && req.user.photos[0]) ? req.user.photos[0].value : null,
+            email: (req.user.emails && req.user.emails[0]) ? req.user.emails[0].value : (req.user._json && req.user._json.email ? req.user._json.email : null),
+            balance: isExist.wallet ? isExist.wallet.balance : { availableBalance: 0, prizePool: 0 },
+            team: isExist.team || {},
+            dropDetails: isExist.dropDetails || {}
+        };
+
+        const userTeamsList = (isExist.teams && Array.isArray(isExist.teams) && isExist.teams.length > 0)
+            ? isExist.teams
+            : ((isExist.team && isExist.team.teamName) ? [isExist.team] : []);
+
+        const userTeamNames = userTeamsList.map(t => t.teamName ? t.teamName.trim().toLowerCase() : null).filter(Boolean);
+        const userTeamIds = userTeamsList.map(t => t._id ? t._id.toString() : null).filter(Boolean);
+
+        const myMatches = [];
+
+        if (userTeamNames.length > 0 || userTeamIds.length > 0) {
+            const orConditions = [];
+            userTeamNames.forEach(name => {
+                const escapedTeam = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                orConditions.push({ "matches.teams.teamName": new RegExp(`^${escapedTeam}$`, 'i') });
+            });
+            userTeamIds.forEach(id => {
+                if (mongoose.Types.ObjectId.isValid(id)) {
+                    orConditions.push({ "matches.teams._id": new mongoose.Types.ObjectId(id) });
+                }
+            });
+
+            if (orConditions.length > 0) {
+                const categories = await categoryModel.find({ $or: orConditions });
+
+                for (const cat of categories) {
+                    if (!cat.matches || !Array.isArray(cat.matches)) continue;
+                    for (const m of cat.matches) {
+                        if (!m.teams || !Array.isArray(m.teams)) continue;
+
+                        m.teams.forEach((t, idx) => {
+                            const isUserTeam = (t._id && userTeamIds.includes(t._id.toString())) ||
+                                               (t.teamName && userTeamNames.includes(t.teamName.trim().toLowerCase()));
+                            if (isUserTeam) {
+                                const approvedTeams = m.teams.filter(team => team.status === "approved" || !team.status);
+
+                                myMatches.push({
+                                    categoryId: cat._id,
+                                    categoryTitle: cat.title,
+                                    categoryImg: cat.img,
+                                    matchId: m._id,
+                                    title: m.title,
+                                    date: m.date,
+                                    prizePool: m.prizePool || 0,
+                                    slots: m.slots || 0,
+                                    entryFee: m.entryFee || 0,
+                                    idpTimings: m.idpTimings || "",
+                                    maps: m.maps || "",
+                                    details: m.details || "",
+                                    whatsappGroupLink: m.whatsappGroupLink || "",
+                                    teams: m.teams,
+                                    approvedTeams: approvedTeams,
+                                    userSlotNo: idx + 1,
+                                    userTeamData: t,
+                                    teamStatus: t.status || "registered",
+                                    isTournament: false
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+
+            // Also fetch tournaments joined by any of user's squads
+            const tournamentOrConditions = [];
+            userTeamNames.forEach(name => {
+                const escapedTeam = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                tournamentOrConditions.push({ "teams.teamName": new RegExp(`^${escapedTeam}$`, 'i') });
+            });
+            userTeamIds.forEach(id => {
+                if (mongoose.Types.ObjectId.isValid(id)) {
+                    tournamentOrConditions.push({ "teams._id": new mongoose.Types.ObjectId(id) });
+                }
+            });
+
+            if (tournamentOrConditions.length > 0) {
+                const tournaments = await tournamentModel.find({ $or: tournamentOrConditions });
+
+                for (const tourn of tournaments) {
+                    if (!tourn.teams || !Array.isArray(tourn.teams)) continue;
+
+                    tourn.teams.forEach((t, idx) => {
+                        const isUserTeam = (t._id && userTeamIds.includes(t._id.toString())) ||
+                                           (t.teamName && userTeamNames.includes(t.teamName.trim().toLowerCase()));
+                        if (isUserTeam) {
+                            const approvedTeams = tourn.teams.filter(team => team.status === "approved" || !team.status);
+
+                            myMatches.push({
+                                categoryId: null,
+                                categoryTitle: "Official Tournament",
+                                categoryImg: tourn.banner || "/images/ubrLogo.png",
+                                tournamentId: tourn._id,
+                                matchId: tourn._id,
+                                title: tourn.title,
+                                date: tourn.date,
+                                prizePool: tourn.prizePool || 0,
+                                slots: tourn.slots || 0,
+                                entryFee: tourn.entryFee || 0,
+                                idpTimings: tourn.idpTimings || "",
+                                maps: tourn.maps || "",
+                                details: tourn.details || "",
+                                whatsappGroupLink: tourn.whatsappGroupLink || "",
+                                teams: tourn.teams,
+                                approvedTeams: approvedTeams,
+                                userSlotNo: idx + 1,
+                                userTeamData: t,
+                                teamStatus: t.status || "registered",
+                                isTournament: true
+                            });
+                        }
+                    });
+                }
+            }
+        }
+
+        // Sort: newest/upcoming match date first
+        myMatches.sort((a, b) => {
+            const dateA = new Date(a.date).getTime() || 0;
+            const dateB = new Date(b.date).getTime() || 0;
+            return dateB - dateA;
+        });
+
+        res.render("pages/myMatches", {
+            user,
+            matches: myMatches,
+            wallet: isExist.wallet,
+            userTeamName: isExist.team ? isExist.team.teamName : null,
+            baseurl
+        });
+    } catch (err) {
+        console.error("My Matches error:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.get("/mymatches", (req, res) => {
+    res.redirect("/my-matches");
+});
+
+app.get("/matches", (req, res) => {
+    res.redirect("/my-matches");
+});
 
 app.get("/team-settings", authCheck, async (req, res)=>{
      try {
@@ -635,15 +1457,33 @@ app.get("/team-settings", authCheck, async (req, res)=>{
          if(!isExist){
              isExist = await userModel.create({gglId:req.user.id, wallet:{ balance:{availableBalance:0, prizePool:0}, withdrawal:[]}});
          }
-         const user = {
-            name:req.user.displayName,
-            dp:req.user.photos[0].value,
-            balance:isExist.wallet.balance
+
+         // Auto-migrate legacy single team if teams array is empty
+         if (isExist.team && isExist.team.teamName && (!isExist.teams || isExist.teams.length === 0)) {
+             isExist.teams = [{
+                 _id: isExist.team._id || new mongoose.Types.ObjectId(),
+                 teamName: isExist.team.teamName,
+                 teamLogo: isExist.team.teamLogo || "",
+                 whatsappNumber: isExist.team.whatsappNumber || null,
+                 totalPoints: isExist.team.totalPoints || 0,
+                 totalFinishes: isExist.team.totalFinishes || 0,
+                 placementPoints: isExist.team.placementPoints || 0,
+                 matchesPlayed: isExist.team.matchesPlayed || 0,
+                 chickenDinners: isExist.team.chickenDinners || 0
+             }];
+             await isExist.save().catch(e => console.error("Migration error:", e));
          }
 
-         const teamSettings = await userModel.findOne({gglId:req.user.id}).select("team");
-         const team = teamSettings.team;
-         res.render("pages/teamSettings", {user, team, baseurl});
+         const user = {
+            name:req.user.displayName,
+            dp:(req.user.photos && req.user.photos[0]) ? req.user.photos[0].value : null,
+            balance:isExist.wallet ? isExist.wallet.balance : { availableBalance: 0, prizePool: 0 }
+         }
+
+         const teams = (isExist.teams && Array.isArray(isExist.teams)) ? isExist.teams : [];
+         const team = teams.length > 0 ? teams[0] : (isExist.team || {});
+
+         res.render("pages/teamSettings", {user, teams, team, baseurl});
      } catch (err) {
          console.error("Team settings error:", err);
          res.status(500).send("Internal Server Error");
@@ -652,7 +1492,6 @@ app.get("/team-settings", authCheck, async (req, res)=>{
 
 app.post("/team-settings", authCheck, upload.single('teamLogo'), async (req, res)=>{
     try {
-        console.log(req.user.id);
         const user = await userModel.findOne({gglId: req.user.id});
         if(!user){
             if (req.file && fs.existsSync(req.file.path)) {
@@ -661,7 +1500,7 @@ app.post("/team-settings", authCheck, upload.single('teamLogo'), async (req, res
             return res.status(404).json({msg:"User does not exist"});
         }
 
-        const { teamName, whatsappNumber } = req.body;
+        const { teamName, whatsappNumber, teamId } = req.body;
         if (!teamName || !whatsappNumber) {
             if (req.file && fs.existsSync(req.file.path)) {
                 try { fs.unlinkSync(req.file.path); } catch(e) {}
@@ -669,42 +1508,188 @@ app.post("/team-settings", authCheck, upload.single('teamLogo'), async (req, res
             return res.status(400).json({ msg: "Please fill all required fields." });
         }
 
-        // Preserve existing logo if no new file is uploaded
-        let logoName = user.team && user.team.teamLogo ? user.team.teamLogo : "";
-        if (req.file) {
-            // Delete old logo file/URL if it exists
-            if (logoName) {
-                if (logoName.startsWith("http://") || logoName.startsWith("https://")) {
-                    await deleteFromCloudinary(logoName);
-                } else {
-                    const oldLogoPath = path.join(__dirname, 'public', 'images', logoName);
-                    if (fs.existsSync(oldLogoPath)) {
-                        fs.unlinkSync(oldLogoPath);
+        if (!user.teams) {
+            user.teams = [];
+        }
+
+        let teamIndex = -1;
+        if (teamId && teamId !== 'new') {
+            teamIndex = user.teams.findIndex(t => t._id && t._id.toString() === teamId.toString());
+            if (teamIndex === -1) {
+                if (req.file && fs.existsSync(req.file.path)) {
+                    try { fs.unlinkSync(req.file.path); } catch(e) {}
+                }
+                return res.status(404).json({ msg: "Squad not found." });
+            }
+        } else if (!teamId && user.teams.length === 1) {
+            teamIndex = 0;
+        }
+
+        // Check if updating an existing team
+        if (teamIndex !== -1) {
+            const oldTeam = user.teams[teamIndex];
+            const oldTeamName = (oldTeam && oldTeam.teamName) ? oldTeam.teamName.trim() : "";
+            const targetTeamId = oldTeam ? oldTeam._id : null;
+            const oldLogo = (oldTeam && oldTeam.teamLogo) ? oldTeam.teamLogo : "";
+            const oldWhatsapp = oldTeam ? oldTeam.whatsappNumber : null;
+            const newTeamName = teamName.trim();
+            const newWhatsapp = Number(whatsappNumber);
+
+            let logoName = oldLogo;
+            if (req.file) {
+                if (logoName) {
+                    if (logoName.startsWith("http://") || logoName.startsWith("https://")) {
+                        await deleteFromCloudinary(logoName).catch(e => console.error("Cloudinary delete error:", e));
+                    } else {
+                        const oldLogoPath = path.join(__dirname, 'public', 'images', logoName);
+                        if (fs.existsSync(oldLogoPath)) {
+                            try { fs.unlinkSync(oldLogoPath); } catch(e) {}
+                        }
                     }
                 }
+                const uploadResult = await uploadToCloudinary(req.file.path, 'team_logos');
+                logoName = uploadResult.secure_url;
             }
-            // Upload new logo to Cloudinary
-            const uploadResult = await uploadToCloudinary(req.file.path, 'team_logos');
-            logoName = uploadResult.secure_url;
+
+            user.teams[teamIndex].teamName = newTeamName;
+            user.teams[teamIndex].whatsappNumber = newWhatsapp;
+            user.teams[teamIndex].teamLogo = logoName;
+
+            // Sync user.team to primary team
+            user.team = user.teams[0];
+            await user.save();
+
+            // Synchronize updated team details across all booked scrim matches and tournaments
+            try {
+                const isMatchingSquad = (t) => {
+                    if (!t) return false;
+                    if (targetTeamId && t.teamId && t.teamId.toString() === targetTeamId.toString()) return true;
+                    if (targetTeamId && t._id && t._id.toString() === targetTeamId.toString()) return true;
+                    if (user._id && t.userId && t.userId.toString() === user._id.toString()) {
+                        if (!oldTeamName || (t.teamName && t.teamName.trim().toLowerCase() === oldTeamName.toLowerCase())) return true;
+                    }
+                    if (oldTeamName && t.teamName && t.teamName.trim().toLowerCase() === oldTeamName.toLowerCase()) {
+                        if (t.userId && user._id && t.userId.toString() === user._id.toString()) return true;
+                        if (oldWhatsapp && t.whatsappNumber && Number(t.whatsappNumber) === Number(oldWhatsapp)) return true;
+                        if (oldLogo && t.teamLogo && t.teamLogo === oldLogo) return true;
+                        if (!t.userId && (!t.whatsappNumber || Number(t.whatsappNumber) === Number(newWhatsapp))) return true;
+                    }
+                    return false;
+                };
+
+                // 1. Sync Scrim Matches in Category Model
+                const categoryOrs = [];
+                if (targetTeamId) {
+                    categoryOrs.push({ "matches.teams.teamId": targetTeamId });
+                    categoryOrs.push({ "matches.teams._id": targetTeamId });
+                }
+                if (user._id) {
+                    categoryOrs.push({ "matches.teams.userId": user._id });
+                }
+                if (oldTeamName) {
+                    const escaped = oldTeamName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    categoryOrs.push({ "matches.teams.teamName": new RegExp(`^${escaped}$`, 'i') });
+                }
+
+                if (categoryOrs.length > 0) {
+                    const matchedCategories = await categoryModel.find({ $or: categoryOrs });
+                    for (const cat of matchedCategories) {
+                        let catModified = false;
+                        if (cat.matches && Array.isArray(cat.matches)) {
+                            cat.matches.forEach(m => {
+                                if (m.teams && Array.isArray(m.teams)) {
+                                    m.teams.forEach(t => {
+                                        if (isMatchingSquad(t)) {
+                                            t.teamName = newTeamName;
+                                            t.whatsappNumber = newWhatsapp;
+                                            t.teamLogo = logoName;
+                                            if (targetTeamId) t.teamId = targetTeamId;
+                                            if (user._id) t.userId = user._id;
+                                            catModified = true;
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        if (catModified) {
+                            await cat.save();
+                        }
+                    }
+                }
+
+                // 2. Sync Tournaments
+                const tournamentOrs = [];
+                if (targetTeamId) {
+                    tournamentOrs.push({ "teams.teamId": targetTeamId });
+                    tournamentOrs.push({ "teams._id": targetTeamId });
+                }
+                if (user._id) {
+                    tournamentOrs.push({ "teams.userId": user._id });
+                }
+                if (oldTeamName) {
+                    const escaped = oldTeamName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    tournamentOrs.push({ "teams.teamName": new RegExp(`^${escaped}$`, 'i') });
+                }
+
+                if (tournamentOrs.length > 0) {
+                    const matchedTournaments = await tournamentModel.find({ $or: tournamentOrs });
+                    for (const tourn of matchedTournaments) {
+                        let tourModified = false;
+                        if (tourn.teams && Array.isArray(tourn.teams)) {
+                            tourn.teams.forEach(t => {
+                                if (isMatchingSquad(t)) {
+                                    t.teamName = newTeamName;
+                                    t.whatsappNumber = newWhatsapp;
+                                    t.teamLogo = logoName;
+                                    if (targetTeamId) t.teamId = targetTeamId;
+                                    if (user._id) t.userId = user._id;
+                                    tourModified = true;
+                                }
+                            });
+                        }
+                        if (tourModified) {
+                            await tourn.save();
+                        }
+                    }
+                }
+            } catch (syncErr) {
+                console.error("Error synchronizing team name to scrims/tournaments:", syncErr);
+            }
+
+            return res.status(200).json({ msg: "Squad updated successfully." });
+        } else {
+            // Adding a new team: Check max 4 limit
+            if (user.teams.length >= 4) {
+                if (req.file && fs.existsSync(req.file.path)) {
+                    try { fs.unlinkSync(req.file.path); } catch(e) {}
+                }
+                return res.status(400).json({ msg: "You can create a maximum of 4 teams." });
+            }
+
+            let logoName = "";
+            if (req.file) {
+                const uploadResult = await uploadToCloudinary(req.file.path, 'team_logos');
+                logoName = uploadResult.secure_url;
+            }
+
+            const newTeam = {
+                _id: new mongoose.Types.ObjectId(),
+                teamName: teamName.trim(),
+                whatsappNumber: Number(whatsappNumber),
+                teamLogo: logoName,
+                totalPoints: 0,
+                totalFinishes: 0,
+                placementPoints: 0,
+                matchesPlayed: 0,
+                chickenDinners: 0
+            };
+
+            user.teams.push(newTeam);
+            user.team = user.teams[0];
+            await user.save();
+
+            return res.status(200).json({ msg: "Squad created successfully." });
         }
-
-        const teamData = {
-            teamName: teamName.trim(),
-            whatsappNumber: Number(whatsappNumber),
-            teamLogo: logoName
-        };
-
-        const updatedUser = await userModel.findOneAndUpdate(
-            { gglId: req.user.id },
-            { team: teamData },
-            { new: true }
-        );
-
-        if(!updatedUser){
-            return res.status(500).json({msg:"something went wrong in adding team please try again later"});
-        }
-        console.log(updatedUser);
-        return res.status(200).json({ msg:"team Created Successfully" });
     } catch(err) {
         console.error("Error setting team details:", err);
         if (req.file && fs.existsSync(req.file.path)) {
@@ -713,6 +1698,41 @@ app.post("/team-settings", authCheck, upload.single('teamLogo'), async (req, res
         return res.status(500).json({ msg: "Internal server error" });
     }
 })
+
+app.post("/team-settings/delete", authCheck, async (req, res) => {
+    try {
+        const { teamId } = req.body;
+        if (!teamId) {
+            return res.status(400).json({ msg: "Team ID is required." });
+        }
+
+        const user = await userModel.findOne({ gglId: req.user.id });
+        if (!user) {
+            return res.status(404).json({ msg: "User not found." });
+        }
+
+        const teamIndex = user.teams ? user.teams.findIndex(t => t._id && t._id.toString() === teamId.toString()) : -1;
+        if (teamIndex === -1) {
+            return res.status(404).json({ msg: "Squad not found." });
+        }
+
+        const removedTeam = user.teams[teamIndex];
+        if (removedTeam && removedTeam.teamLogo) {
+            if (removedTeam.teamLogo.startsWith("http://") || removedTeam.teamLogo.startsWith("https://")) {
+                await deleteFromCloudinary(removedTeam.teamLogo).catch(e => console.error("Cloudinary delete error:", e));
+            }
+        }
+
+        user.teams.splice(teamIndex, 1);
+        user.team = (user.teams && user.teams.length > 0) ? user.teams[0] : {};
+        await user.save();
+
+        return res.status(200).json({ msg: "Squad deleted successfully." });
+    } catch (err) {
+        console.error("Error deleting squad:", err);
+        return res.status(500).json({ msg: "Internal server error." });
+    }
+});
 
 app.get("/drop-details", authCheck, async (req, res)=>{
      try {
@@ -760,20 +1780,34 @@ app.get("/logout", (req, res)=>{
 
 app.post("/book", upload.none(), async (req, res)=>{
      if (!req.isAuthenticated()) {
-        console.log("not log ined")
         return res.status(401).json({ authenticated: false });
     }
     
    try {
-       console.log(req.user.id);
-       const getTeam = await userModel.findOne({gglId:req.user.id}).select("team");
-       if (!getTeam || !getTeam.team || !getTeam.team.teamName) {
-           return res.status(400).json({msg:"Please set up your team settings first."});
+       const user = await userModel.findOne({gglId:req.user.id});
+       if (!user) {
+           return res.status(404).json({ msg: "User not found." });
        }
-       console.log(getTeam.team.teamName);
-       const { id, title, matchid } = req.body;
- 
-       // Fetch category and match details from DB to prevent client-side entryFee tampering
+
+       const userTeams = (user.teams && Array.isArray(user.teams) && user.teams.length > 0)
+           ? user.teams
+           : ((user.team && user.team.teamName) ? [user.team] : []);
+
+       const { id, title, matchid, teamId } = req.body;
+
+       let selectedTeam = null;
+       if (teamId) {
+           selectedTeam = userTeams.find(t => t._id && t._id.toString() === teamId.toString());
+       }
+       if (!selectedTeam && userTeams.length > 0) {
+           selectedTeam = userTeams[0];
+       }
+
+       if (!selectedTeam || !selectedTeam.teamName) {
+           return res.status(400).json({msg:"Please set up your squad in team settings first."});
+       }
+
+       // Fetch category and match details from DB
        const category = await categoryModel.findOne({_id:id});
        if(!category){
          if (req.file) fs.unlinkSync(req.file.path);
@@ -786,47 +1820,51 @@ app.post("/book", upload.none(), async (req, res)=>{
        }
        const entryFee = Number(match.entryFee) || 0;
 
-        // Check if slots are full
+       // Check if slots are full
        if (match.teams && match.teams.length >= match.slots) {
            if (req.file) fs.unlinkSync(req.file.path);
            return res.status(400).json({msg:"Scrim slots are already full!"});
        }
  
        const drop = await userModel.findOne({gglId:req.user.id}).select("dropDetails");
-       console.log(drop)
        if(!drop || !drop.dropDetails){
          if (req.file) fs.unlinkSync(req.file.path);
          return res.status(400).json({msg:"Please add Drop Details "});
        };
  
-       const isAlreadyRegistered = await categoryModel.findOne({_id:id, matches:{$elemMatch:{_id:matchid, teams:{ $elemMatch:{_id:getTeam.team._id}}}}});
+       const isAlreadyRegistered = match.teams && match.teams.some(t => 
+           (selectedTeam._id && t._id && t._id.toString() === selectedTeam._id.toString()) ||
+           (selectedTeam._id && t.teamId && t.teamId.toString() === selectedTeam._id.toString()) ||
+           (user && user._id && t.userId && t.userId.toString() === user._id.toString()) ||
+           (t.teamName && selectedTeam.teamName && t.teamName.trim().toLowerCase() === selectedTeam.teamName.trim().toLowerCase())
+       );
        if(isAlreadyRegistered){
          if (req.file) fs.unlinkSync(req.file.path);
-         return res.status(409).json({msg:"You have already booked"});
+         return res.status(409).json({msg: `Squad '${selectedTeam.teamName}' has already booked this match.`});
        }
- 
+
        const erangle = drop.dropDetails.erangle;
        const rando = drop.dropDetails.rando;
        const miramar = drop.dropDetails.miramar;
- 
-       const teamObj = getTeam.team.toObject ? getTeam.team.toObject() : getTeam.team;
-       const fullteam = {
-            _id: teamObj._id,
-           teamName: teamObj.teamName,
-           teamLogo: teamObj.teamLogo,
-           whatsappNumber: teamObj.whatsappNumber,
-           erangle: erangle || "",
-           rando: rando || "",
-           miramar: miramar || ""
-           }
 
-        console.log(fullteam);
+       const teamObj = selectedTeam.toObject ? selectedTeam.toObject() : selectedTeam;
+       const fullteam = {
+            _id: teamObj._id || new mongoose.Types.ObjectId(),
+            teamId: teamObj._id || null,
+            userId: user._id,
+            teamName: teamObj.teamName,
+            teamLogo: teamObj.teamLogo || "",
+            whatsappNumber: teamObj.whatsappNumber,
+            erangle: erangle || "",
+            rando: rando || "",
+            miramar: miramar || ""
+       };
+
         let deductAvailable = 0;
         let deductPrize = 0;
 
          // Check if user has sufficient wallet balance and deduct atomically
          if (entryFee > 0) {
-             const user = await userModel.findOne({ gglId: req.user.id });
              const availableBalance = (user && user.wallet && user.wallet.balance && typeof user.wallet.balance.availableBalance !== 'undefined') ? Number(user.wallet.balance.availableBalance) : 0;
              const prizePool = (user && user.wallet && user.wallet.balance && typeof user.wallet.balance.prizePool !== 'undefined') ? Number(user.wallet.balance.prizePool) : 0;
 
@@ -879,9 +1917,18 @@ app.post("/book", upload.none(), async (req, res)=>{
              { returnDocument: 'after' }
          );
    
-         console.log(saveTeam);
-          if(saveTeam){
-              return res.status(200).json({msg: "Slot booked successfully.", whatsappGroupLink: match.whatsappGroupLink || ""});
+         if(saveTeam){
+             // Reward referrer if referee's first match/slot
+             await checkAndRewardReferral(user._id, matchid, "scrim");
+             const updatedMatch = saveTeam.matches ? saveTeam.matches.find(m => m._id.toString() === matchid.toString() || m.id === matchid) : null;
+             const slotNumber = updatedMatch && Array.isArray(updatedMatch.teams)
+                 ? (updatedMatch.teams.findIndex(t => t.teamName === fullteam.teamName) + 1 || updatedMatch.teams.length)
+                 : 1;
+             return res.status(200).json({
+                 msg: `Slot booked successfully for squad '${fullteam.teamName}'.`, 
+                 whatsappGroupLink: match.whatsappGroupLink || "",
+                 slotNumber: slotNumber
+             });
          } else {
              // Refund the entry fee if it was deducted
              if (entryFee > 0) {
@@ -906,6 +1953,171 @@ app.post("/book", upload.none(), async (req, res)=>{
        return res.status(500).json({msg:"Internal server error during booking."});
    }
 })
+
+app.post("/book-tournament", upload.none(), async (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ authenticated: false });
+    }
+
+    try {
+        const user = await userModel.findOne({ gglId: req.user.id });
+        if (!user) {
+            return res.status(404).json({ msg: "User not found." });
+        }
+
+        const userTeams = (user.teams && Array.isArray(user.teams) && user.teams.length > 0)
+            ? user.teams
+            : ((user.team && user.team.teamName) ? [user.team] : []);
+
+        const { id, tournamentId, teamId } = req.body;
+        const tId = tournamentId || id;
+        if (!tId) {
+            return res.status(400).json({ msg: "Tournament ID is required." });
+        }
+
+        let selectedTeam = null;
+        if (teamId) {
+            selectedTeam = userTeams.find(t => t._id && t._id.toString() === teamId.toString());
+        }
+        if (!selectedTeam && userTeams.length > 0) {
+            selectedTeam = userTeams[0];
+        }
+
+        if (!selectedTeam || !selectedTeam.teamName) {
+            return res.status(400).json({ msg: "Please set up your squad in team settings first." });
+        }
+
+        const tournament = await tournamentModel.findById(tId);
+        if (!tournament) {
+            return res.status(404).json({ msg: "This tournament does not exist." });
+        }
+
+        const entryFee = Number(tournament.entryFee) || 0;
+
+        // Check if slots are full
+        if (tournament.teams && tournament.teams.length >= tournament.slots) {
+            return res.status(400).json({ msg: "Tournament slots are already full!" });
+        }
+
+        const drop = await userModel.findOne({ gglId: req.user.id }).select("dropDetails");
+        if (!drop || !drop.dropDetails) {
+            return res.status(400).json({ msg: "Please add Drop Details " });
+        }
+
+        // Check if already registered
+        const alreadyBooked = tournament.teams && tournament.teams.some(t => 
+            (selectedTeam._id && t._id && t._id.toString() === selectedTeam._id.toString()) ||
+            (selectedTeam._id && t.teamId && t.teamId.toString() === selectedTeam._id.toString()) ||
+            (user && user._id && t.userId && t.userId.toString() === user._id.toString()) ||
+            (t.teamName && selectedTeam.teamName && t.teamName.toString().trim().toLowerCase() === selectedTeam.teamName.toString().trim().toLowerCase())
+        );
+        if (alreadyBooked) {
+            return res.status(409).json({ msg: `Squad '${selectedTeam.teamName}' has already booked this tournament.` });
+        }
+
+        const erangle = drop.dropDetails.erangle;
+        const rando = drop.dropDetails.rando;
+        const miramar = drop.dropDetails.miramar;
+
+        const teamObj = selectedTeam.toObject ? selectedTeam.toObject() : selectedTeam;
+        const fullteam = {
+            _id: teamObj._id || new mongoose.Types.ObjectId(),
+            teamId: teamObj._id || null,
+            userId: user._id,
+            teamName: teamObj.teamName,
+            teamLogo: teamObj.teamLogo || "",
+            whatsappNumber: teamObj.whatsappNumber,
+            erangle: erangle || "",
+            rando: rando || "",
+            miramar: miramar || "",
+            dropDetails: {
+                erangle: erangle || "",
+                rando: rando || "",
+                miramar: miramar || ""
+            },
+            joinedAt: new Date()
+        };
+
+        let deductAvailable = 0;
+        let deductPrize = 0;
+
+        // Check wallet balance and deduct atomically
+        if (entryFee > 0) {
+            const availableBalance = (user && user.wallet && user.wallet.balance && typeof user.wallet.balance.availableBalance !== 'undefined') ? Number(user.wallet.balance.availableBalance) : 0;
+            const prizePool = (user && user.wallet && user.wallet.balance && typeof user.wallet.balance.prizePool !== 'undefined') ? Number(user.wallet.balance.prizePool) : 0;
+
+            if (availableBalance + prizePool < entryFee) {
+                return res.status(400).json({ msg: "Insufficient balance in your wallet. Available: ₹" + availableBalance + ", Prizepool: ₹" + prizePool + ", Required: ₹" + entryFee });
+            }
+
+            if (availableBalance >= entryFee) {
+                deductAvailable = entryFee;
+            } else {
+                deductAvailable = availableBalance;
+                deductPrize = entryFee - availableBalance;
+            }
+
+            const updateWallet = await userModel.findOneAndUpdate(
+                { 
+                    gglId: req.user.id, 
+                    "wallet.balance.availableBalance": { $gte: deductAvailable },
+                    "wallet.balance.prizePool": { $gte: deductPrize }
+                },
+                { 
+                    $inc: { 
+                        "wallet.balance.availableBalance": -deductAvailable,
+                        "wallet.balance.prizePool": -deductPrize
+                    } 
+                },
+                { new: true }
+            );
+
+            if (!updateWallet) {
+                return res.status(400).json({ msg: "Insufficient balance in your wallet." });
+            }
+        }
+
+        // Push team only if not already in teams array
+        const saveTeam = await tournamentModel.findOneAndUpdate(
+            { 
+                _id: tId, 
+                "teams.teamName": { $ne: fullteam.teamName } 
+            },
+            { $push: { teams: fullteam } },
+            { returnDocument: 'after' }
+        );
+
+        if (saveTeam) {
+            // Reward referrer if referee's first match/slot
+            await checkAndRewardReferral(user._id, tId, "tournament");
+            const slotNumber = Array.isArray(saveTeam.teams)
+                ? (saveTeam.teams.findIndex(t => t.teamName === fullteam.teamName) + 1 || saveTeam.teams.length)
+                : 1;
+            return res.status(200).json({ 
+                msg: `Slot booked successfully for squad '${fullteam.teamName}'.`, 
+                whatsappGroupLink: tournament.whatsappGroupLink || "",
+                slotNumber: slotNumber
+            });
+        } else {
+            // Refund if entry fee was deducted
+            if (entryFee > 0) {
+                await userModel.findOneAndUpdate(
+                    { gglId: req.user.id },
+                    { 
+                        $inc: { 
+                            "wallet.balance.availableBalance": deductAvailable,
+                            "wallet.balance.prizePool": deductPrize
+                        } 
+                    }
+                );
+            }
+            return res.status(500).json({ msg: "Failed to book slot." });
+        }
+    } catch (err) {
+        console.error("Tournament booking error:", err);
+        return res.status(500).json({ msg: "Internal server error during booking." });
+    }
+});
 
 app.get("/point-table", async (req, res) => {
     try {
@@ -1217,9 +2429,31 @@ app.post("/admin/user/:id/edit-wallet", adminAuthCheck, async (req, res) => {
 });
 
 app.get("/admin/categories", adminAuthCheck, async (req, res)=>{
-    const categories = await categoryModel.find();
-    res.render("admin/pages/categories", { categories });
+    const categories = await categoryModel.find().sort({ order: 1, _id: 1 });
+    res.render("admin/pages/categories", { categories, baseurl });
 })
+
+app.post("/admin/categories/reorder", adminAuthCheck, async (req, res) => {
+    try {
+        const { orderedIds } = req.body;
+        if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+            return res.status(400).json({ success: false, msg: "Invalid category order data" });
+        }
+
+        const bulkOps = orderedIds.map((id, index) => ({
+            updateOne: {
+                filter: { _id: id },
+                update: { $set: { order: index } }
+            }
+        }));
+
+        await categoryModel.bulkWrite(bulkOps);
+        return res.status(200).json({ success: true, msg: "Category order updated successfully" });
+    } catch (err) {
+        console.error("Error reordering categories:", err);
+        return res.status(500).json({ success: false, msg: "Internal server error" });
+    }
+});
 
 app.get("/admin/category/:id", adminAuthCheck, async (req, res)=>{
     try {
@@ -1253,7 +2487,7 @@ app.post("/admin/addcategory", adminAuthCheck, upload.single('categoryPicture'),
     try {
         console.log(req.body);
         console.log(req.file);
-        const { title, description } = req.body;
+        const { title, description, teams, prizePool, entryFee } = req.body;
         if (!title || !description) {
             if (req.file && fs.existsSync(req.file.path)) {
                 try { fs.unlinkSync(req.file.path); } catch(e) {}
@@ -1268,9 +2502,17 @@ app.post("/admin/addcategory", adminAuthCheck, upload.single('categoryPicture'),
                 const uploadResult = await uploadToCloudinary(req.file.path, 'categories');
                 imgName = uploadResult.secure_url;
             }
+
+            const maxCat = await categoryModel.findOne().sort({ order: -1 }).select("order");
+            const nextOrder = (maxCat && typeof maxCat.order === 'number') ? maxCat.order + 1 : 0;
+
             const category = await categoryModel.create({
                 title,
                 description,
+                teams: teams ? teams.trim() : "16-18",
+                prizePool: prizePool ? prizePool.trim() : "1000",
+                entryFee: entryFee ? entryFee.trim() : "60",
+                order: nextOrder,
                 img: imgName
             });
             const result = await category.save();
@@ -1339,7 +2581,7 @@ app.get("/admin/editcategory/:id", adminAuthCheck, async (req, res)=>{
 
 app.post("/admin/editcategory/:id", adminAuthCheck, upload.single('categoryPicture'), async (req, res)=>{
     try {
-        const { title, description } = req.body;
+        const { title, description, teams, prizePool, entryFee } = req.body;
         if (!title || !description) {
             if (req.file && fs.existsSync(req.file.path)) {
                 try { fs.unlinkSync(req.file.path); } catch(e) {}
@@ -1368,6 +2610,9 @@ app.post("/admin/editcategory/:id", adminAuthCheck, upload.single('categoryPictu
 
         category.title = title;
         category.description = description;
+        if (teams !== undefined) category.teams = teams.trim() || "16-18";
+        if (prizePool !== undefined) category.prizePool = prizePool.trim() || "1000";
+        if (entryFee !== undefined) category.entryFee = entryFee.trim() || "60";
 
         if (req.file) {
             // Delete old image if it exists
@@ -1407,7 +2652,7 @@ app.post("/admin/editcategory/:id", adminAuthCheck, upload.single('categoryPictu
 })
 
 app.get("/admin/addscrim", adminAuthCheck, async (req, res)=>{
-    const categories = await categoryModel.find().select("title -_id");
+    const categories = await categoryModel.find().select("title -_id").sort({ order: 1, _id: 1 });
     console.log(categories);
     res.render("admin/pages/addscrim", { categories, baseurl });
 })
@@ -1573,37 +2818,56 @@ app.get("/admin/teams/:id/:mid", adminAuthCheck, async (req, res)=>{
     try {
         const {id, mid} = req.params;
         console.log(id)
-        const category = await categoryModel.findOne({ _id: id, "matches._id": mid }, { "matches.$": 1 });
+        const category = await categoryModel.findOne({ _id: id, "matches._id": mid }, { "matches.$": 1, title: 1 });
         if (!category || !category.matches || category.matches.length === 0) {
             return res.status(404).send("Category or Match not found");
         }
         
-        const matchesTeams = category.matches[0].teams || [];
+        const match = category.matches[0];
+        const matchesTeams = match.teams || [];
         
         // Fetch current logos and wallet details from the users collection for all these teams
-        const teamNames = matchesTeams.map(t => t.teamName);
-        const users = await userModel.find({ "team.teamName": { $in: teamNames } }).select("team wallet");
+        const teamNames = matchesTeams.map(t => t.teamName).filter(Boolean);
+        const teamUserIds = matchesTeams.map(t => t.userId).filter(Boolean);
+        const users = await userModel.find({
+            $or: [
+                { _id: { $in: teamUserIds } },
+                { "team.teamName": { $in: teamNames } },
+                { "teams.teamName": { $in: teamNames } }
+            ]
+        }).select("team teams wallet");
         
-        // Create maps of teamName -> logo, userId, and balance
+        // Create maps of teamName/userId -> logo, userId, and balance
         const logoMap = {};
         const userMap = {};
         const balanceMap = {};
         users.forEach(u => {
-            if (u.team && u.team.teamName) {
-                logoMap[u.team.teamName] = u.team.teamLogo;
-                userMap[u.team.teamName] = u._id.toString();
-                balanceMap[u.team.teamName] = (u.wallet && u.wallet.balance && typeof u.wallet.balance.prizePool !== 'undefined') ? u.wallet.balance.prizePool : 0;
+            const allUserTeams = (u.teams && u.teams.length > 0) ? u.teams : (u.team ? [u.team] : []);
+            allUserTeams.forEach(tm => {
+                if (tm && tm.teamName) {
+                    const norm = tm.teamName.trim().toLowerCase();
+                    logoMap[norm] = tm.teamLogo;
+                    userMap[norm] = u._id.toString();
+                    balanceMap[norm] = (u.wallet && u.wallet.balance && typeof u.wallet.balance.prizePool !== 'undefined') ? u.wallet.balance.prizePool : 0;
+                }
+            });
+            userMap[u._id.toString()] = u._id.toString();
+            balanceMap[u._id.toString()] = (u.wallet && u.wallet.balance && typeof u.wallet.balance.prizePool !== 'undefined') ? u.wallet.balance.prizePool : 0;
+            if (u.team && u.team.teamLogo) {
+                logoMap[u._id.toString()] = u.team.teamLogo;
             }
         });
         
         // Construct teams array with the latest logo, userId, and walletBalance
         const teams = matchesTeams.map(t => {
             const teamObj = t.toObject ? t.toObject() : t;
+            const normName = t.teamName ? t.teamName.trim().toLowerCase() : "";
+            const uid = (t.userId ? t.userId.toString() : "") || userMap[normName] || "";
             return {
                 ...teamObj,
-                userId: userMap[t.teamName] || "",
-                walletBalance: balanceMap[t.teamName] || 0,
-                teamLogo: logoMap[t.teamName] || t.teamLogo || "",
+                userId: uid,
+                walletBalance: (uid && typeof balanceMap[uid] !== 'undefined') ? balanceMap[uid] : (balanceMap[normName] || 0),
+                teamLogo: (uid && logoMap[uid]) ? logoMap[uid] : (logoMap[normName] || t.teamLogo || ""),
                 dropDetails: teamObj.dropDetails || {
                     erangle: teamObj.erangle || "",
                     rando: teamObj.rando || "",
@@ -1613,7 +2877,13 @@ app.get("/admin/teams/:id/:mid", adminAuthCheck, async (req, res)=>{
         });
 
         console.log(teams);
-        res.render("admin/pages/teams", { teams, categoryId: id, matchId: mid });
+        res.render("admin/pages/teams", { 
+            teams, 
+            categoryId: id, 
+            matchId: mid, 
+            matchTitle: match.title || "", 
+            categoryTitle: category.title || "" 
+        });
     } catch (err) {
         console.error("Error fetching teams:", err);
         res.status(500).send("Internal Server Error");
@@ -1698,7 +2968,426 @@ app.post("/admin/category/:id/match/:mid/team/:tid/status", adminAuthCheck, asyn
         console.error("Error processing team status:", err);
         return res.status(500).json({ msg: "Internal server error." });
     }
-})
+});
+
+app.post("/admin/category/:id/match/:mid/team/:tid/delete", adminAuthCheck, async (req, res) => {
+    try {
+        const { id, mid, tid } = req.params;
+
+        const category = await categoryModel.findOne({ _id: id });
+        if (!category) {
+            return res.status(404).json({ msg: "Category not found." });
+        }
+
+        const match = category.matches.id(mid);
+        if (!match) {
+            return res.status(404).json({ msg: "Match not found." });
+        }
+
+        const team = match.teams.id(tid);
+        if (!team) {
+            return res.status(404).json({ msg: "Team not found." });
+        }
+
+        if (team.paymentScreenshot) {
+            const screenshotPath = path.join(__dirname, 'public', 'images', team.paymentScreenshot);
+            if (fs.existsSync(screenshotPath)) {
+                try { fs.unlinkSync(screenshotPath); } catch(e) {}
+            }
+        }
+
+        match.teams.pull(tid);
+        await category.save();
+
+        return res.status(200).json({ msg: "Team deleted successfully." });
+    } catch (err) {
+        console.error("Error deleting team:", err);
+        return res.status(500).json({ msg: "Internal server error." });
+    }
+});
+
+app.post("/admin/category/:id/match/:mid/team/:tid/match-details", adminAuthCheck, async (req, res) => {
+    try {
+        const { id, mid, tid } = req.params;
+        const { rank, finishes, matches } = req.body;
+
+        const category = await categoryModel.findOne({ _id: id });
+        if (!category) {
+            return res.status(404).json({ msg: "Category not found." });
+        }
+
+        const match = category.matches.id(mid);
+        if (!match) {
+            return res.status(404).json({ msg: "Match not found." });
+        }
+
+        const team = match.teams.id(tid);
+        if (!team) {
+            return res.status(404).json({ msg: "Team not found." });
+        }
+
+        let matchScores = [];
+        let totalPlacementPoints = 0;
+        let totalFinishes = 0;
+        let totalFinishPoints = 0;
+        let totalPoints = 0;
+
+        if (Array.isArray(matches) && matches.length > 0) {
+            matches.forEach((m, idx) => {
+                const r = (m.rank !== null && typeof m.rank !== 'undefined' && m.rank !== '') ? Number(m.rank) : null;
+                const f = Math.max(0, Number(m.finishes) || 0);
+                const pPts = r ? calculatePlacementPoints(r) : 0;
+                const fPts = f * 1;
+                const tPts = pPts + fPts;
+
+                totalPlacementPoints += pPts;
+                totalFinishes += f;
+                totalFinishPoints += fPts;
+                totalPoints += tPts;
+
+                matchScores.push({
+                    matchNumber: idx + 1,
+                    rank: r,
+                    finishes: f,
+                    placementPoints: pPts,
+                    finishPoints: fPts,
+                    totalPoints: tPts
+                });
+            });
+        } else {
+            const r = (rank !== null && typeof rank !== 'undefined' && rank !== '') ? Number(rank) : null;
+            const f = Math.max(0, Number(finishes) || 0);
+            const pPts = r ? calculatePlacementPoints(r) : 0;
+            const fPts = f * 1;
+            const tPts = pPts + fPts;
+
+            totalPlacementPoints = pPts;
+            totalFinishes = f;
+            totalFinishPoints = fPts;
+            totalPoints = tPts;
+
+            matchScores.push({
+                matchNumber: 1,
+                rank: r,
+                finishes: f,
+                placementPoints: pPts,
+                finishPoints: fPts,
+                totalPoints: tPts
+            });
+        }
+
+        team.matchScores = matchScores;
+        team.rank = matchScores.length > 0 ? matchScores[0].rank : null;
+        team.finishes = totalFinishes;
+        team.placementPoints = totalPlacementPoints;
+        team.finishPoints = totalFinishPoints;
+        team.totalPoints = totalPoints;
+
+        await category.save();
+
+        if (team.teamName) {
+            await syncTeamStats(team.teamName);
+        }
+
+        return res.status(200).json({
+            msg: "Match details saved successfully!",
+            matchScores,
+            totalPoints,
+            totalFinishes,
+            placementPoints: totalPlacementPoints,
+            finishPoints: totalFinishPoints
+        });
+    } catch (err) {
+        console.error("Error saving scrim match details:", err);
+        return res.status(500).json({ msg: "Internal server error." });
+    }
+});
+
+/* Admin Tournament Routes */
+
+app.get("/admin/tournaments", adminAuthCheck, async (req, res) => {
+    try {
+        const tournaments = await tournamentModel.find().sort({ createdAt: -1 });
+        res.render("admin/pages/tournaments", { tournaments, baseurl });
+    } catch (err) {
+        console.error("Error fetching tournaments:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.get("/admin/addtournament", adminAuthCheck, (req, res) => {
+    res.render("admin/pages/addtournament", { baseurl });
+});
+
+app.post("/admin/addtournament", adminAuthCheck, async (req, res) => {
+    try {
+        const { title, date, slots, entryFee, prizePool, idpTimings, maps, details, whatsappGroupLink } = req.body;
+        
+        if (!title || !date) {
+            return res.status(400).json({ msg: "Title and Date are required." });
+        }
+
+        const newTournament = new tournamentModel({
+            title,
+            date,
+            slots: Number(slots) || 20,
+            entryFee: Number(entryFee) || 0,
+            prizePool: Number(prizePool) || 0,
+            idpTimings: idpTimings || "",
+            maps: maps || "",
+            details: details || "",
+            whatsappGroupLink: whatsappGroupLink || "",
+            teams: []
+        });
+
+        await newTournament.save();
+        res.status(200).json({ msg: "Tournament added successfully!" });
+    } catch (err) {
+        console.error("Error adding tournament:", err);
+        res.status(500).json({ msg: "Internal server error while adding tournament." });
+    }
+});
+
+app.get("/admin/edittournament/:id", adminAuthCheck, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const tournament = await tournamentModel.findById(id);
+        if (!tournament) {
+            return res.status(404).send("Tournament not found");
+        }
+        res.render("admin/pages/edittournament", { tournament, baseurl });
+    } catch (err) {
+        console.error("Error fetching tournament for edit:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.post("/admin/edittournament/:id", adminAuthCheck, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, date, slots, entryFee, prizePool, idpTimings, maps, details, whatsappGroupLink } = req.body;
+
+        const updated = await tournamentModel.findByIdAndUpdate(
+            id,
+            {
+                title,
+                date,
+                slots: Number(slots) || 20,
+                entryFee: Number(entryFee) || 0,
+                prizePool: Number(prizePool) || 0,
+                idpTimings: idpTimings || "",
+                maps: maps || "",
+                details: details || "",
+                whatsappGroupLink: whatsappGroupLink || ""
+            },
+            { new: true }
+        );
+
+        if (!updated) {
+            return res.status(404).json({ msg: "Tournament not found" });
+        }
+
+        res.status(200).json({ msg: "Tournament updated successfully!" });
+    } catch (err) {
+        console.error("Error updating tournament:", err);
+        res.status(500).json({ msg: "Internal server error while updating tournament." });
+    }
+});
+
+app.post("/admin/tournament/delete/:id", adminAuthCheck, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deleted = await tournamentModel.findByIdAndDelete(id);
+        if (!deleted) {
+            return res.status(404).json({ msg: "Tournament not found." });
+        }
+        res.status(200).json({ msg: "Tournament deleted successfully!" });
+    } catch (err) {
+        console.error("Error deleting tournament:", err);
+        res.status(500).json({ msg: "Internal server error while deleting tournament." });
+    }
+});
+
+app.get("/admin/tournament/:id/teams", adminAuthCheck, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const tournament = await tournamentModel.findById(id);
+        if (!tournament) {
+            return res.status(404).send("Tournament not found");
+        }
+
+        const tournamentTeams = tournament.teams || [];
+        const teamNames = tournamentTeams.map(t => t.teamName).filter(Boolean);
+        const teamUserIds = tournamentTeams.map(t => t.userId).filter(Boolean);
+        const users = await userModel.find({
+            $or: [
+                { _id: { $in: teamUserIds } },
+                { "team.teamName": { $in: teamNames } },
+                { "teams.teamName": { $in: teamNames } }
+            ]
+        }).select("team teams wallet");
+
+        const logoMap = {};
+        const userMap = {};
+        const balanceMap = {};
+        users.forEach(u => {
+            const allUserTeams = (u.teams && u.teams.length > 0) ? u.teams : (u.team ? [u.team] : []);
+            allUserTeams.forEach(tm => {
+                if (tm && tm.teamName) {
+                    const norm = tm.teamName.trim().toLowerCase();
+                    logoMap[norm] = tm.teamLogo;
+                    userMap[norm] = u._id.toString();
+                    balanceMap[norm] = (u.wallet && u.wallet.balance && typeof u.wallet.balance.prizePool !== 'undefined') ? u.wallet.balance.prizePool : 0;
+                }
+            });
+            userMap[u._id.toString()] = u._id.toString();
+            balanceMap[u._id.toString()] = (u.wallet && u.wallet.balance && typeof u.wallet.balance.prizePool !== 'undefined') ? u.wallet.balance.prizePool : 0;
+            if (u.team && u.team.teamLogo) {
+                logoMap[u._id.toString()] = u.team.teamLogo;
+            }
+        });
+
+        const teams = tournamentTeams.map(t => {
+            const teamObj = t.toObject ? t.toObject() : t;
+            const normName = t.teamName ? t.teamName.trim().toLowerCase() : "";
+            const uid = (t.userId ? t.userId.toString() : "") || userMap[normName] || "";
+            return {
+                ...teamObj,
+                userId: uid,
+                walletBalance: (uid && typeof balanceMap[uid] !== 'undefined') ? balanceMap[uid] : (balanceMap[normName] || 0),
+                teamLogo: (uid && logoMap[uid]) ? logoMap[uid] : (logoMap[normName] || t.teamLogo || ""),
+                dropDetails: teamObj.dropDetails || {
+                    erangle: teamObj.erangle || "",
+                    rando: teamObj.rando || "",
+                    miramar: teamObj.miramar || ""
+                }
+            };
+        });
+
+        res.render("admin/pages/tournamentTeams", { 
+            tournament: { ...tournament.toObject(), teams }, 
+            baseurl 
+        });
+    } catch (err) {
+        console.error("Error fetching tournament teams:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.post("/admin/tournament/:tournamentId/team/:teamId/delete", adminAuthCheck, async (req, res) => {
+    try {
+        const { tournamentId, teamId } = req.params;
+        const tournament = await tournamentModel.findById(tournamentId);
+        if (!tournament) {
+            return res.status(404).json({ msg: "Tournament not found." });
+        }
+
+        const team = tournament.teams.id(teamId);
+        if (!team) {
+            return res.status(404).json({ msg: "Team not found." });
+        }
+
+        tournament.teams.pull(teamId);
+        await tournament.save();
+
+        return res.status(200).json({ msg: "Team deleted successfully." });
+    } catch (err) {
+        console.error("Error deleting tournament team:", err);
+        return res.status(500).json({ msg: "Internal server error." });
+    }
+});
+
+app.post("/admin/tournament/:tournamentId/team/:teamId/match-details", adminAuthCheck, async (req, res) => {
+    try {
+        const { tournamentId, teamId } = req.params;
+        const { rank, finishes, matches } = req.body;
+
+        const tournament = await tournamentModel.findById(tournamentId);
+        if (!tournament) {
+            return res.status(404).json({ msg: "Tournament not found." });
+        }
+
+        const team = tournament.teams.id(teamId);
+        if (!team) {
+            return res.status(404).json({ msg: "Team not found." });
+        }
+
+        let matchScores = [];
+        let totalPlacementPoints = 0;
+        let totalFinishes = 0;
+        let totalFinishPoints = 0;
+        let totalPoints = 0;
+
+        if (Array.isArray(matches) && matches.length > 0) {
+            matches.forEach((m, idx) => {
+                const r = (m.rank !== null && typeof m.rank !== 'undefined' && m.rank !== '') ? Number(m.rank) : null;
+                const f = Math.max(0, Number(m.finishes) || 0);
+                const pPts = r ? calculatePlacementPoints(r) : 0;
+                const fPts = f * 1;
+                const tPts = pPts + fPts;
+
+                totalPlacementPoints += pPts;
+                totalFinishes += f;
+                totalFinishPoints += fPts;
+                totalPoints += tPts;
+
+                matchScores.push({
+                    matchNumber: idx + 1,
+                    rank: r,
+                    finishes: f,
+                    placementPoints: pPts,
+                    finishPoints: fPts,
+                    totalPoints: tPts
+                });
+            });
+        } else {
+            const r = (rank !== null && typeof rank !== 'undefined' && rank !== '') ? Number(rank) : null;
+            const f = Math.max(0, Number(finishes) || 0);
+            const pPts = r ? calculatePlacementPoints(r) : 0;
+            const fPts = f * 1;
+            const tPts = pPts + fPts;
+
+            totalPlacementPoints = pPts;
+            totalFinishes = f;
+            totalFinishPoints = fPts;
+            totalPoints = tPts;
+
+            matchScores.push({
+                matchNumber: 1,
+                rank: r,
+                finishes: f,
+                placementPoints: pPts,
+                finishPoints: fPts,
+                totalPoints: tPts
+            });
+        }
+
+        team.matchScores = matchScores;
+        team.rank = matchScores.length > 0 ? matchScores[0].rank : null;
+        team.finishes = totalFinishes;
+        team.placementPoints = totalPlacementPoints;
+        team.finishPoints = totalFinishPoints;
+        team.totalPoints = totalPoints;
+
+        await tournament.save();
+
+        if (team.teamName) {
+            await syncTeamStats(team.teamName);
+        }
+
+        return res.status(200).json({
+            msg: "Tournament match details saved successfully!",
+            matchScores,
+            totalPoints,
+            totalFinishes,
+            placementPoints: totalPlacementPoints,
+            finishPoints: totalFinishPoints
+        });
+    } catch (err) {
+        console.error("Error saving tournament match details:", err);
+        return res.status(500).json({ msg: "Internal server error." });
+    }
+});
 
 app.get("/admin/withdrawals", adminAuthCheck, async (req, res)=>{
     try {
@@ -1898,8 +3587,42 @@ app.get("/admin/point-table", adminAuthCheck, async (req, res)=>{
 
 app.get("/admin/add-point-table", adminAuthCheck, async (req, res)=>{
     try {
-        const categories = await categoryModel.find();
-        res.render("admin/pages/addpointtable", { categories, baseurl });
+        const categories = await categoryModel.find().sort({ order: 1, _id: 1 });
+
+        const now = new Date();
+        const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const istTodayStr = new Intl.DateTimeFormat('en-CA', { 
+            timeZone: 'Asia/Kolkata', 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit' 
+        }).format(now);
+
+        const filteredCategories = categories.map(cat => {
+            const catObj = cat.toObject ? cat.toObject() : JSON.parse(JSON.stringify(cat));
+            catObj.matches = (catObj.matches || []).filter(match => {
+                let isRecent = false;
+                if (match._id) {
+                    try {
+                        const createdAt = typeof match._id.getTimestamp === 'function' 
+                            ? match._id.getTimestamp() 
+                            : new mongoose.Types.ObjectId(match._id).getTimestamp();
+                        if (createdAt && createdAt >= twentyFourHoursAgo) {
+                            isRecent = true;
+                        }
+                    } catch (e) {}
+                }
+                if (!isRecent && match.date) {
+                    if (match.date >= istTodayStr) {
+                        isRecent = true;
+                    }
+                }
+                return isRecent;
+            });
+            return catObj;
+        }).filter(cat => cat.matches && cat.matches.length > 0);
+
+        res.render("admin/pages/addpointtable", { categories: filteredCategories, baseurl });
     } catch (err) {
         console.error("Error rendering add point table:", err);
         res.status(500).send("Internal Server Error");

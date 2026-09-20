@@ -2,8 +2,8 @@
     --bg-dark: #070709;
     --card-bg: #151720;
     --border-color: rgba(255, 255, 255, 0.08);
-    --accent: #d7263d;
-    --accent-light: #ff455e;
+    --accent: #9B0707;
+    --accent-light: #D41B23;
     --text: #ffffff;
     --text-muted: #a0a0aa;
 }
@@ -128,7 +128,7 @@ body {
 
 .form-input:focus {
     border-color: var(--accent-light);
-    box-shadow: 0 0 0 3px rgba(215, 38, 61, 0.2);
+    box-shadow: 0 0 0 3px rgba(155, 7, 7, 0.2);
 }
 
 .form-input:focus + .input-icon,
@@ -147,7 +147,7 @@ body {
     font-size: 1rem;
     font-weight: 800;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(215, 38, 61, 0.35);
+    box-shadow: 0 4px 14px rgba(155, 7, 7, 0.35);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     display: flex;
     align-items: center;
@@ -157,7 +157,7 @@ body {
 
 .auth-submit-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(215, 38, 61, 0.5);
+    box-shadow: 0 6px 20px rgba(155, 7, 7, 0.5);
 }
 
 .auth-footer {

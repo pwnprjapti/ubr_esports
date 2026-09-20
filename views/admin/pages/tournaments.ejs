@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Tournaments | UBR Esports Admin</title>
+    <link rel="icon" type="image/png" href="/images/ubrLogo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin/adminLayout.css?v=restore">
+    <link rel="stylesheet" href="/css/category.css?v=restore">
+    <style>
+        .tournaments-admin-page {
+            width: 100%;
+        }
+
+        .page-title-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .add-tournament-btn {
+            padding: 0.65rem 1.25rem;
+            background: linear-gradient(180deg, var(--accent-2, #D41B23), var(--accent, #9B0707));
+            color: #ffffff !important;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 14px rgba(155, 7, 7, 0.35);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .add-tournament-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(155, 7, 7, 0.5);
+        }
+
+        .tournament-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .admin-scrim-card {
+            background: #111217;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+            transition: border-color 0.25s ease, transform 0.25s ease;
+        }
+
+        .admin-scrim-card:hover {
+            border-color: rgba(155, 7, 7, 0.4);
+            transform: translateY(-3px);
+        }
+
+        .admin-scrim-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .admin-scrim-title {
+            margin: 0;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.3;
+        }
+
+        .admin-card-actions {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .action-icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: transform 0.15s ease;
+        }
+
+        .action-icon-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .edit-btn {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffca28;
+            border: 1px solid rgba(255, 193, 7, 0.4);
+        }
+
+        .delete-btn {
+            background: rgba(155, 7, 7, 0.2);
+            color: #D41B23;
+            border: 1px solid rgba(155, 7, 7, 0.4);
+        }
+
+        .admin-scrim-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 0.75rem;
+        }
+
+        .meta-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .meta-stat-lbl {
+            font-size: 0.72rem;
+            color: #9e9ea7;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .meta-stat-val {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .admin-teams-btn {
+            width: 100%;
+            padding: 0.65rem 1rem;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.88rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            transition: background 0.2s ease;
+        }
+
+        .admin-teams-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .empty-tournaments-card {
+            background: #111217;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 3rem 1.5rem;
+            text-align: center;
+            color: #9e9ea7;
+        }
+
+        .empty-tournaments-card i {
+            font-size: 3rem;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <%- include("../partials/sidebar") %>
+
+        <div class="admin-main">
+            <%- include("../partials/adminNav") %>
+
+            <main class="admin-body">
+                <div class="tournaments-admin-page">
+                    <div class="page-title-bar">
+                        <div>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 1.6rem; display: flex; align-items: center; gap: 0.6rem;">
+                                <i class="fa-solid fa-trophy" style="color: var(--accent);"></i> Tournaments Management
+                            </h1>
+                            <p style="margin: 0.35rem 0 0; color: #9e9ea7; font-size: 0.9rem;">Create, edit and manage BGMI tournaments and slots.</p>
+                        </div>
+
+                        <a href="/admin/addtournament" class="add-tournament-btn">
+                            <i class="fa-solid fa-plus"></i> Add Tournament
+                        </a>
+                    </div>
+
+                    <% if (tournaments && tournaments.length > 0) { %>
+                        <div class="tournament-grid">
+                            <% tournaments.forEach(tournament => { %>
+                                <div class="admin-scrim-card" id="card-<%= tournament._id %>">
+                                    <div class="admin-scrim-header">
+                                        <h3 class="admin-scrim-title"><%= tournament.title %></h3>
+                                        <div class="admin-card-actions">
+                                            <a href="/admin/edittournament/<%= tournament._id %>" class="action-icon-btn edit-btn" title="Edit Tournament">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </a>
+                                            <button type="button" class="action-icon-btn delete-btn" title="Delete Tournament" onclick="deleteTournament('<%= tournament._id %>')">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="admin-scrim-meta">
+                                        <div class="meta-stat">
+                                            <span class="meta-stat-lbl"><i class="fa-regular fa-calendar"></i> Date</span>
+                                            <span class="meta-stat-val"><%= tournament.date %></span>
+                                        </div>
+                                        <div class="meta-stat">
+                                            <span class="meta-stat-lbl"><i class="fa-solid fa-trophy"></i> Prize Pool</span>
+                                            <span class="meta-stat-val" style="color: #22c55e;">₹ <%= Number(tournament.prizePool).toLocaleString('en-IN') %></span>
+                                        </div>
+                                        <div class="meta-stat">
+                                            <span class="meta-stat-lbl"><i class="fa-solid fa-ticket"></i> Entry Fee</span>
+                                            <span class="meta-stat-val">₹ <%= tournament.entryFee %></span>
+                                        </div>
+                                        <div class="meta-stat">
+                                            <span class="meta-stat-lbl"><i class="fa-solid fa-users"></i> Slots</span>
+                                            <span class="meta-stat-val" style="color: <%= (tournament.teams && tournament.teams.length >= tournament.slots) ? '#D41B23' : '#ffffff' %>;">
+                                                <%= (tournament.teams ? tournament.teams.length : 0) %> / <%= tournament.slots %>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Progress Bar -->
+                                    <% 
+                                        const bookedCount = tournament.teams ? tournament.teams.length : 0;
+                                        const pct = Math.min(100, Math.round((bookedCount / (tournament.slots || 1)) * 100));
+                                    %>
+                                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden;">
+                                        <div style="width: <%= pct %>%; height: 100%; background: <%= bookedCount >= tournament.slots ? '#D41B23' : 'linear-gradient(90deg, #22c55e, #4ade80)' %>;"></div>
+                                    </div>
+
+                                    <div style="font-size: 0.8rem; color: #9e9ea7; display: flex; flex-direction: column; gap: 0.25rem;">
+                                        <div><strong style="color: #ffffff;"><i class="fa-regular fa-clock"></i> IDP:</strong> <%= tournament.idpTimings || 'N/A' %></div>
+                                        <div><strong style="color: #ffffff;"><i class="fa-solid fa-map"></i> Maps:</strong> <%= tournament.maps || 'N/A' %></div>
+                                    </div>
+
+                                    <a href="/admin/tournament/<%= tournament._id %>/teams" class="admin-teams-btn">
+                                        <i class="fa-solid fa-users-viewfinder"></i> Manage Teams (<%= bookedCount %>)
+                                    </a>
+                                </div>
+                            <% }); %>
+                        </div>
+                    <% } else { %>
+                        <div class="empty-tournaments-card">
+                            <i class="fa-solid fa-trophy"></i>
+                            <h2 style="color: #ffffff; margin: 0 0 0.5rem;">No Tournaments Yet</h2>
+                            <p style="margin: 0 0 1.5rem;">Click below to create and schedule your first BGMI tournament.</p>
+                            <a href="/admin/addtournament" class="add-tournament-btn">
+                                <i class="fa-solid fa-plus"></i> Add Tournament Now
+                            </a>
+                        </div>
+                    <% } %>
+                </div>
+            </main>
+
+            <%- include("../partials/footer") %>
+        </div>
+    </div>
+
+    <script>
+        async function deleteTournament(id) {
+            if (!confirm("Are you sure you want to delete this tournament? This action cannot be undone.")) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`/admin/tournament/delete/${id}`, {
+                    method: "POST"
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.msg || "Tournament deleted successfully!");
+                    const card = document.getElementById(`card-${id}`);
+                    if (card) card.remove();
+                    else window.location.reload();
+                } else {
+                    alert(data.msg || "Failed to delete tournament.");
+                }
+            } catch (err) {
+                console.error("Error deleting tournament:", err);
+                alert("Something went wrong while deleting.");
+            }
+        }
+    </script>
+</body>
+</html>

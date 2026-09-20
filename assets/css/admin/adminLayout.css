@@ -3,8 +3,8 @@
     --sidebar-bg: #0f1016;
     --card-bg: #14161f;
     --border-color: rgba(255, 255, 255, 0.08);
-    --accent: #d7263d;
-    --accent-light: #ff455e;
+    --accent: #9B0707;
+    --accent-light: #D41B23;
     --text: #f7f7f7;
     --text-muted: #9e9ea7;
     --green: #22c55e;
@@ -105,7 +105,7 @@ body {
 
 .sidebar-link:hover,
 .sidebar-link.active {
-    background: rgba(215, 38, 61, 0.15);
+    background: rgba(155, 7, 7, 0.15);
     color: #ffffff;
 }
 
@@ -200,7 +200,7 @@ body {
 }
 
 .btn-primary-sm {
-    background: linear-gradient(135deg, #d7263d, #ff455e);
+    background: linear-gradient(180deg, #D41B23, #9B0707);
     color: #ffffff;
     border: none;
     padding: 0.5rem 0.9rem;

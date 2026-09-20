@@ -1,3 +1,7 @@
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 500;
+}
+
 .withdrawal-page {
     padding: 1.5rem 1.25rem 3rem;
     max-width: 1200px;
@@ -29,7 +33,7 @@
 
 .panel h2 {
     font-size: clamp(1.3rem, 3vw, 1.7rem);
-    font-weight: 800;
+    font-weight: 500;
     margin-top: 0;
     margin-bottom: 0.4rem;
     color: #ffffff;
@@ -37,7 +41,7 @@
 
 .panel h3 {
     font-size: 1.2rem;
-    font-weight: 800;
+    font-weight: 500;
     margin-top: 0;
     margin-bottom: 0.5rem;
     color: #ffffff;
@@ -99,8 +103,8 @@
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-    border-color: var(--accent-2, #ff455e);
-    box-shadow: 0 0 0 3px rgba(215, 38, 61, 0.25);
+    border-color: var(--accent-2, #D41B23);
+    box-shadow: 0 0 0 3px rgba(155, 7, 7, 0.25);
 }
 
 .form-group input[type="file"] {
@@ -116,7 +120,7 @@
     border: 0;
     border-radius: 999px;
     padding: 0.9rem 1.4rem;
-    background: linear-gradient(135deg, var(--accent, #d7263d), var(--accent-2, #ff455e));
+    background: linear-gradient(135deg, var(--accent, #9B0707), var(--accent-2, #D41B23));
     color: white;
     font-weight: 800;
     font-size: 1rem;
@@ -125,7 +129,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
-    box-shadow: 0 4px 18px rgba(215, 38, 61, 0.35);
+    box-shadow: 0 4px 18px rgba(155, 7, 7, 0.35);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     min-height: 48px;
 }
@@ -133,7 +137,7 @@
 .submit-btn:hover,
 .submit-btn:active {
     transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(215, 38, 61, 0.5);
+    box-shadow: 0 6px 24px rgba(155, 7, 7, 0.5);
 }
 
 .timeline {

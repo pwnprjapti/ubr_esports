@@ -7,10 +7,10 @@
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
     <meta name="description" content="Configure and manage your team's tactical drop coordinates and locations for Erangle, Rando, and Miramar maps.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-    <link rel="stylesheet" href="/css/home.css">
-    <link rel="stylesheet" href="/css/nav.css">
-    <link rel="stylesheet" href="/css/teamSettings.css">
-    <link rel="stylesheet" href="/css/footer.css">
+    <link rel="stylesheet" href="/css/home.css?v=restore">
+    <link rel="stylesheet" href="/css/nav.css?v=restore">
+    <link rel="stylesheet" href="/css/teamSettings.css?v=restore">
+    <link rel="stylesheet" href="/css/footer.css?v=restore">
     <style>
         /* Custom tweaks for the drop details page */
         .drop-icon-accent {
@@ -112,6 +112,7 @@
         </main>
 
         <%- include("../partials/footer") %>
+        <%- include("../partials/bottomNav") %>
     </div>
 
     <!-- Success/Error Toast Notification -->
@@ -175,9 +176,9 @@
                 } else {
                     // Show error toast
                     toastIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-                    toastIcon.style.color = '#d7263d';
-                    toastIcon.style.background = 'rgba(215, 38, 61, 0.2)';
-                    statusToast.style.borderColor = '#d7263d';
+                    toastIcon.style.color = '#9B0707';
+                    toastIcon.style.background = 'rgba(155, 7, 7, 0.2)';
+                    statusToast.style.borderColor = '#9B0707';
                     toastMessage.textContent = result.msg || 'Failed to save drop details. Please try again.';
                     
                     statusToast.classList.add('show');
@@ -191,9 +192,9 @@
                 submitBtn.innerHTML = originalBtnHtml;
                 
                 toastIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-                toastIcon.style.color = '#d7263d';
-                toastIcon.style.background = 'rgba(215, 38, 61, 0.2)';
-                statusToast.style.borderColor = '#d7263d';
+                toastIcon.style.color = '#9B0707';
+                toastIcon.style.background = 'rgba(155, 7, 7, 0.2)';
+                statusToast.style.borderColor = '#9B0707';
                 toastMessage.textContent = 'Network error. Please try again.';
                 
                 statusToast.classList.add('show');

@@ -6,8 +6,8 @@
     <title>Point Tables | UBR Esports Admin</title>
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-    <link rel="stylesheet" href="/css/admin/adminLayout.css">
-    <link rel="stylesheet" href="/css/home.css">
+    <link rel="stylesheet" href="/css/admin/adminLayout.css?v=restore">
+    <link rel="stylesheet" href="/css/home.css?v=restore">
     <style>
         .admin-categories-page {
             width: 100%;
@@ -25,7 +25,7 @@
 
         .category-card:hover {
             transform: translateY(-4px);
-            border-color: rgba(215, 38, 61, 0.4);
+            border-color: rgba(155, 7, 7, 0.4);
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
         }
 
@@ -38,7 +38,7 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 1rem;
-            color: #ff455e;
+            color: #D41B23;
             font-size: 2.5rem;
             border: 1px solid rgba(255, 255, 255, 0.05);
             overflow: hidden;
@@ -69,7 +69,7 @@
 
         .add-category-top-btn {
             padding: 0.65rem 1.25rem;
-            background: linear-gradient(135deg, #d7263d, #ff455e);
+            background: linear-gradient(180deg, #D41B23, #9B0707);
             color: #ffffff !important;
             border-radius: 10px;
             font-weight: 700;
@@ -78,20 +78,20 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            box-shadow: 0 4px 14px rgba(215, 38, 61, 0.35);
+            box-shadow: 0 4px 14px rgba(155, 7, 7, 0.35);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .add-category-top-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(215, 38, 61, 0.5);
+            box-shadow: 0 6px 20px rgba(155, 7, 7, 0.5);
         }
 
         .delete-category-btn {
             position: absolute;
             top: 0.75rem;
             right: 0.75rem;
-            background: rgba(215, 38, 61, 0.85);
+            background: rgba(155, 7, 7, 0.85);
             border: none;
             border-radius: 50% !important;
             width: 34px !important;
@@ -110,8 +110,8 @@
 
         .delete-category-btn:hover {
             transform: scale(1.1);
-            background-color: #ff455e;
-            box-shadow: 0 4px 12px rgba(215, 38, 61, 0.5);
+            background-color: #D41B23;
+            box-shadow: 0 4px 12px rgba(155, 7, 7, 0.5);
         }
 
         .modal-overlay {
@@ -159,7 +159,7 @@
                     <div class="categories" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
                       <% if (pointTables.length === 0) { %>
                          <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem; color: #9e9ea7;">
-                             <i class="fa-solid fa-table-list" style="font-size: 3.5rem; color: #ff455e; margin-bottom: 1.5rem; display: block;"></i>
+                             <i class="fa-solid fa-table-list" style="font-size: 3.5rem; color: #D41B23; margin-bottom: 1.5rem; display: block;"></i>
                              <h3 style="margin: 0; color: #ffffff; font-size: 1.3rem;">No Point Tables Uploaded</h3>
                              <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem;">Click "Add Point Table" to upload one.</p>
                          </div>

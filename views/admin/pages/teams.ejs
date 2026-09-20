@@ -6,8 +6,8 @@
     <title>Teams | UBR Esports Admin</title>
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-    <link rel="stylesheet" href="/css/admin/adminLayout.css">
-    <link rel="stylesheet" href="/css/admin/dashboard.css">
+    <link rel="stylesheet" href="/css/admin/adminLayout.css?v=restore">
+    <link rel="stylesheet" href="/css/admin/dashboard.css?v=restore">
     <style>
         .approve-btn {
             background: #28a745; 
@@ -71,6 +71,63 @@
             background: #128c7e;
             transform: translateY(-1px);
         }
+
+        .delete-team-btn {
+            background: rgba(220, 53, 69, 0.18);
+            color: #ff4d5e;
+            border: 1px solid rgba(220, 53, 69, 0.4);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.82rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.2s ease;
+        }
+        .delete-team-btn:hover {
+            background: #dc3545;
+            color: #ffffff;
+            border-color: #dc3545;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.35);
+        }
+        .delete-team-btn:active {
+            transform: translateY(0);
+        }
+        .delete-team-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .match-details-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.82rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+        }
+        .match-details-btn:hover {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+        }
+        .match-details-btn.has-score {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.25);
+        }
+        .match-details-btn.has-score:hover {
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+        }
     </style>
 </head>
 <body>
@@ -81,11 +138,21 @@
             <%- include("../partials/adminNav") %>
 
             <main class="admin-body">
-                <div class="page-title-bar">
+                <div class="page-title-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                     <div>
-                        <h1 class="page-heading">Registered Teams</h1>
-                        <p class="page-sub">View all squads with direct WhatsApp contact.</p>
+                        <h1 class="page-heading">
+                            Registered Teams
+                            <% if (typeof matchTitle !== 'undefined' && matchTitle) { %>
+                                <span style="font-size: 1rem; font-weight: 600; color: #D41B23; margin-left: 0.5rem;">(<%= matchTitle %>)</span>
+                            <% } %>
+                        </h1>
+                        <p class="page-sub">View all squads with direct WhatsApp contact, wallet management, and team removal.</p>
                     </div>
+                    <% if (typeof categoryId !== 'undefined' && categoryId) { %>
+                        <a href="/admin/category/<%= categoryId %>" class="btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.55rem 1.1rem; font-size: 0.88rem; border-radius: 8px;">
+                            <i class="fa-solid fa-arrow-left"></i> Back to Scrims
+                        </a>
+                    <% } %>
                 </div>
 
                 <div class="content-card">
@@ -94,6 +161,7 @@
                             <thead>
                                 <tr>
                                     <th>Squad Name</th>
+                                    <th>Match Score</th>
                                     <th>WhatsApp Mobile</th>
                                     <th>Erangle</th>
                                     <th>Rondo</th>
@@ -103,40 +171,80 @@
                             </thead>
                             <tbody>
 
-                                <% for(team of teams ) { %>
-                                <tr>
-                                    <td>
-                                        <div style="display: flex; align-items: center; gap: 0.65rem;">
-                                            <div style="width: 34px; height: 34px; border-radius: 50%; background: rgba(215,38,61,0.2); display: flex; align-items: center; justify-content: center; color: #ff455e; overflow: hidden;">
-                                                 <% if (team.teamLogo) { %>
-                                                     <img src="<%= imageUrl(team.teamLogo) %>" alt="<%= team.teamName %>" style="width: 100%; height: 100%; object-fit: cover; display: block;">
-                                                 <% } else { %>
-                                                    <i class="fa-solid fa-shield-halved"></i>
-                                                <% } %>
+                                <% if (teams && teams.length > 0) { %>
+                                    <% for(team of teams ) { %>
+                                    <tr>
+                                        <td>
+                                            <div style="display: flex; align-items: center; gap: 0.65rem;">
+                                                <div style="width: 34px; height: 34px; border-radius: 50%; background: rgba(155, 7, 7,0.2); display: flex; align-items: center; justify-content: center; color: #D41B23; overflow: hidden;">
+                                                     <% if (team.teamLogo) { %>
+                                                         <img src="<%= imageUrl(team.teamLogo) %>" alt="<%= team.teamName %>" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                                     <% } else { %>
+                                                        <i class="fa-solid fa-shield-halved"></i>
+                                                    <% } %>
+                                                </div>
+                                                <strong><%= team.teamName %></strong>
                                             </div>
-                                            <strong><%= team.teamName %></strong>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div style="display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-start;">
-                                            
-                                            <a href="https://wa.me/91<%= team.whatsappNumber %>" target="_blank" class="btn-whatsapp">
-                                                <i class="fa-brands fa-whatsapp"></i> Chat WhatsApp
-                                            </a>
-                                        </div>
-                                    </td>
+                                        </td>
+                                        <td>
+                                            <% if (team.rank || (team.matchScores && team.matchScores.length > 0)) { %>
+                                                <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                                                    <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                                                        <% if (team.matchScores && team.matchScores.length > 1) { %>
+                                                            <span style="font-weight: 800; font-size: 0.76rem; padding: 0.15rem 0.5rem; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">
+                                                                <i class="fa-solid fa-gamepad"></i> <%= team.matchScores.length %> Matches
+                                                            </span>
+                                                        <% } else { %>
+                                                            <span style="font-weight: 800; font-size: 0.8rem; padding: 0.12rem 0.45rem; border-radius: 4px; background: <%= team.rank === 1 ? '#f59e0b' : (team.rank === 2 ? '#94a3b8' : (team.rank === 3 ? '#d97706' : 'rgba(255,255,255,0.1)')) %>; color: <%= (team.rank <= 3) ? '#000' : '#fff' %>;">
+                                                                #<%= team.rank %>
+                                                            </span>
+                                                        <% } %>
+                                                        <span style="font-size: 0.8rem; color: #9e9ea7;"><i class="fa-solid fa-crosshairs"></i> <%= team.finishes || 0 %> Kills</span>
+                                                    </div>
+                                                    <strong style="color: #22c55e; font-size: 0.88rem;">
+                                                        <%= (typeof team.totalPoints !== 'undefined' && team.totalPoints !== null) ? team.totalPoints : 0 %> PTS
+                                                        <span style="font-size: 0.72rem; color: #9e9ea7; font-weight: normal;">(<%= team.placementPoints || 0 %>P + <%= team.finishPoints || (team.finishes || 0) %>K)</span>
+                                                    </strong>
+                                                </div>
+                                            <% } else { %>
+                                                <span style="color: var(--text-muted); font-size: 0.82rem; font-style: italic;">Not entered</span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <div style="display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-start;">
+                                                <a href="https://wa.me/91<%= team.whatsappNumber %>" target="_blank" class="btn-whatsapp">
+                                                    <i class="fa-brands fa-whatsapp"></i> Chat WhatsApp
+                                                </a>
+                                            </div>
+                                        </td>
 
-                                    <td> <%= team.dropDetails.erangle || "" %></td>
-                                    <td> <%= team.dropDetails.rando || "" %></td>
-                                    <td> <%= team.dropDetails.miramar || "" %></td>
-                                    <td>
-                                        <button class="approve-btn" onclick="openWalletModal('<%= team.userId %>', '<%= team.teamName %>', '<%= team.walletBalance || 0 %>')">
-                                            <i class="fa-solid fa-wallet"></i> Update Wallet
-                                        </button>
-                                    </td>
+                                        <td> <%= team.dropDetails ? (team.dropDetails.erangle || "") : "" %></td>
+                                        <td> <%= team.dropDetails ? (team.dropDetails.rando || "") : "" %></td>
+                                        <td> <%= team.dropDetails ? (team.dropDetails.miramar || "") : "" %></td>
+                                        <td style="white-space: nowrap;">
+                                            <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;">
+                                                <button class="match-details-btn <%= (team.rank || (team.matchScores && team.matchScores.length > 0)) ? 'has-score' : '' %>" data-match-scores="<%- encodeURIComponent(JSON.stringify(team.matchScores || [])) %>" onclick="openMatchDetailsModal('<%= categoryId %>', '<%= matchId %>', '<%= team._id %>', '<%= team.teamName %>', '<%= team.rank || '' %>', '<%= team.finishes || 0 %>', this)" title="Enter Match Details">
+                                                    <i class="fa-solid fa-medal"></i> <%= (team.rank || (team.matchScores && team.matchScores.length > 0)) ? 'Edit Score' : 'Enter Match Details' %>
+                                                </button>
+                                                <button class="approve-btn" onclick="openWalletModal('<%= team.userId %>', '<%= team.teamName %>', '<%= team.walletBalance || 0 %>')" title="Update Wallet">
+                                                    <i class="fa-solid fa-wallet"></i> Update Wallet
+                                                </button>
+                                                <button class="delete-team-btn" onclick="deleteTeam(this, '<%= categoryId %>', '<%= matchId %>', '<%= team._id %>', '<%= team.teamName %>')" title="Delete Team">
+                                                    <i class="fa-solid fa-trash-can"></i> Delete
+                                                </button>
+                                            </div>
+                                        </td>
 
-                                </tr>
-                                <%  } %>
+                                    </tr>
+                                    <% } %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem 1rem;">
+                                            <i class="fa-solid fa-users-slash" style="font-size: 1.8rem; margin-bottom: 0.6rem; display: block; opacity: 0.4;"></i>
+                                            No registered teams found for this scrim.
+                                        </td>
+                                    </tr>
+                                <% } %>
 
                             </tbody>
                         </table>
@@ -148,11 +256,73 @@
         </div>
     </div>
 
+    <!-- Enter Match Details Modal -->
+    <div id="matchDetailsModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div style="background-color: #1a1c26; color: white; margin: auto; padding: 1.8rem; border: 1px solid rgba(255,255,255,0.12); width: 92%; max-width: 500px; border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,0.7); position: relative; max-height: 90vh; display: flex; flex-direction: column;">
+            <span onclick="closeMatchDetailsModal()" style="color: #aaa; font-size: 26px; font-weight: bold; cursor: pointer; position: absolute; right: 1.25rem; top: 1rem; z-index: 10;">&times;</span>
+            <div style="display: flex; align-items: center; gap: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.85rem; margin-bottom: 1rem; flex-shrink: 0;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 1.2rem;">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.25rem; color: #ffffff;">Enter Match Details</h3>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem;">
+                        <span id="mdModalSquadName" style="color: #ff4d5e; font-size: 0.9rem; font-weight: 800;"></span>
+                        <span id="mdMatchCountBadge" style="font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 999px; background: rgba(255,255,255,0.08); color: #9e9ea7; font-weight: 700;">1 Match</span>
+                    </div>
+                </div>
+            </div>
+
+            <form id="matchDetailsForm" onsubmit="submitMatchDetails(event)" style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+                <input type="hidden" id="mdCategoryId">
+                <input type="hidden" id="mdMatchId">
+                <input type="hidden" id="mdTeamId">
+
+                <!-- Scrollable matches container -->
+                <div id="mdMatchesContainer" style="overflow-y: auto; max-height: 330px; padding-right: 0.35rem; display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 0.85rem;">
+                    <!-- Dynamically populated Match items will go here -->
+                </div>
+
+                <!-- Add Match (+) Button -->
+                <div style="margin-bottom: 0.9rem; flex-shrink: 0;">
+                    <button type="button" id="btnAddMatch" onclick="addMatchEntry()" style="background: rgba(212, 27, 35, 0.1); border: 1px dashed rgba(212, 27, 35, 0.5); color: #ff6b7a; padding: 0.65rem 1rem; border-radius: 10px; font-weight: 700; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; font-size: 0.88rem;" onmouseover="this.style.background='rgba(212,27,35,0.2)'; this.style.borderColor='#D41B23'" onmouseout="this.style.background='rgba(212,27,35,0.1)'; this.style.borderColor='rgba(212,27,35,0.5)'">
+                        <i class="fa-solid fa-plus-circle" style="font-size: 1rem;"></i>
+                        <span>+ Add Match (<span id="nextMatchTitle">Match 2</span>)</span>
+                    </button>
+                </div>
+
+                <!-- Live Cumulative Preview Card -->
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.8rem 1rem; margin-bottom: 1rem; flex-shrink: 0;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #9e9ea7; margin-bottom: 0.3rem;">
+                        <span>Total Placement Points:</span>
+                        <strong id="livePlacementPts" style="color: #fff;">0 PTS</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #9e9ea7; margin-bottom: 0.45rem;">
+                        <span>Total Finishes (Kills):</span>
+                        <strong id="liveFinishPts" style="color: #fff;">0 PTS (0 Kills)</strong>
+                    </div>
+                    <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 0.45rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #f59e0b; font-size: 0.92rem; font-weight: 800;">Cumulative Total Score:</span>
+                        <span id="liveTotalPts" style="color: #22c55e; font-size: 1.15rem; font-weight: 900;">0 PTS</span>
+                    </div>
+                </div>
+
+                <!-- Footer Buttons -->
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end; flex-shrink: 0;">
+                    <button type="button" onclick="closeMatchDetailsModal()" style="background: rgba(255,255,255,0.08); color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 700; cursor: pointer;">Cancel</button>
+                    <button type="submit" id="saveMdBtn" style="background: #D41B23; color: white; border: none; padding: 0.65rem 1.5rem; border-radius: 8px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 0.45rem;">
+                        <i class="fa-solid fa-check"></i> Save Score
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Wallet Update Modal -->
     <div id="walletModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
         <div style="background-color: #1e1e2f; color: white; margin: auto; padding: 2rem; border: 1px solid #333; width: 90%; max-width: 400px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); position: relative;">
             <span onclick="closeWalletModal()" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; position: absolute; right: 1.5rem; top: 1rem;">&times;</span>
-            <h3 style="margin-top: 0; font-size: 1.4rem; color: #ff455e; border-bottom: 1px solid #333; padding-bottom: 0.75rem;">Update Wallet</h3>
+            <h3 style="margin-top: 0; font-size: 1.4rem; color: #D41B23; border-bottom: 1px solid #333; padding-bottom: 0.75rem;">Update Wallet</h3>
             <p style="margin: 1rem 0; font-size: 0.95rem; color: #ccc; line-height: 1.5;">
                 Team: <strong id="modalTeamName" style="color: white;"></strong><br>
                 Current Balance: <strong id="modalCurrentBalance" style="color: #28a745;">₹0</strong>
@@ -165,13 +335,255 @@
                 </div>
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                     <button type="button" onclick="closeWalletModal()" style="background: #444; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 700; cursor: pointer;">Cancel</button>
-                    <button type="submit" style="background: #ff455e; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 700; cursor: pointer;">Submit</button>
+                    <button type="submit" style="background: #D41B23; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 700; cursor: pointer;">Submit</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
+        function calculatePlacementPts(rank) {
+            const r = parseInt(rank, 10);
+            if (r === 1) return 10;
+            if (r === 2) return 6;
+            if (r === 3) return 5;
+            if (r === 4) return 4;
+            if (r === 5) return 3;
+            if (r === 6) return 2;
+            if (r === 7 || r === 8) return 1;
+            return 0;
+        }
+
+        let currentMatchesData = [];
+
+        function renderMatchCard(index, rankVal, finishVal, canDelete) {
+            const matchNum = index + 1;
+            const r = (rankVal !== null && typeof rankVal !== 'undefined' && rankVal !== '') ? rankVal : '';
+            const f = (finishVal !== null && typeof finishVal !== 'undefined' && finishVal !== '') ? finishVal : 0;
+            const pPts = r ? calculatePlacementPts(r) : 0;
+            const fPts = (parseInt(f, 10) || 0);
+            const tPts = pPts + fPts;
+
+            return `
+                <div class="match-entry-card" id="matchCard_${index}" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 0.85rem; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.4rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="background: rgba(212, 27, 35, 0.2); color: #ff4d5e; border: 1px solid rgba(212, 27, 35, 0.4); font-size: 0.78rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.03em;">
+                                <i class="fa-solid fa-gamepad"></i> Match ${matchNum}
+                            </span>
+                            <span id="matchScorePill_${index}" style="font-size: 0.76rem; color: #22c55e; font-weight: 700;">
+                                ${tPts} PTS (${pPts}P + ${fPts}K)
+                            </span>
+                        </div>
+                        ${canDelete ? `
+                            <button type="button" onclick="removeMatchEntry(${index})" title="Remove Match ${matchNum}" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px; padding: 0.25rem 0.55rem; font-size: 0.74rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">
+                                <i class="fa-solid fa-trash-can"></i> Remove
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div>
+                            <label style="display: block; margin-bottom: 0.35rem; font-size: 0.82rem; color: #ccc; font-weight: 700;">
+                                Team Rank:
+                            </label>
+                            <input type="number" class="md-rank-input" data-index="${index}" min="1" max="25" placeholder="e.g. 1" value="${r}" required oninput="calculateLiveScore()" style="width: 100%; padding: 0.65rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background-color: #0d0e15; color: white; font-size: 0.92rem; box-sizing: border-box;">
+                            <span style="display: block; font-size: 0.68rem; color: #888; margin-top: 0.25rem;">#1: 10, #2: 6, #3: 5, #4: 4...</span>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.35rem; font-size: 0.82rem; color: #ccc; font-weight: 700;">
+                                Finishes (Kills):
+                            </label>
+                            <input type="number" class="md-finishes-input" data-index="${index}" min="0" max="99" placeholder="e.g. 5" value="${f}" required oninput="calculateLiveScore()" style="width: 100%; padding: 0.65rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background-color: #0d0e15; color: white; font-size: 0.92rem; box-sizing: border-box;">
+                            <span style="display: block; font-size: 0.68rem; color: #888; margin-top: 0.25rem;">1 Kill = 1 Point</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function syncMatchesStateFromDOM() {
+            const rankInputs = document.querySelectorAll('.md-rank-input');
+            const finishesInputs = document.querySelectorAll('.md-finishes-input');
+            const updated = [];
+            for (let i = 0; i < rankInputs.length; i++) {
+                updated.push({
+                    rank: rankInputs[i].value !== '' ? Number(rankInputs[i].value) : '',
+                    finishes: finishesInputs[i].value !== '' ? Number(finishesInputs[i].value) : 0
+                });
+            }
+            currentMatchesData = updated;
+        }
+
+        function renderAllMatchCards() {
+            const container = document.getElementById('mdMatchesContainer');
+            if (!container) return;
+            if (currentMatchesData.length === 0) {
+                currentMatchesData = [{ rank: '', finishes: 0 }];
+            }
+
+            const canDelete = currentMatchesData.length > 1;
+            let html = '';
+            currentMatchesData.forEach((m, idx) => {
+                html += renderMatchCard(idx, m.rank, m.finishes, canDelete);
+            });
+            container.innerHTML = html;
+
+            const nextNum = currentMatchesData.length + 1;
+            const nextMatchEl = document.getElementById('nextMatchTitle');
+            if (nextMatchEl) nextMatchEl.textContent = `Match ${nextNum}`;
+
+            const badgeEl = document.getElementById('mdMatchCountBadge');
+            if (badgeEl) badgeEl.textContent = `${currentMatchesData.length} ${currentMatchesData.length > 1 ? 'Matches' : 'Match'}`;
+
+            calculateLiveScore();
+        }
+
+        function addMatchEntry() {
+            syncMatchesStateFromDOM();
+            currentMatchesData.push({ rank: '', finishes: 0 });
+            renderAllMatchCards();
+            const container = document.getElementById('mdMatchesContainer');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+                const newRankInput = container.querySelector(`.md-rank-input[data-index="${currentMatchesData.length - 1}"]`);
+                if (newRankInput) newRankInput.focus();
+            }
+        }
+
+        function removeMatchEntry(index) {
+            syncMatchesStateFromDOM();
+            if (currentMatchesData.length <= 1) return;
+            currentMatchesData.splice(index, 1);
+            renderAllMatchCards();
+        }
+
+        function calculateLiveScore() {
+            const rankInputs = document.querySelectorAll('.md-rank-input');
+            const finishesInputs = document.querySelectorAll('.md-finishes-input');
+
+            let totalPlacement = 0;
+            let totalFinishes = 0;
+            let grandTotal = 0;
+
+            for (let i = 0; i < rankInputs.length; i++) {
+                const rVal = rankInputs[i].value;
+                const fVal = finishesInputs[i].value;
+                const pPts = rVal ? calculatePlacementPts(rVal) : 0;
+                const fPts = fVal ? (parseInt(fVal, 10) || 0) : 0;
+                const matchTotal = pPts + fPts;
+
+                totalPlacement += pPts;
+                totalFinishes += fPts;
+                grandTotal += matchTotal;
+
+                const pill = document.getElementById(`matchScorePill_${i}`);
+                if (pill) {
+                    pill.textContent = `${matchTotal} PTS (${pPts}P + ${fPts}K)`;
+                }
+            }
+
+            const livePlace = document.getElementById('livePlacementPts');
+            const liveFinish = document.getElementById('liveFinishPts');
+            const liveTotal = document.getElementById('liveTotalPts');
+
+            if (livePlace) livePlace.textContent = totalPlacement + ' PTS';
+            if (liveFinish) liveFinish.textContent = `${totalFinishes} PTS (${totalFinishes} Kills)`;
+            if (liveTotal) liveTotal.textContent = grandTotal + ' PTS';
+        }
+
+        function openMatchDetailsModal(catId, matchId, teamId, squadName, rank, finishes, btn) {
+            document.getElementById('mdCategoryId').value = catId;
+            document.getElementById('mdMatchId').value = matchId;
+            document.getElementById('mdTeamId').value = teamId;
+            document.getElementById('mdModalSquadName').textContent = squadName;
+
+            let scores = [];
+            if (btn) {
+                const raw = btn.getAttribute('data-match-scores');
+                if (raw) {
+                    try {
+                        scores = JSON.parse(decodeURIComponent(raw));
+                    } catch (e) {
+                        console.error("Error parsing match scores:", e);
+                    }
+                }
+            }
+
+            if (scores && Array.isArray(scores) && scores.length > 0) {
+                currentMatchesData = scores.map(s => ({
+                    rank: (s.rank !== null && typeof s.rank !== 'undefined') ? s.rank : '',
+                    finishes: (s.finishes !== null && typeof s.finishes !== 'undefined') ? s.finishes : 0
+                }));
+            } else if (rank) {
+                currentMatchesData = [{
+                    rank: rank,
+                    finishes: (typeof finishes !== 'undefined' && finishes !== '') ? finishes : 0
+                }];
+            } else {
+                currentMatchesData = [{ rank: '', finishes: 0 }];
+            }
+
+            renderAllMatchCards();
+
+            const modal = document.getElementById('matchDetailsModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeMatchDetailsModal() {
+            const modal = document.getElementById('matchDetailsModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function submitMatchDetails(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveMdBtn');
+            const catId = document.getElementById('mdCategoryId').value;
+            const matchId = document.getElementById('mdMatchId').value;
+            const teamId = document.getElementById('mdTeamId').value;
+
+            syncMatchesStateFromDOM();
+
+            if (currentMatchesData.length === 0) {
+                alert("Please enter at least one match.");
+                return;
+            }
+
+            for (let i = 0; i < currentMatchesData.length; i++) {
+                const m = currentMatchesData[i];
+                if (m.rank === '' || m.rank === null || typeof m.rank === 'undefined') {
+                    alert(`Please enter a valid Team Rank for Match ${i + 1}`);
+                    const input = document.querySelector(`.md-rank-input[data-index="${i}"]`);
+                    if (input) input.focus();
+                    return;
+                }
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const res = await fetch(`/admin/category/${catId}/match/${matchId}/team/${teamId}/match-details`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ matches: currentMatchesData })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.msg || "Match details saved successfully!");
+                    window.location.reload();
+                } else {
+                    alert(data.msg || "Failed to save match details.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("An error occurred while saving match details.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Save Score';
+            }
+        }
+
         function openWalletModal(userId, teamName, currentBalance) {
             if (!userId) {
                 alert("This team does not have an associated user account.");
@@ -190,9 +602,13 @@
         }
         
         window.onclick = function(event) {
-            const modal = document.getElementById('walletModal');
-            if (event.target == modal) {
+            const wModal = document.getElementById('walletModal');
+            if (event.target == wModal) {
                 closeWalletModal();
+            }
+            const mdModal = document.getElementById('matchDetailsModal');
+            if (event.target == mdModal) {
+                closeMatchDetailsModal();
             }
         }
 
@@ -229,6 +645,51 @@
             } catch (error) {
                 console.error("Error updating wallet:", error);
                 alert("Something went wrong. Please try again.");
+            }
+        }
+
+        async function deleteTeam(btn, categoryId, matchId, teamId, teamName) {
+            if (!confirm(`Are you sure you want to delete team "${teamName}" from this scrim? This slot will become available again.`)) {
+                return;
+            }
+
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+            try {
+                const response = await fetch(`/admin/category/${categoryId}/match/${matchId}/team/${teamId}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    const row = btn.closest('tr');
+                    if (row) {
+                        row.style.transition = 'all 0.3s ease';
+                        row.style.opacity = '0';
+                        row.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            row.remove();
+                            const tbody = document.querySelector('.data-table tbody');
+                            if (tbody && tbody.querySelectorAll('tr').length === 0) {
+                                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem 1rem;"><i class="fa-solid fa-users-slash" style="font-size: 1.8rem; margin-bottom: 0.6rem; display: block; opacity: 0.4;"></i>No registered teams found for this scrim.</td></tr>';
+                            }
+                        }, 300);
+                    }
+                } else {
+                    alert(data.msg || "Failed to delete team.");
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            } catch (err) {
+                console.error("Error deleting team:", err);
+                alert("Something went wrong. Please try again.");
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
             }
         }
     </script>

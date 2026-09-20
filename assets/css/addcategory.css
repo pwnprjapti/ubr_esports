@@ -2,8 +2,8 @@
     --bg-dark: #070709;
     --card-bg: #151720;
     --border-color: rgba(255, 255, 255, 0.08);
-    --accent: #d7263d;
-    --accent-light: #ff455e;
+    --accent: #9B0707;
+    --accent-light: #D41B23;
     --text: #ffffff;
     --text-muted: #a0a0aa;
 }
@@ -38,6 +38,12 @@
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+}
+
+.form-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
 }
 
 .form-group {
@@ -83,8 +89,8 @@
 }
 
 .form-file-input::-webkit-file-upload-button {
-    background: rgba(215, 38, 61, 0.2);
-    border: 1px solid rgba(215, 38, 61, 0.4);
+    background: rgba(155, 7, 7, 0.2);
+    border: 1px solid rgba(155, 7, 7, 0.4);
     color: var(--accent-light);
     padding: 0.4rem 0.8rem;
     border-radius: 6px;
@@ -124,17 +130,21 @@
     font-size: 1rem;
     font-weight: 800;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(215, 38, 61, 0.35);
+    box-shadow: 0 4px 14px rgba(155, 7, 7, 0.35);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .submit-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(215, 38, 61, 0.5);
+    box-shadow: 0 6px 20px rgba(155, 7, 7, 0.5);
 }
 
 @media (max-width: 600px) {
     .add-category-card {
         padding: 1.25rem;
+    }
+    .form-grid-3 {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
     }
 }

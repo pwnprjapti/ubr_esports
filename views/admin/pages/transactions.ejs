@@ -6,8 +6,8 @@
     <title>Transactions | UBR Esports Admin</title>
     <link rel="icon" type="image/png" href="/images/ubrLogo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-    <link rel="stylesheet" href="/css/admin/adminLayout.css">
-    <link rel="stylesheet" href="/css/admin/dashboard.css">
+    <link rel="stylesheet" href="/css/admin/adminLayout.css?v=restore">
+    <link rel="stylesheet" href="/css/admin/dashboard.css?v=restore">
     <style>
         .screenshot-thumbnail {
             width: 80px;
@@ -107,7 +107,7 @@
                                                 <i class="fa-solid fa-circle-check"></i> Success
                                             </span>
                                         <% } else if (txn.status === 'rejected' || txn.status === 'failed') { %>
-                                            <span class="badge badge-red" style="background: rgba(215, 38, 61, 0.15); color: #ff455e; border: 1px solid rgba(215, 38, 61, 0.3); display: inline-flex; align-items: center; gap: 4px;">
+                                            <span class="badge badge-red" style="background: rgba(155, 7, 7, 0.15); color: #D41B23; border: 1px solid rgba(155, 7, 7, 0.3); display: inline-flex; align-items: center; gap: 4px;">
                                                 <i class="fa-solid fa-circle-xmark"></i> Failed
                                             </span>
                                         <% } else { %>
