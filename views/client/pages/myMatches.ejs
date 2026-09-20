@@ -190,6 +190,21 @@
             border-color: rgba(239, 68, 68, 0.3);
         }
 
+        .ubr-badge {
+            background: rgba(212, 27, 35, 0.15);
+            color: #ff4d56;
+            border: 1px solid rgba(212, 27, 35, 0.35);
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 0.22rem 0.65rem;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
         .card-match-title {
             font-size: 1.25rem;
             font-weight: 500;
@@ -257,29 +272,50 @@
         }
 
         .timings-badges {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.4rem;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.35rem;
+            width: 100%;
         }
 
         .timing-pill {
             background: rgba(255, 255, 255, 0.06);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #e2e8f0;
-            font-size: 0.82rem;
+            font-size: 0.74rem;
             font-weight: 700;
-            padding: 0.3rem 0.65rem;
+            padding: 0.28rem 0.15rem;
             border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .map-pill {
-            background: rgba(212, 27, 35, 0.08);
-            border: 1px solid rgba(212, 27, 35, 0.2);
-            color: #ff94a2;
-            font-size: 0.82rem;
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            color: #c084fc;
+            font-size: 0.74rem;
             font-weight: 700;
-            padding: 0.3rem 0.65rem;
+            padding: 0.28rem 0.15rem;
             border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         /* Slots Bar */
@@ -550,6 +586,10 @@
                                 <% if (match.isTournament) { %>
                                     <span style="background: linear-gradient(135deg, #d97706, #b45309); color: #fff; font-size: 0.68rem; font-weight: 900; padding: 0.22rem 0.65rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);">
                                         <i class="fa-solid fa-trophy"></i> Tournament
+                                    </span>
+                                <% } else { %>
+                                    <span class="ubr-badge">
+                                        <i class="fa-solid fa-shield-halved"></i> UBR Esports
                                     </span>
                                 <% } %>
                                 <% if (remainingSlots > 0) { %>

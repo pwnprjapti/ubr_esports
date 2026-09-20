@@ -253,6 +253,58 @@
             background: rgba(239, 68, 68, 0.12);
             border-color: rgba(239, 68, 68, 0.3);
         }
+
+        .ubr-badge {
+            background: rgba(212, 27, 35, 0.15);
+            color: #ff4d56;
+            border: 1px solid rgba(212, 27, 35, 0.35);
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 0.22rem 0.65rem;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .idp-timing {
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 0.6rem 0.65rem;
+            background-color: rgba(255, 255, 255, 0.02);
+            margin: 0.25rem 0;
+        }
+
+        .idp-timing .timings {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.35rem;
+            margin-top: 0.4rem;
+            width: 100%;
+        }
+
+        .idp-timing .timings span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #c084fc;
+            padding: 0.28rem 0.15rem;
+            border-radius: 6px;
+            background-color: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
     </style>
 </head>
 <body>
@@ -346,8 +398,11 @@
                     const remainingSlots = Math.max(0, (match.slots || 0) - (match.teams ? match.teams.length : 0));
                     %>
                     <article class="scrim-card <%= isFull ? 'scrim-card-full' : '' %>" data-date="<%= match.date %>" data-period="today" data-full="<%= isFull ? 'true' : 'false' %>">
-                        <!-- Top Bar: Remaining Slots Badge -->
-                        <div class="card-top-bar" style="justify-content: flex-end;">
+                        <!-- Top Bar: UBR Esports Badge + Remaining Slots -->
+                        <div class="card-top-bar" style="justify-content: space-between; display: flex; align-items: center; width: 100%;">
+                            <span class="ubr-badge">
+                                <i class="fa-solid fa-shield-halved"></i> UBR Esports
+                            </span>
                             <% if (remainingSlots > 0) { %>
                                 <span class="slot-assigned-badge">
                                     <i class="fa-solid fa-users"></i> <%= remainingSlots %> <%= remainingSlots === 1 ? 'Slot' : 'Slots' %> Left
@@ -386,19 +441,23 @@
                         <div class="idp-timing">
                             <span class="meta-label"><i class="fa-regular fa-clock"></i> IDP Timing</span>
                             <div class="timings">
-                                <% const timings = match.idpTimings.split(","); %>
+                                <% const timings = (match.idpTimings || '').split(","); %>
                                 <% for (const time of timings) { %>
-                                    <span><%= time %></span>
+                                    <% if (time.trim()) { %>
+                                        <span class="timing-badge"><%= time.trim() %></span>
+                                    <% } %>
                                 <% } %>
                             </div>
                         </div>
                         <% if (match.maps) { %>
-                        <div class="idp-timing" style="margin-top: 10px;">
+                        <div class="idp-timing idp-maps-box" style="margin-top: 10px;">
                             <span class="meta-label"><i class="fa-solid fa-map"></i> Maps</span>
                             <div class="timings">
                                 <% const mapsList = match.maps.split(","); %>
                                 <% for (const mapName of mapsList) { %>
-                                    <span><%= mapName.trim() %></span>
+                                    <% if (mapName.trim()) { %>
+                                        <span class="map-badge"><%= mapName.trim() %></span>
+                                    <% } %>
                                 <% } %>
                             </div>
                         </div>

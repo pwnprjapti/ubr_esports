@@ -172,27 +172,39 @@
 .idp-timing {
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 10px;
-    padding: 0.65rem 0.85rem;
+    padding: 0.6rem 0.65rem;
     background-color: rgba(255, 255, 255, 0.02);
     margin: 0.25rem 0;
 }
 
 .idp-timing .timings {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.35rem;
     margin-top: 0.4rem;
+    width: 100%;
 }
 
 .idp-timing .timings span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: #c084fc;
-    padding: 0.25rem 0.6rem;
+    padding: 0.28rem 0.15rem;
     border-radius: 6px;
     background-color: rgba(168, 85, 247, 0.15);
     border: 1px solid rgba(168, 85, 247, 0.25);
-    font-size: 0.82rem;
-    font-weight: 600;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
+
 
 /* Single View Details Button */
 .card-actions-single {
