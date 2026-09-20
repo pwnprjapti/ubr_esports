@@ -1158,11 +1158,11 @@
                                     <i class="fa-solid fa-trophy"></i> Tournament
                                 </span>
                                 <% if (remainingTournamentSlots > 0) { %>
-                                    <span class="slot-assigned-badge">
+                                    <span class="slot-assigned-badge" style="margin-left: auto;">
                                         <i class="fa-solid fa-users"></i> <%= remainingTournamentSlots %> <%= remainingTournamentSlots === 1 ? 'Slot' : 'Slots' %> Left
                                     </span>
                                 <% } else { %>
-                                    <span class="slot-assigned-badge full">
+                                    <span class="slot-assigned-badge full" style="margin-left: auto;">
                                         <i class="fa-solid fa-ban"></i> Slots Full
                                     </span>
                                 <% } %>

@@ -346,11 +346,8 @@
                     const remainingSlots = Math.max(0, (match.slots || 0) - (match.teams ? match.teams.length : 0));
                     %>
                     <article class="scrim-card <%= isFull ? 'scrim-card-full' : '' %>" data-date="<%= match.date %>" data-period="today" data-full="<%= isFull ? 'true' : 'false' %>">
-                        <!-- Top Bar: Daily Scrim Badge + Remaining Slots -->
-                        <div class="card-top-bar">
-                            <span style="background: rgba(212, 27, 35, 0.15); color: #ff4d56; border: 1px solid rgba(212, 27, 35, 0.35); font-size: 0.68rem; font-weight: 800; padding: 0.22rem 0.65rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 0.35rem;">
-                                <i class="fa-solid fa-crosshairs"></i> Daily Scrim
-                            </span>
+                        <!-- Top Bar: Remaining Slots Badge -->
+                        <div class="card-top-bar" style="justify-content: flex-end;">
                             <% if (remainingSlots > 0) { %>
                                 <span class="slot-assigned-badge">
                                     <i class="fa-solid fa-users"></i> <%= remainingSlots %> <%= remainingSlots === 1 ? 'Slot' : 'Slots' %> Left

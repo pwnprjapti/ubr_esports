@@ -551,17 +551,13 @@
                                     <span style="background: linear-gradient(135deg, #d97706, #b45309); color: #fff; font-size: 0.68rem; font-weight: 900; padding: 0.22rem 0.65rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);">
                                         <i class="fa-solid fa-trophy"></i> Tournament
                                     </span>
-                                <% } else { %>
-                                    <span style="background: rgba(212, 27, 35, 0.15); color: #ff4d56; border: 1px solid rgba(212, 27, 35, 0.35); font-size: 0.68rem; font-weight: 800; padding: 0.22rem 0.65rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 0.35rem;">
-                                        <i class="fa-solid fa-crosshairs"></i> Daily Scrim
-                                    </span>
                                 <% } %>
                                 <% if (remainingSlots > 0) { %>
-                                    <span class="slot-assigned-badge">
+                                    <span class="slot-assigned-badge" style="margin-left: auto;">
                                         <i class="fa-solid fa-users"></i> <%= remainingSlots %> <%= remainingSlots === 1 ? 'Slot' : 'Slots' %> Left
                                     </span>
                                 <% } else { %>
-                                    <span class="slot-assigned-badge full">
+                                    <span class="slot-assigned-badge full" style="margin-left: auto;">
                                         <i class="fa-solid fa-ban"></i> Slots Full
                                     </span>
                                 <% } %>
