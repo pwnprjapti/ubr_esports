@@ -10,6 +10,10 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    console.warn("⚠️ WARNING: Cloudinary environment variables (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET) are missing or incomplete. File uploads to Cloudinary will fail.");
+}
+
 /**
  * Uploads a local file to Cloudinary and deletes the local file
  * @param {string} localFilePath - Path to the local file
@@ -19,6 +23,10 @@ cloudinary.config({
 export const uploadToCloudinary = async (localFilePath, folder = 'ubr_esports') => {
     try {
         if (!localFilePath) return null;
+
+        if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+            throw new Error("Cloudinary credentials missing on server. Please configure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your hosting environment variables.");
+        }
         
         // Upload the file to cloudinary
         const response = await cloudinary.uploader.upload(localFilePath, {

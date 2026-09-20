@@ -6,6 +6,7 @@ import compression from "compression"
 import ejs from "ejs"
 import path from "path"
 import fs from "fs"
+import os from "os"
 import { fileURLToPath } from "url"
 import passport from "passport"
 import session from "express-session"
@@ -105,16 +106,32 @@ app.use((req, res, next) => {
     next();
 });
 
+// Ensure upload temp directory exists safely across Linux VPS, Render, Railway, Docker, Vercel
+const uploadTempDir = path.join(os.tmpdir(), 'ubr_uploads');
+try {
+    if (!fs.existsSync(uploadTempDir)) {
+        fs.mkdirSync(uploadTempDir, { recursive: true });
+    }
+} catch (e) {}
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, path.join(__dirname, 'public', 'images'));
+        try {
+            if (fs.existsSync(uploadTempDir)) {
+                return cb(null, uploadTempDir);
+            }
+        } catch(e) {}
+        cb(null, os.tmpdir());
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
-const upload = multer({ storage: storage });
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 app.set('view engine', 'ejs');
 app.set('views', [
@@ -1521,8 +1538,6 @@ app.post("/team-settings", authCheck, upload.single('teamLogo'), async (req, res
                 }
                 return res.status(404).json({ msg: "Squad not found." });
             }
-        } else if (!teamId && user.teams.length === 1) {
-            teamIndex = 0;
         }
 
         // Check if updating an existing team
@@ -1547,8 +1562,18 @@ app.post("/team-settings", authCheck, upload.single('teamLogo'), async (req, res
                         }
                     }
                 }
-                const uploadResult = await uploadToCloudinary(req.file.path, 'team_logos');
-                logoName = uploadResult.secure_url;
+                try {
+                    const uploadResult = await uploadToCloudinary(req.file.path, 'team_logos');
+                    logoName = uploadResult ? uploadResult.secure_url : oldLogo;
+                } catch (uploadErr) {
+                    console.error("Cloudinary upload failed for squad logo update:", uploadErr);
+                    if (req.file && fs.existsSync(req.file.path)) {
+                        try { fs.unlinkSync(req.file.path); } catch(e) {}
+                    }
+                    return res.status(500).json({ 
+                        msg: "Failed to upload squad logo: " + (uploadErr.message || "Please check Cloudinary configuration on server.") 
+                    });
+                }
             }
 
             user.teams[teamIndex].teamName = newTeamName;
@@ -1668,8 +1693,18 @@ app.post("/team-settings", authCheck, upload.single('teamLogo'), async (req, res
 
             let logoName = "";
             if (req.file) {
-                const uploadResult = await uploadToCloudinary(req.file.path, 'team_logos');
-                logoName = uploadResult.secure_url;
+                try {
+                    const uploadResult = await uploadToCloudinary(req.file.path, 'team_logos');
+                    logoName = uploadResult ? uploadResult.secure_url : "";
+                } catch (uploadErr) {
+                    console.error("Cloudinary upload failed for new squad:", uploadErr);
+                    if (req.file && fs.existsSync(req.file.path)) {
+                        try { fs.unlinkSync(req.file.path); } catch(e) {}
+                    }
+                    return res.status(500).json({ 
+                        msg: "Failed to upload squad logo: " + (uploadErr.message || "Please check Cloudinary configuration on server.") 
+                    });
+                }
             }
 
             const newTeam = {
@@ -1695,7 +1730,7 @@ app.post("/team-settings", authCheck, upload.single('teamLogo'), async (req, res
         if (req.file && fs.existsSync(req.file.path)) {
             try { fs.unlinkSync(req.file.path); } catch(e) {}
         }
-        return res.status(500).json({ msg: "Internal server error" });
+        return res.status(500).json({ msg: err.message || "Internal server error" });
     }
 })
 

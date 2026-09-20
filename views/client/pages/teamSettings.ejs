@@ -244,7 +244,7 @@
 
         function openAddTeamModal() {
             modalSquadTitle.textContent = "Add New Squad";
-            modalTeamId.value = "";
+            modalTeamId.value = "new";
             modalTeamName.value = "";
             modalWhatsappNumber.value = "";
             modalTeamLogo.value = "";
@@ -348,9 +348,7 @@
             }
 
             const formData = new FormData();
-            if (modalTeamId.value) {
-                formData.append("teamId", modalTeamId.value);
-            }
+            formData.append("teamId", modalTeamId.value || "new");
             formData.append("teamName", modalTeamName.value.trim());
             formData.append("whatsappNumber", modalWhatsappNumber.value.trim());
             if (modalTeamLogo.files[0]) {
@@ -362,13 +360,14 @@
                 modalSubmitBtn.disabled = true;
                 modalSubmitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
 
-                const res = await fetch(`${baseurl}/team-settings`, {
+                const endpoint = (baseurl ? baseurl.replace(/\/+$/, '') : '') + '/team-settings';
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     body: formData
                 });
 
                 const result = await res.json();
-                alert(result.msg);
+                alert(result.msg || "Operation completed.");
 
                 if (res.status === 200) {
                     setTimeout(() => {
@@ -393,14 +392,15 @@
             }
 
             try {
-                const res = await fetch(`${baseurl}/team-settings/delete`, {
+                const endpoint = (baseurl ? baseurl.replace(/\/+$/, '') : '') + '/team-settings/delete';
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ teamId })
                 });
 
                 const result = await res.json();
-                alert(result.msg);
+                alert(result.msg || "Operation completed.");
                 if (res.status === 200) {
                     setTimeout(() => {
                         window.location.reload();
