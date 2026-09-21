@@ -398,10 +398,13 @@ app.get("/checksignin", async (req, res)=>{
             for (const ut of userTeams) {
                 const utName = ut.teamName ? ut.teamName.trim().toLowerCase() : "";
                 const utId = ut._id ? ut._id.toString() : "";
-                const isReg = matchTeams.some(t => 
-                    (utId && t._id && t._id.toString() === utId) ||
-                    (utName && t.teamName && t.teamName.trim().toLowerCase() === utName)
-                );
+                const isReg = matchTeams.some(t => {
+                    const tId = (t._id && t._id.toString()) || "";
+                    const tTeamId = (t.teamId && t.teamId.toString()) || "";
+                    const tName = (t.teamName && t.teamName.toString().trim().toLowerCase()) || "";
+                    return (utId && (tId === utId || tTeamId === utId)) ||
+                           (utName && tName === utName);
+                });
                 if (isReg) {
                     if (ut.teamName) registeredTeamNames.push(ut.teamName);
                     if (ut._id) registeredTeamIds.push(ut._id.toString());
@@ -1344,8 +1347,12 @@ app.get("/my-matches", authCheck, async (req, res) => {
             userTeamIds.forEach(id => {
                 if (mongoose.Types.ObjectId.isValid(id)) {
                     orConditions.push({ "matches.teams._id": new mongoose.Types.ObjectId(id) });
+                    orConditions.push({ "matches.teams.teamId": new mongoose.Types.ObjectId(id) });
                 }
             });
+            if (user && user._id) {
+                orConditions.push({ "matches.teams.userId": user._id });
+            }
 
             if (orConditions.length > 0) {
                 const categories = await categoryModel.find({ $or: orConditions });
@@ -1357,6 +1364,8 @@ app.get("/my-matches", authCheck, async (req, res) => {
 
                         m.teams.forEach((t, idx) => {
                             const isUserTeam = (t._id && userTeamIds.includes(t._id.toString())) ||
+                                               (t.teamId && userTeamIds.includes(t.teamId.toString())) ||
+                                               (user && user._id && t.userId && t.userId.toString() === user._id.toString()) ||
                                                (t.teamName && userTeamNames.includes(t.teamName.trim().toLowerCase()));
                             if (isUserTeam) {
                                 const approvedTeams = m.teams.filter(team => team.status === "approved" || !team.status);
@@ -1397,8 +1406,12 @@ app.get("/my-matches", authCheck, async (req, res) => {
             userTeamIds.forEach(id => {
                 if (mongoose.Types.ObjectId.isValid(id)) {
                     tournamentOrConditions.push({ "teams._id": new mongoose.Types.ObjectId(id) });
+                    tournamentOrConditions.push({ "teams.teamId": new mongoose.Types.ObjectId(id) });
                 }
             });
+            if (user && user._id) {
+                tournamentOrConditions.push({ "teams.userId": user._id });
+            }
 
             if (tournamentOrConditions.length > 0) {
                 const tournaments = await tournamentModel.find({ $or: tournamentOrConditions });
@@ -1408,6 +1421,8 @@ app.get("/my-matches", authCheck, async (req, res) => {
 
                     tourn.teams.forEach((t, idx) => {
                         const isUserTeam = (t._id && userTeamIds.includes(t._id.toString())) ||
+                                           (t.teamId && userTeamIds.includes(t.teamId.toString())) ||
+                                           (user && user._id && t.userId && t.userId.toString() === user._id.toString()) ||
                                            (t.teamName && userTeamNames.includes(t.teamName.trim().toLowerCase()));
                         if (isUserTeam) {
                             const approvedTeams = tourn.teams.filter(team => team.status === "approved" || !team.status);
@@ -1867,12 +1882,15 @@ app.post("/book", upload.none(), async (req, res)=>{
          return res.status(400).json({msg:"Please add Drop Details "});
        };
  
-       const isAlreadyRegistered = match.teams && match.teams.some(t => 
-           (selectedTeam._id && t._id && t._id.toString() === selectedTeam._id.toString()) ||
-           (selectedTeam._id && t.teamId && t.teamId.toString() === selectedTeam._id.toString()) ||
-           (user && user._id && t.userId && t.userId.toString() === user._id.toString()) ||
-           (t.teamName && selectedTeam.teamName && t.teamName.trim().toLowerCase() === selectedTeam.teamName.trim().toLowerCase())
-       );
+       const selTeamId = (selectedTeam._id && selectedTeam._id.toString()) || '';
+       const selTeamName = (selectedTeam.teamName && selectedTeam.teamName.toString().trim().toLowerCase()) || '';
+       const isAlreadyRegistered = match.teams && match.teams.some(t => {
+           const tId = (t._id && t._id.toString()) || '';
+           const tTeamId = (t.teamId && t.teamId.toString()) || '';
+           const tName = (t.teamName && t.teamName.toString().trim().toLowerCase()) || '';
+           return (selTeamId && (tId === selTeamId || tTeamId === selTeamId)) ||
+                  (selTeamName && tName === selTeamName);
+       });
        if(isAlreadyRegistered){
          if (req.file) fs.unlinkSync(req.file.path);
          return res.status(409).json({msg: `Squad '${selectedTeam.teamName}' has already booked this match.`});
@@ -2040,12 +2058,15 @@ app.post("/book-tournament", upload.none(), async (req, res) => {
         }
 
         // Check if already registered
-        const alreadyBooked = tournament.teams && tournament.teams.some(t => 
-            (selectedTeam._id && t._id && t._id.toString() === selectedTeam._id.toString()) ||
-            (selectedTeam._id && t.teamId && t.teamId.toString() === selectedTeam._id.toString()) ||
-            (user && user._id && t.userId && t.userId.toString() === user._id.toString()) ||
-            (t.teamName && selectedTeam.teamName && t.teamName.toString().trim().toLowerCase() === selectedTeam.teamName.toString().trim().toLowerCase())
-        );
+        const selTournamentTeamId = (selectedTeam._id && selectedTeam._id.toString()) || '';
+        const selTournamentTeamName = (selectedTeam.teamName && selectedTeam.teamName.toString().trim().toLowerCase()) || '';
+        const alreadyBooked = tournament.teams && tournament.teams.some(t => {
+            const tId = (t._id && t._id.toString()) || '';
+            const tTeamId = (t.teamId && t.teamId.toString()) || '';
+            const tName = (t.teamName && t.teamName.toString().trim().toLowerCase()) || '';
+            return (selTournamentTeamId && (tId === selTournamentTeamId || tTeamId === selTournamentTeamId)) ||
+                   (selTournamentTeamName && tName === selTournamentTeamName);
+        });
         if (alreadyBooked) {
             return res.status(409).json({ msg: `Squad '${selectedTeam.teamName}' has already booked this tournament.` });
         }
