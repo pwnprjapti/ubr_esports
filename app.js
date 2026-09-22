@@ -166,6 +166,25 @@ function adminAuthCheck(req, res, next){
     next();
 }
 
+function isBookedSquadForUserTeam(bookedTeam, userTeam, userId) {
+    if (!bookedTeam || !userTeam) return false;
+
+    const userTeamId = userTeam._id ? userTeam._id.toString() : "";
+    const bookedTeamId = bookedTeam.teamId ? bookedTeam.teamId.toString() : "";
+    const bookedSubdocumentId = bookedTeam._id ? bookedTeam._id.toString() : "";
+    const bookedUserId = bookedTeam.userId ? bookedTeam.userId.toString() : "";
+    const currentUserId = userId ? userId.toString() : "";
+    const userTeamName = userTeam.teamName ? userTeam.teamName.trim().toLowerCase() : "";
+    const bookedTeamName = bookedTeam.teamName ? bookedTeam.teamName.trim().toLowerCase() : "";
+
+    if (userTeamId && bookedTeamId) return bookedTeamId === userTeamId;
+    if (userTeamId && bookedSubdocumentId) return bookedSubdocumentId === userTeamId;
+    if (currentUserId && bookedUserId) {
+        return bookedUserId === currentUserId && userTeamName && bookedTeamName === userTeamName;
+    }
+    return userTeamName && bookedTeamName === userTeamName;
+}
+
 const baseurl = process.env.BASE_URL;
 
 // ==========================================
@@ -396,15 +415,7 @@ app.get("/checksignin", async (req, res)=>{
 
         if (matchTeams.length > 0 && userTeams.length > 0) {
             for (const ut of userTeams) {
-                const utName = ut.teamName ? ut.teamName.trim().toLowerCase() : "";
-                const utId = ut._id ? ut._id.toString() : "";
-                const isReg = matchTeams.some(t => {
-                    const tId = (t._id && t._id.toString()) || "";
-                    const tTeamId = (t.teamId && t.teamId.toString()) || "";
-                    const tName = (t.teamName && t.teamName.toString().trim().toLowerCase()) || "";
-                    return (utId && (tId === utId || tTeamId === utId)) ||
-                           (utName && tName === utName);
-                });
+                const isReg = matchTeams.some(t => isBookedSquadForUserTeam(t, ut, user._id));
                 if (isReg) {
                     if (ut.teamName) registeredTeamNames.push(ut.teamName);
                     if (ut._id) registeredTeamIds.push(ut._id.toString());
@@ -413,12 +424,9 @@ app.get("/checksignin", async (req, res)=>{
         }
 
         // Teams available to book for this match (excluding already registered ones)
-        const availableTeams = userTeams.filter(ut => {
-            const utName = ut.teamName ? ut.teamName.trim().toLowerCase() : "";
-            const utId = ut._id ? ut._id.toString() : "";
-            const isReg = registeredTeamIds.includes(utId) || registeredTeamNames.some(rn => rn.trim().toLowerCase() === utName);
-            return !isReg && ut.teamName;
-        });
+        const availableTeams = userTeams.filter(ut =>
+            ut.teamName && !matchTeams.some(t => isBookedSquadForUserTeam(t, ut, user._id))
+        );
 
         const isAlreadyRegistered = registeredTeamNames.length > 0;
         const allRegistered = hasTeam && availableTeams.length === 0;
@@ -1882,15 +1890,9 @@ app.post("/book", upload.none(), async (req, res)=>{
          return res.status(400).json({msg:"Please add Drop Details "});
        };
  
-       const selTeamId = (selectedTeam._id && selectedTeam._id.toString()) || '';
-       const selTeamName = (selectedTeam.teamName && selectedTeam.teamName.toString().trim().toLowerCase()) || '';
-       const isAlreadyRegistered = match.teams && match.teams.some(t => {
-           const tId = (t._id && t._id.toString()) || '';
-           const tTeamId = (t.teamId && t.teamId.toString()) || '';
-           const tName = (t.teamName && t.teamName.toString().trim().toLowerCase()) || '';
-           return (selTeamId && (tId === selTeamId || tTeamId === selTeamId)) ||
-                  (selTeamName && tName === selTeamName);
-       });
+       const isAlreadyRegistered = match.teams && match.teams.some(t =>
+           isBookedSquadForUserTeam(t, selectedTeam, user._id)
+       );
        if(isAlreadyRegistered){
          if (req.file) fs.unlinkSync(req.file.path);
          return res.status(409).json({msg: `Squad '${selectedTeam.teamName}' has already booked this match.`});
