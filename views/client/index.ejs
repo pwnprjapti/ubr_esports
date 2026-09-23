@@ -985,534 +985,79 @@
                     white-space: nowrap;
                 }
 
-                /* Scrim & Tournament Grid & Card Layout - Sleek Horizontal Rectangle */
-                .scrim-grid {
-                    display: grid !important;
-                    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)) !important;
-                    gap: 1.1rem !important;
-                    width: 100% !important;
-                }
-
                 .scrim-card {
                     order: 1;
-                    background: #0e111a !important;
-                    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-                    border-radius: 14px !important;
-                    padding: 0.85rem 1.05rem !important;
-                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
-                    display: flex !important;
-                    flex-direction: column !important;
-                    gap: 0.52rem !important;
-                    position: relative !important;
-                    overflow: hidden !important;
-                    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
                 }
-
-                .scrim-card:hover {
-                    transform: translateY(-3px) !important;
-                    border-color: rgba(255, 255, 255, 0.18) !important;
-                    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6) !important;
-                }
-
                 .scrim-card.scrim-card-full {
                     order: 2;
-                    opacity: 0.95;
+                    opacity: 0.92;
                 }
 
-                /* Card Hero Row: Logo on Left (~30% card height), Details on Right */
-                .card-hero-row {
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 0.85rem !important;
-                    width: 100% !important;
+                .card-top-bar {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 0.75rem;
+                    padding-bottom: 0.75rem;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                    margin-bottom: 0.85rem;
+                    width: 100%;
                 }
 
-                .card-game-logo {
-                    width: 52px !important;
-                    height: 52px !important;
-                    border-radius: 8px !important;
-                    object-fit: cover !important;
-                    display: block !important;
-                    flex-shrink: 0 !important;
-                    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-                    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45) !important;
+                .slot-assigned-badge {
+                    font-size: 0.78rem;
+                    font-weight: 800;
+                    color: #22c55e;
+                    background: rgba(34, 197, 94, 0.12);
+                    border: 1px solid rgba(34, 197, 94, 0.3);
+                    padding: 0.25rem 0.65rem;
+                    border-radius: 999px;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    white-space: nowrap;
                 }
 
-                .card-hero-details {
-                    display: flex !important;
-                    flex-direction: column !important;
-                    justify-content: center !important;
-                    gap: 0.45rem !important;
-                    flex: 1 !important;
-                    min-width: 0 !important;
+                .slot-assigned-badge.full {
+                    color: #ef4444;
+                    background: rgba(239, 68, 68, 0.12);
+                    border-color: rgba(239, 68, 68, 0.3);
                 }
 
-                .card-header-bar {
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: space-between !important;
-                    gap: 0.5rem !important;
-                    width: 100% !important;
-                    padding-bottom: 0 !important;
+                .idp-timing {
+                    border: 1px solid rgba(255, 255, 255, 0.06);
+                    border-radius: 10px;
+                    padding: 0.6rem 0.65rem;
+                    background-color: rgba(255, 255, 255, 0.02);
+                    margin: 0.25rem 0;
                 }
 
-                .card-main-title {
-                    font-size: 0.84rem !important;
-                    font-weight: 800 !important;
-                    color: #ffffff !important;
-                    margin: 0 !important;
-                    text-transform: uppercase !important;
-                    letter-spacing: 0.025em !important;
-                    line-height: 1.25 !important;
-                    white-space: nowrap !important;
-                    overflow: hidden !important;
-                    text-overflow: ellipsis !important;
-                    flex: 1 !important;
-                    min-width: 0 !important;
-                    text-align: left !important;
+                .idp-timing .timings {
+                    display: grid;
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                    gap: 0.35rem;
+                    margin-top: 0.4rem;
+                    width: 100%;
                 }
 
-                .card-slot-badge {
-                    background: #1e1333 !important;
-                    border: 1px solid #8b5cf6 !important;
-                    color: #d8b4fe !important;
-                    font-size: 0.65rem !important;
-                    font-weight: 800 !important;
-                    padding: 0.16rem 0.45rem !important;
-                    border-radius: 6px !important;
-                    white-space: nowrap !important;
-                    box-shadow: 0 0 10px rgba(139, 92, 246, 0.2) !important;
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    gap: 0.25rem !important;
-                    flex-shrink: 0 !important;
-                }
-
-                .card-slot-badge.badge-full {
-                    background: rgba(239, 68, 68, 0.12) !important;
-                    border-color: rgba(239, 68, 68, 0.45) !important;
-                    color: #f87171 !important;
-                    box-shadow: 0 0 10px rgba(239, 68, 68, 0.15) !important;
-                }
-
-                .card-slot-badge.badge-open {
-                    background: rgba(34, 197, 94, 0.12) !important;
-                    border-color: rgba(34, 197, 94, 0.45) !important;
-                    color: #4ade80 !important;
-                    box-shadow: 0 0 10px rgba(34, 197, 94, 0.15) !important;
-                }
-
-                .card-slot-badge.badge-tournament {
-                    background: rgba(217, 119, 6, 0.15) !important;
-                    border-color: #d97706 !important;
-                    color: #fbbf24 !important;
-                    box-shadow: 0 0 10px rgba(217, 119, 6, 0.15) !important;
-                }
-
-                /* Stats Row: PRIZE POOL | ENTRY FEE */
-                .card-stats-grid {
-                    display: flex !important;
-                    align-items: flex-start !important;
-                    justify-content: flex-start !important;
-                    gap: 1.15rem !important;
-                    width: 100% !important;
-                    padding: 0 !important;
-                    margin: 0 !important;
-                }
-
-                .card-stat-box {
-                    display: flex !important;
-                    flex-direction: column !important;
-                    align-items: flex-start !important;
-                    gap: 0.12rem !important;
-                    min-width: 0 !important;
-                    flex-shrink: 0 !important;
-                }
-
-                .card-stat-label {
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 0.25rem !important;
-                    font-size: 0.58rem !important;
-                    color: #94a3b8 !important;
-                    font-weight: 700 !important;
-                    text-transform: uppercase !important;
-                    letter-spacing: 0.03em !important;
-                    white-space: nowrap !important;
-                    overflow: hidden !important;
-                    text-overflow: ellipsis !important;
-                    width: 100% !important;
-                }
-
-                .card-stat-label i {
-                    font-size: 0.64rem !important;
-                    color: #94a3b8 !important;
-                }
-
-                .card-stat-val {
-                    font-size: 0.84rem !important;
-                    font-weight: 800 !important;
-                    white-space: nowrap !important;
-                    overflow: hidden !important;
-                    text-overflow: ellipsis !important;
-                    width: 100% !important;
-                    line-height: 1.15 !important;
-                }
-
-                .card-stat-val.val-prize {
-                    color: #22c55e !important;
-                }
-
-                .card-stat-val.val-fee {
-                    color: #ffffff !important;
-                }
-
-                /* IDP TIMINGS and MAPS Rows */
-                .card-meta-row {
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 0.5rem !important;
-                    width: 100% !important;
-                }
-
-                .card-meta-label {
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 0.35rem !important;
-                    font-size: 0.64rem !important;
-                    font-weight: 700 !important;
-                    color: #94a3b8 !important;
-                    text-transform: uppercase !important;
-                    letter-spacing: 0.03em !important;
-                    flex-shrink: 0 !important;
-                    width: 90px !important;
-                }
-
-                .card-meta-label i {
-                    font-size: 0.72rem !important;
-                    color: #94a3b8 !important;
-                }
-
-                .card-pills-container {
-                    display: grid !important;
-                    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-                    gap: 0.3rem !important;
-                    flex: 1 !important;
-                    min-width: 0 !important;
-                }
-
-                .timing-pill-dark {
-                    background: #171a25 !important;
-                    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-                    border-radius: 6px !important;
-                    color: #ffffff !important;
-                    font-size: 0.68rem !important;
-                    font-weight: 700 !important;
-                    padding: 0.22rem 0.15rem !important;
-                    text-align: center !important;
-                    white-space: nowrap !important;
-                    overflow: hidden !important;
-                    text-overflow: ellipsis !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                }
-
-                .map-pill-purple {
-                    background: rgba(147, 51, 234, 0.12) !important;
-                    border: 1px solid #7c3aed !important;
-                    border-radius: 6px !important;
-                    color: #e9d5ff !important;
-                    font-size: 0.64rem !important;
-                    font-weight: 800 !important;
-                    text-transform: uppercase !important;
-                    letter-spacing: 0.03em !important;
-                    padding: 0.22rem 0.15rem !important;
-                    text-align: center !important;
-                    white-space: nowrap !important;
-                    overflow: hidden !important;
-                    text-overflow: ellipsis !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                }
-
-                /* Slots Filled Row */
-                .card-slots-bar-box {
-                    display: flex !important;
-                    flex-direction: column !important;
-                    gap: 0.25rem !important;
-                    width: 100% !important;
-                    margin-top: 0.05rem !important;
-                }
-
-                .slots-header-line {
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: space-between !important;
-                    width: 100% !important;
-                }
-
-                .slots-header-label {
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 0.35rem !important;
-                    font-size: 0.64rem !important;
-                    font-weight: 700 !important;
-                    color: #94a3b8 !important;
-                    text-transform: uppercase !important;
-                    letter-spacing: 0.03em !important;
-                }
-
-                .slots-header-label i {
-                    font-size: 0.72rem !important;
-                    color: #94a3b8 !important;
-                }
-
-                .slots-header-count {
-                    font-size: 0.78rem !important;
-                    font-weight: 800 !important;
-                    color: #ffffff !important;
-                    letter-spacing: 0.02em !important;
-                }
-
-                .slots-bar-track {
-                    width: 100% !important;
-                    height: 6px !important;
-                    background: rgba(255, 255, 255, 0.08) !important;
-                    border-radius: 999px !important;
-                    overflow: hidden !important;
-                }
-
-                .slots-bar-fill {
-                    height: 100% !important;
-                    background: #22c55e !important;
-                    border-radius: 999px !important;
-                    transition: width 0.3s ease !important;
-                    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4) !important;
-                }
-
-                /* Action Buttons */
-                .card-actions-wrapper {
-                    display: flex !important;
-                    flex-direction: column !important;
-                    gap: 0.45rem !important;
-                    width: 100% !important;
-                    margin-top: 0.15rem !important;
-                }
-
-                .card-joined-actions-row {
-                    display: grid !important;
-                    grid-template-columns: 1.15fr 0.85fr !important;
-                    gap: 0.45rem !important;
-                    width: 100% !important;
-                }
-
-                .btn-join-idp {
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    gap: 0.4rem !important;
-                    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
-                    color: #ffffff !important;
-                    text-decoration: none !important;
-                    font-weight: 800 !important;
-                    font-size: 0.76rem !important;
-                    text-transform: uppercase !important;
-                    letter-spacing: 0.025em !important;
-                    border-radius: 8px !important;
-                    height: 35px !important;
-                    border: none !important;
-                    box-shadow: 0 3px 12px rgba(34, 197, 94, 0.3) !important;
-                    transition: all 0.2s ease !important;
-                    cursor: pointer !important;
-                }
-
-                .btn-join-idp:hover {
-                    filter: brightness(1.1) !important;
-                    transform: translateY(-1px) !important;
-                }
-
-                .btn-copy-link {
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    gap: 0.35rem !important;
-                    background: rgba(34, 197, 94, 0.08) !important;
-                    border: 1px solid #22c55e !important;
-                    color: #4ade80 !important;
-                    font-weight: 700 !important;
-                    font-size: 0.74rem !important;
-                    border-radius: 8px !important;
-                    height: 35px !important;
-                    cursor: pointer !important;
-                    transition: all 0.2s ease !important;
-                }
-
-                .btn-copy-link:hover {
-                    background: rgba(34, 197, 94, 0.16) !important;
-                    color: #86efac !important;
-                    transform: translateY(-1px) !important;
-                }
-
-                .btn-book-slot-primary {
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    gap: 0.4rem !important;
-                    background: #D41B23 !important;
-                    color: #ffffff !important;
-                    font-weight: 800 !important;
-                    font-size: 0.8rem !important;
-                    border-radius: 8px !important;
-                    height: 36px !important;
-                    border: none !important;
-                    width: 100% !important;
-                    box-shadow: 0 3px 12px rgba(212, 27, 35, 0.3) !important;
-                    cursor: pointer !important;
-                    transition: all 0.2s ease !important;
-                }
-
-                .btn-book-slot-primary:hover {
-                    background: #b9151c !important;
-                    transform: translateY(-1px) !important;
-                }
-
-                .btn-slots-full-disabled {
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    gap: 0.4rem !important;
-                    background: #171a24 !important;
-                    border: 1px solid rgba(255, 255, 255, 0.06) !important;
-                    color: #64748b !important;
-                    font-weight: 700 !important;
-                    font-size: 0.76rem !important;
-                    border-radius: 8px !important;
-                    height: 36px !important;
-                    width: 100% !important;
-                    cursor: not-allowed !important;
-                }
-
-                .btn-book-more {
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    gap: 0.35rem !important;
-                    background: #D41B23 !important;
-                    color: #ffffff !important;
-                    font-weight: 800 !important;
-                    font-size: 0.74rem !important;
-                    border-radius: 8px !important;
-                    height: 33px !important;
-                    border: none !important;
-                    cursor: pointer !important;
-                    width: 100% !important;
-                    transition: all 0.2s !important;
-                }
-
-                .btn-book-more.disabled {
-                    background: #171a24 !important;
-                    border: 1px solid rgba(255, 255, 255, 0.06) !important;
-                    color: #64748b !important;
-                    cursor: not-allowed !important;
-                }
-
-                .card-sec-actions-grid {
-                    display: grid !important;
-                    grid-template-columns: 1fr 1fr !important;
-                    gap: 0.45rem !important;
-                    width: 100% !important;
-                }
-
-                .btn-card-secondary {
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    gap: 0.35rem !important;
-                    background: #171a25 !important;
-                    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-                    border-radius: 8px !important;
-                    color: #ffffff !important;
-                    font-weight: 700 !important;
-                    font-size: 0.74rem !important;
-                    height: 33px !important;
-                    width: 100% !important;
-                    cursor: pointer !important;
-                    transition: all 0.2s ease !important;
-                }
-
-                .btn-card-secondary:hover {
-                    background: #202434 !important;
-                    border-color: rgba(255, 255, 255, 0.16) !important;
-                    transform: translateY(-1px) !important;
-                }
-
-                @media (max-width: 480px) {
-                    .scrim-grid {
-                        grid-template-columns: 1fr !important;
-                        gap: 0.85rem !important;
-                    }
-                    .scrim-card {
-                        padding: 0.75rem 0.85rem !important;
-                        gap: 0.45rem !important;
-                        border-radius: 12px !important;
-                    }
-                    .card-hero-row {
-                        gap: 0.65rem !important;
-                    }
-                    .card-game-logo {
-                        width: 48px !important;
-                        height: 48px !important;
-                        border-radius: 7px !important;
-                    }
-                    .card-hero-details {
-                        gap: 0.35rem !important;
-                    }
-                    .card-main-title {
-                        font-size: 0.78rem !important;
-                    }
-                    .card-slot-badge {
-                        font-size: 0.6rem !important;
-                        padding: 0.14rem 0.4rem !important;
-                    }
-                    .card-stats-grid {
-                        gap: 0.9rem !important;
-                    }
-                    .card-stat-label {
-                        font-size: 0.52rem !important;
-                    }
-                    .card-stat-val {
-                        font-size: 0.76rem !important;
-                    }
-                    .card-meta-label {
-                        width: 80px !important;
-                        font-size: 0.6rem !important;
-                    }
-                    .timing-pill-dark {
-                        font-size: 0.62rem !important;
-                        padding: 0.18rem 0.1rem !important;
-                    }
-                    .map-pill-purple {
-                        font-size: 0.58rem !important;
-                        padding: 0.18rem 0.1rem !important;
-                    }
-                    .btn-join-idp {
-                        font-size: 0.72rem !important;
-                        height: 33px !important;
-                    }
-                    .btn-copy-link {
-                        font-size: 0.7rem !important;
-                        height: 33px !important;
-                    }
-                    .btn-book-slot-primary {
-                        font-size: 0.75rem !important;
-                        height: 34px !important;
-                    }
-                    .btn-card-secondary {
-                        font-size: 0.7rem !important;
-                        height: 31px !important;
-                    }
+                .idp-timing .timings span {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #c084fc;
+                    padding: 0.28rem 0.15rem;
+                    border-radius: 6px;
+                    background-color: rgba(168, 85, 247, 0.15);
+                    border: 1px solid rgba(168, 85, 247, 0.25);
+                    font-size: 0.74rem;
+                    font-weight: 700;
+                    text-align: center;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    min-width: 0;
+                    width: 100%;
+                    box-sizing: border-box;
                 }
 
             </style>
@@ -1625,11 +1170,9 @@
                         const userTeamIdStrings = (typeof userTeams !== 'undefined' && Array.isArray(userTeams))
                             ? userTeams.map(t => t && t._id ? t._id.toString() : '').filter(Boolean)
                             : [];
-                        let userSlotNumbers = [];
-                        const userRegTeams = [];
-                        if (tournament.teams && Array.isArray(tournament.teams)) {
-                            tournament.teams.forEach((t, idx) => {
-                                if (!t) return;
+                        const userRegTeams = (tournament.teams && Array.isArray(tournament.teams))
+                            ? tournament.teams.filter(t => {
+                                if (!t) return false;
                                 const tId = t._id ? t._id.toString() : '';
                                 const tTeamId = t.teamId ? t.teamId.toString() : '';
                                 const tName = t.teamName ? t.teamName.toString().trim().toLowerCase() : '';
@@ -1638,166 +1181,169 @@
                                     (typeof userTeamNames !== 'undefined' && Array.isArray(userTeamNames) && userTeamNames.some(ut => ut && ut.toString().trim().toLowerCase() === tName)) ||
                                     (typeof userTeamName !== 'undefined' && userTeamName && userTeamName.toString().trim().toLowerCase() === tName)
                                 );
-                                if (idMatch || nameMatch) {
-                                    userRegTeams.push(t);
-                                    userSlotNumbers.push(idx + 1);
-                                }
-                            });
-                        }
+                                return idMatch || nameMatch;
+                            })
+                            : [];
                         const isJoined = userRegTeams.length > 0;
-                        const registeredTeam = isJoined ? userRegTeams[0] : null;
                         const isTournamentFull = Boolean(tournament.slots && (tournament.teams ? tournament.teams.length : 0) >= tournament.slots);
                         const remainingTournamentSlots = Math.max(0, (tournament.slots || 0) - (tournament.teams ? tournament.teams.length : 0));
-                        const filledPercentage = Math.min(100, Math.round(((tournament.teams ? tournament.teams.length : 0) / (tournament.slots || 1)) * 100));
                         %>
                         <article class="scrim-card <%= isTournamentFull ? 'scrim-card-full' : '' %>" data-date="<%= tournament.date %>" data-period="today" data-full="<%= isTournamentFull ? 'true' : 'false' %>">
-                            <!-- Hero Row: BGMI Logo on Left (~30% height), Details on Right -->
-                            <div class="card-hero-row">
-                                <img src="/images/bgmi_logo.png" alt="BGMI" class="card-game-logo">
-                                <div class="card-hero-details">
-                                    <div class="card-header-bar">
-                                        <h3 class="card-main-title"><%= tournament.title %></h3>
-                                        <% if (isJoined) { %>
-                                            <span class="card-slot-badge">
-                                                Slot #<%= userSlotNumbers.join(', #') %>
-                                            </span>
-                                        <% } else if (isTournamentFull) { %>
-                                            <span class="card-slot-badge badge-full">
-                                                <i class="fa-solid fa-ban"></i> Slots Full
-                                            </span>
-                                        <% } else { %>
-                                            <span class="card-slot-badge badge-open">
-                                                <i class="fa-solid fa-users"></i> <%= remainingTournamentSlots %> Slot
-                                            </span>
-                                        <% } %>
-                                    </div>
-
-                                    <!-- Stats: PRIZE POOL | ENTRY FEE -->
-                                    <div class="card-stats-grid">
-                                        <div class="card-stat-box">
-                                            <span class="card-stat-label"><i class="fa-solid fa-sack-dollar"></i> PRIZE POOL</span>
-                                            <span class="card-stat-val val-prize">₹ <%= Number(tournament.prizePool).toLocaleString('en-IN') %></span>
-                                        </div>
-                                        <div class="card-stat-box">
-                                            <span class="card-stat-label"><i class="fa-solid fa-indian-rupee-sign"></i> ENTRY FEE</span>
-                                            <span class="card-stat-val val-fee">₹ <%= tournament.entryFee %></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- IDP TIMINGS Row -->
-                            <div class="card-meta-row">
-                                <div class="card-meta-label">
-                                    <i class="fa-regular fa-clock"></i> IDP TIMINGS
-                                </div>
-                                <div class="card-pills-container">
-                                    <% 
-                                        const rawTimings = (tournament.idpTimings || '').split(',').map(t => t.trim()).filter(Boolean);
-                                        const displayTimings = rawTimings.length > 0 ? rawTimings : ['7:32 PM', '8:02 PM', '8:32 PM', '9:02 PM'];
-                                    %>
-                                    <% for (const time of displayTimings) { %>
-                                        <span class="timing-pill-dark"><%= time %></span>
-                                    <% } %>
-                                </div>
-                            </div>
-
-                            <!-- MAPS Row -->
-                            <div class="card-meta-row">
-                                <div class="card-meta-label">
-                                    <i class="fa-solid fa-map-location-dot"></i> MAPS
-                                </div>
-                                <div class="card-pills-container">
-                                    <% 
-                                        const rawMaps = (tournament.maps || '').split(',').map(m => m.trim()).filter(Boolean);
-                                        const displayMaps = rawMaps.length > 0 ? rawMaps : ['ERANGEL', 'MIRAMAR', 'RONDO', 'ERANGEL'];
-                                    %>
-                                    <% for (const mapName of displayMaps) { %>
-                                        <span class="map-pill-purple"><%= mapName.toUpperCase() %></span>
-                                    <% } %>
-                                </div>
-                            </div>
-
-                            <!-- SLOTS FILLED Row -->
-                            <div class="card-slots-bar-box">
-                                <div class="slots-header-line">
-                                    <span class="slots-header-label"><i class="fa-solid fa-users"></i> SLOTS FILLED</span>
-                                    <span class="slots-header-count"><%= (tournament.teams ? tournament.teams.length : 0) %> / <%= tournament.slots %></span>
-                                </div>
-                                <div class="slots-bar-track">
-                                    <div class="slots-bar-fill" style="width: <%= filledPercentage %>%;"></div>
-                                </div>
-                            </div>
-
-                            <!-- Actions Container -->
-                            <div class="card-actions-wrapper">
-                                <% if (isJoined) { %>
-                                    <% if (tournament.whatsappGroupLink) { %>
-                                        <div class="card-joined-actions-row">
-                                            <a href="<%= tournament.whatsappGroupLink %>" target="_blank" class="btn-join-idp">
-                                                <i class="fa-brands fa-whatsapp"></i> JOIN IDP GROUP
-                                            </a>
-                                            <button type="button" class="btn-copy-link" onclick="copyWhatsAppLink('<%= tournament.whatsappGroupLink %>', this)">
-                                                <i class="fa-regular fa-copy"></i> Copy Link
-                                            </button>
-                                        </div>
-                                    <% } else { %>
-                                        <div class="card-joined-actions-row">
-                                            <button type="button" class="btn-join-idp" style="background: #28a745; cursor: default;" disabled>
-                                                <i class="fa-solid fa-circle-check"></i> Booked Successfully
-                                            </button>
-                                            <button type="button" class="btn-copy-link" style="opacity: 0.5; cursor: not-allowed;" disabled>
-                                                <i class="fa-regular fa-copy"></i> Link TBA
-                                            </button>
-                                        </div>
-                                    <% } %>
-
-                                    <% if (isTournamentFull) { %>
-                                        <button class="btn-book-more disabled" disabled><i class="fa-solid fa-ban"></i> Slots Full</button>
-                                    <% } else { %>
-                                        <button type="button" class="btn-book-more" onclick="initiateBooking({ type: 'tournament', tournamentId: '<%= tournament._id %>', title: '<%= tournament.title %>', entryFee: '<%= tournament.entryFee %>' })">
-                                            <i class="fa-solid fa-plus-circle"></i> Book More Slot
-                                        </button>
-                                    <% } %>
-
-                                    <div style="text-align: center; margin-top: 0.15rem; width: 100%;">
-                                        <button type="button" class="user-registered-teams-link" data-teams="<%- encodeURIComponent(JSON.stringify(userRegTeams.map(t => ({ _id: t._id, teamName: t.teamName, teamLogo: t.teamLogo, whatsappNumber: t.whatsappNumber })))) %>" onclick="showUserRegisteredTeams(this, event)" style="background: transparent; border: none; color: #38bdf8; font-size: 0.85rem; font-weight: 700; text-decoration: underline; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.25rem 0.5rem; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#38bdf8'">
-                                            <i class="fa-solid fa-shield-halved"></i> See your registered teams
-                                            <span class="user-reg-data" style="display: none;"><%- JSON.stringify(userRegTeams) %></span>
-                                        </button>
-                                    </div>
+                            <!-- Top Bar: Tournament Badge + Remaining Slots -->
+                            <div class="card-top-bar">
+                                <span style="background: linear-gradient(135deg, #d97706, #b45309); color: #fff; font-size: 0.68rem; font-weight: 900; padding: 0.22rem 0.65rem; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);">
+                                    <i class="fa-solid fa-trophy"></i> Tournament
+                                </span>
+                                <% if (remainingTournamentSlots > 0) { %>
+                                    <span class="slot-assigned-badge" style="margin-left: auto;">
+                                        <i class="fa-solid fa-users"></i> <%= remainingTournamentSlots %> <%= remainingTournamentSlots === 1 ? 'Slot' : 'Slots' %> Left
+                                    </span>
                                 <% } else { %>
-                                    <% if (isTournamentFull) { %>
-                                        <button class="btn-slots-full-disabled" disabled>
-                                            <i class="fa-solid fa-ban"></i> Slots Full
-                                        </button>
-                                    <% } else { %>
-                                        <button type="button" class="btn-book-slot-primary" onclick="initiateBooking({ type: 'tournament', tournamentId: '<%= tournament._id %>', title: '<%= tournament.title %>', entryFee: '<%= tournament.entryFee %>' })">
-                                            <i class="fa-solid fa-ticket"></i> Book Slot
-                                        </button>
-                                    <% } %>
+                                    <span class="slot-assigned-badge full" style="margin-left: auto;">
+                                        <i class="fa-solid fa-ban"></i> Slots Full
+                                    </span>
                                 <% } %>
-
-                                <!-- Secondary Buttons (View Teams | View Details) -->
-                                <div class="card-sec-actions-grid">
-                                    <button type="button" class="btn-card-secondary" data-booked="<%= isJoined %>" onclick="showTournamentTeams(this)">
-                                        <i class="fa-solid fa-users"></i> View Teams
-                                        <span class="teams-data" style="display: none;"><%- isJoined ? JSON.stringify(approvedTeams) : '[]' %></span>
-                                    </button>
-                                    <button type="button" class="btn-card-secondary" onclick="showTournamentDetails(this)">
-                                        <i class="fa-solid fa-circle-info"></i> View Details
-                                        <span class="match-data" style="display: none;" 
-                                              data-title="<%= tournament.title %>"
-                                              data-date="<%= tournament.date %>"
-                                              data-prize="<%= tournament.prizePool %>"
-                                              data-slots="<%= tournament.slots %>"
-                                              data-registered="<%= approvedTeams.length %>"
-                                              data-fee="<%= tournament.entryFee %>"
-                                              data-timings="<%= tournament.idpTimings %>"
-                                              data-maps="<%= tournament.maps || '' %>"
-                                              data-details="<%= tournament.details || '' %>"></span>
-                                    </button>
+                            </div>
+                            <h3 class="scrim-title"><%= tournament.title %></h3>
+                            <div class="scrim-meta" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; padding: 0.75rem 0.85rem;">
+                                <div class="meta-item" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.04); padding: 0.55rem 0.65rem; border-radius: 8px; box-sizing: border-box; min-width: 0;">
+                                    <span class="meta-label" style="font-size: 0.74rem; color: #94a3b8; font-weight: 600; display: flex; align-items: center; gap: 0.35rem; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">
+                                        <i class="fa-regular fa-calendar" style="color: #ff4d56;"></i> Match Date
+                                    </span>
+                                    <span class="meta-val highlight-date" style="font-size: 0.95rem; font-weight: 800; color: #ff9da8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;"><%= tournament.date %></span>
                                 </div>
+                                <div class="meta-item" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.04); padding: 0.55rem 0.65rem; border-radius: 8px; box-sizing: border-box; min-width: 0;">
+                                    <span class="meta-label" style="font-size: 0.74rem; color: #94a3b8; font-weight: 600; display: flex; align-items: center; gap: 0.35rem; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">
+                                        <i class="fa-solid fa-trophy" style="color: #4ade80;"></i> Prize Pool
+                                    </span>
+                                    <span class="meta-val prize" style="font-size: 0.95rem; font-weight: 800; color: #4ade80; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">₹ <%= Number(tournament.prizePool).toLocaleString('en-IN') %></span>
+                                </div>
+                                <div class="meta-item" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.04); padding: 0.55rem 0.65rem; border-radius: 8px; box-sizing: border-box; min-width: 0;">
+                                    <span class="meta-label" style="font-size: 0.74rem; color: #94a3b8; font-weight: 600; display: flex; align-items: center; gap: 0.35rem; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">
+                                        <i class="fa-solid fa-ticket" style="color: #fbbf24;"></i> Entry Fee
+                                    </span>
+                                    <span class="meta-val slot-highlight" style="font-size: 0.95rem; font-weight: 800; color: #fbbf24; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">₹<%= tournament.entryFee %></span>
+                                </div>
+                                <div class="meta-item" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.04); padding: 0.55rem 0.65rem; border-radius: 8px; box-sizing: border-box; min-width: 0;">
+                                    <span class="meta-label" style="font-size: 0.74rem; color: #94a3b8; font-weight: 600; display: flex; align-items: center; gap: 0.35rem; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">
+                                        <i class="fa-solid fa-gamepad" style="color: #38bdf8;"></i> Mode (Squad)
+                                    </span>
+                                    <span class="meta-val" style="font-size: 0.95rem; font-weight: 800; color: #38bdf8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">16 - 18</span>
+                                </div>
+                            </div>
+                            <div class="idp-timing">
+                                <span class="meta-label"><i class="fa-regular fa-clock"></i> IDP Timing</span>
+                                <div class="timings">
+                                    <% const timings = (tournament.idpTimings || '').split(","); %>
+                                    <% for (const time of timings) { %>
+                                        <% if (time.trim()) { %>
+                                            <span><%= time.trim() %></span>
+                                        <% } %>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <% if (tournament.maps) { %>
+                            <div class="idp-timing idp-maps-box" style="margin-top: 10px;">
+                                <span class="meta-label"><i class="fa-solid fa-map"></i> Maps</span>
+                                <div class="timings">
+                                    <% const mapsList = tournament.maps.split(","); %>
+                                    <% for (const mapName of mapsList) { %>
+                                        <% if (mapName.trim()) { %>
+                                            <span class="map-badge"><%= mapName.trim() %></span>
+                                        <% } %>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <% } %>
+                           
+                            <div class="card-actions-grid" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; width: 100%;">
+                                  <!-- Slots Indicator Line -->
+                                  <div class="slot-indicator-row" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; width: 100%;">
+                                      <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                          <span class="meta-label" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--muted, #94a3b8);"><i class="fa-solid fa-users"></i> Slots Booked</span>
+                                          <span class="meta-val slot-highlight" style="font-weight: 700; color: #fbbf24; font-size: 0.9rem;"> <%= (tournament.teams ? tournament.teams.length : 0) %> / <%= tournament.slots %> </span>
+                                      </div>
+                                      <% const filledPercentage = Math.min(100, Math.round(((tournament.teams ? tournament.teams.length : 0) / (tournament.slots || 1)) * 100)); %>
+                                      <div class="progress-bar-container" style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.08); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.04);">
+                                          <div class="progress-bar-fill" style="width: <%= filledPercentage %>%; height: 100%; background: <%= (tournament.teams && tournament.teams.length >= tournament.slots) ? '#D41B23' : 'linear-gradient(90deg, #4ade80, #22c55e)' %>; border-radius: 999px; transition: width 0.3s ease;"></div>
+                                      </div>
+                                  </div>
+
+                                  <% if (isJoined) { %>
+                                      <% if (tournament.whatsappGroupLink) { %>
+                                          <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
+                                              <a href="<%= tournament.whatsappGroupLink %>" target="_blank" class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #25d366; color: white; text-decoration: none; font-weight: 800; border-radius: 8px; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#128c7e'" onmouseout="this.style.backgroundColor='#25d366'">
+                                                  <i class="fa-brands fa-whatsapp" style="margin-right: 0.5rem; font-size: 1.1rem;"></i> TAP TO JOIN IDP GROUP
+                                              </a>
+                                              <button type="button" class="slot-btn" onclick="copyWhatsAppLink('<%= tournament.whatsappGroupLink %>', this)" title="Copy WhatsApp Group Link" style="width: 100%; min-height: 40px; margin: 0; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: rgba(37, 211, 102, 0.12); border: 1px solid rgba(37, 211, 102, 0.5); color: #25d366; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-weight: 700; font-size: 0.88rem;" onmouseover="this.style.backgroundColor='rgba(37, 211, 102, 0.22)'" onmouseout="this.style.backgroundColor='rgba(37, 211, 102, 0.12)'">
+                                                  <i class="fa-regular fa-copy"></i> <span>Copy WhatsApp Link</span>
+                                              </button>
+                                              <% if (isTournamentFull) { %>
+                                                  <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #6c757d; color: white;" disabled>
+                                                      <i class="fa-solid fa-ban"></i> Slots Full
+                                                  </button>
+                                              <% } else { %>
+                                                  <button type="button" class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #D41B23; color: white; font-weight: 800;" onclick="initiateBooking({ type: 'tournament', tournamentId: '<%= tournament._id %>', title: '<%= tournament.title %>', entryFee: '<%= tournament.entryFee %>' })">
+                                                      <i class="fa-solid fa-plus-circle"></i> Book More Slot
+                                                  </button>
+                                              <% } %>
+                                              <div style="text-align: center; margin-top: 0.35rem; width: 100%;">
+                                                  <button type="button" class="user-registered-teams-link" data-teams="<%- encodeURIComponent(JSON.stringify(userRegTeams.map(t => ({ _id: t._id, teamName: t.teamName, teamLogo: t.teamLogo, whatsappNumber: t.whatsappNumber })))) %>" onclick="showUserRegisteredTeams(this, event)" style="background: transparent; border: none; color: #38bdf8; font-size: 0.86rem; font-weight: 700; text-decoration: underline; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.35rem 0.6rem; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#38bdf8'">
+                                                      <i class="fa-solid fa-shield-halved"></i> See your registered teams
+                                                      <span class="user-reg-data" style="display: none;"><%- JSON.stringify(userRegTeams) %></span>
+                                                  </button>
+                                              </div>
+                                          </div>
+                                      <% } else { %>
+                                         <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
+                                             <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #28a745; color: white;" disabled>
+                                                 <i class="fa-solid fa-circle-check"></i> Booked Successfully
+                                             </button>
+                                             <% if (isTournamentFull) { %>
+                                                 <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #6c757d; color: white;" disabled>
+                                                     <i class="fa-solid fa-ban"></i> Slots Full
+                                                 </button>
+                                             <% } else { %>
+                                                 <button type="button" class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #D41B23; color: white; font-weight: 800;" onclick="initiateBooking({ type: 'tournament', tournamentId: '<%= tournament._id %>', title: '<%= tournament.title %>', entryFee: '<%= tournament.entryFee %>' })">
+                                                     <i class="fa-solid fa-plus-circle"></i> Book More Slot
+                                                 </button>
+                                             <% } %>
+                                             <div style="text-align: center; margin-top: 0.35rem; width: 100%;">
+                                                 <button type="button" class="user-registered-teams-link" data-teams="<%- encodeURIComponent(JSON.stringify(userRegTeams.map(t => ({ _id: t._id, teamName: t.teamName, teamLogo: t.teamLogo, whatsappNumber: t.whatsappNumber })))) %>" onclick="showUserRegisteredTeams(this, event)" style="background: transparent; border: none; color: #38bdf8; font-size: 0.86rem; font-weight: 700; text-decoration: underline; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.35rem 0.6rem; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#38bdf8'">
+                                                     <i class="fa-solid fa-shield-halved"></i> See your registered teams
+                                                     <span class="user-reg-data" style="display: none;"><%- JSON.stringify(userRegTeams) %></span>
+                                                 </button>
+                                             </div>
+                                         </div>
+                                      <% } %>
+                                  <% } else { %>
+                                      <% if (isTournamentFull) { %>
+                                          <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: #6c757d; color: white;" disabled>
+                                              <i class="fa-solid fa-ban"></i> Slots Full
+                                          </button>
+                                      <% } else { %>
+                                          <button class="slot-btn" style="width: 100%; margin: 0; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;" onclick="initiateBooking({ type: 'tournament', tournamentId: '<%= tournament._id %>', title: '<%= tournament.title %>', entryFee: '<%= tournament.entryFee %>' })"><i class="fa-solid fa-ticket"></i> Book Slot</button>
+                                      <% } %>
+                                  <% } %>
+                                  <div class="secondary-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%;">
+                                      <button type="button" class="pay-btn" style="min-height: 38px; padding: 0.5rem; font-size: 0.85rem; width: 100%;" data-booked="<%= isJoined %>" onclick="showTournamentTeams(this)">
+                                          <i class="fa-solid fa-users"></i> View Teams
+                                          <span class="teams-data" style="display: none;"><%- isJoined ? JSON.stringify(approvedTeams) : '[]' %></span>
+                                      </button>
+                                     <button type="button" class="pay-btn" style="min-height: 38px; padding: 0.5rem; font-size: 0.85rem; width: 100%;" onclick="showTournamentDetails(this)">
+                                         <i class="fa-solid fa-circle-info"></i> View Details
+                                         <span class="match-data" style="display: none;" 
+                                               data-title="<%= tournament.title %>"
+                                               data-date="<%= tournament.date %>"
+                                               data-prize="<%= tournament.prizePool %>"
+                                               data-slots="<%= tournament.slots %>"
+                                               data-registered="<%= approvedTeams.length %>"
+                                               data-fee="<%= tournament.entryFee %>"
+                                               data-timings="<%= tournament.idpTimings %>"
+                                               data-maps="<%= tournament.maps || '' %>"
+                                               data-details="<%= tournament.details || '' %>"></span>
+                                     </button>
+                                 </div>
                             </div>
                         </article>
                     <% } %>

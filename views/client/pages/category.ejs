@@ -229,12 +229,16 @@
             border-radius: 14px !important;
             padding: 0.85rem 1.05rem !important;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
-            display: flex !important;
+            display: flex;
             flex-direction: column !important;
             gap: 0.52rem !important;
             position: relative !important;
             overflow: hidden !important;
             transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+        }
+
+        .scrim-card.is-hidden {
+            display: none !important;
         }
 
         .scrim-card:hover {
@@ -760,9 +764,10 @@
                 <div class="filter-controls-wrapper">
 
                     <!-- Specific Custom Date Picker -->
+                    <% const todayDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); %>
                     <div class="custom-date-picker">
                         <label for="customDatePicker"><i class="fa-regular fa-calendar"></i> Pick Specific Date:</label>
-                        <input type="date" id="customDatePicker" name="customDate" min="2026-08-01" max="2026-12-31">
+                        <input type="date" id="customDatePicker" name="customDate" value="<%= todayDate %>" min="2026-08-01" max="2026-12-31">
                     </div>
                 </div>
             </section>
@@ -770,7 +775,7 @@
             <!-- Selected Date Display Banner -->
             <div class="selected-date-banner">
                 <span class="line"></span>
-                <span class="date-text" id="selectedDateDisplay">Loading Date...</span>
+                <span class="date-text" id="selectedDateDisplay"><%= new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) %></span>
                 <span class="line"></span>
             </div>
 
@@ -792,14 +797,17 @@
 
                     return aFull - bFull;
                 }) : [];
+
+                const todayMatches = sortedMatches.filter(m => (m.date || '').trim() === todayDate);
+                const hasTodayMatches = todayMatches.length > 0;
             %>
 
-            <div class="no-scrims-card" id="noScrimsMsg" style="display: <%= hasMatches ? 'none' : 'block' %>;">
+            <div class="no-scrims-card" id="noScrimsMsg" style="display: <%= hasTodayMatches ? 'none' : 'block' %>;">
                 <div class="empty-icon"><i class="fa-regular fa-calendar-xmark"></i></div>
-                <h3>No Scrims Found for this category </h3>
-                <p>There are no matches scheduled for the selected Category. Choose another Category.</p>
-                <button type="button" onclick="window.location.href='/'" class="reset-filter-btn" id="resetDateFilter">
-                    <i class="fa-solid fa-rotate-left"></i> View All Categories
+                <h3 id="noScrimsTitle"><%= hasMatches ? 'No Scrims Scheduled for Today' : 'No Scrims Found for this category' %></h3>
+                <p id="noScrimsDesc"><%= hasMatches ? 'Please pick another date from the calendar above to view available scrims.' : 'There are no matches scheduled for the selected Category. Choose another Category.' %></p>
+                <button type="button" onclick="showAllScrims()" class="reset-filter-btn" id="resetDateFilter">
+                    <i class="fa-solid fa-list-ul"></i> View All Matches
                 </button>
             </div>
 
@@ -834,8 +842,13 @@
                     const isFull = Boolean(match.slots && (match.teams ? match.teams.length : 0) >= match.slots); 
                     const remainingSlots = Math.max(0, (match.slots || 0) - (match.teams ? match.teams.length : 0));
                     const filledPercentage = Math.min(100, Math.round(((match.teams ? match.teams.length : 0) / (match.slots || 1)) * 100));
+                    const isMatchToday = (match.date || '').trim() === todayDate;
                     %>
-                    <article class="scrim-card <%= isFull ? 'scrim-card-full' : '' %>" data-date="<%= match.date %>" data-period="today" data-full="<%= isFull ? 'true' : 'false' %>">
+                    <article class="scrim-card <%= isFull ? 'scrim-card-full' : '' %> <%= isMatchToday ? '' : 'is-hidden' %>" 
+                             data-date="<%= (match.date || '').trim() %>" 
+                             data-period="<%= isMatchToday ? 'today' : 'other' %>" 
+                             data-full="<%= isFull ? 'true' : 'false' %>"
+                             style="<%= isMatchToday ? 'display: flex !important;' : 'display: none !important;' %>">
                         <!-- Hero Row: BGMI Logo on Left (~30% height), Details on Right -->
                         <div class="card-hero-row">
                             <img src="/assets/images/bgmi_logo.png" alt="BGMI" class="card-game-logo">
@@ -1008,116 +1021,89 @@
         const baseurl = "<%= baseurl %>";
 
         (function() {
-            const datePills = document.querySelectorAll('.date-pill');
             const customDatePicker = document.getElementById('customDatePicker');
             const scrimCards = document.querySelectorAll('.scrim-card');
-            const countDisplay = document.getElementById('scrimCount');
             const emptyMsg = document.getElementById('noScrimsMsg');
-            const resetBtn = document.getElementById('resetDateFilter');
+            const noScrimsTitle = document.getElementById('noScrimsTitle');
+            const noScrimsDesc = document.getElementById('noScrimsDesc');
+            const dateDisplay = document.getElementById('selectedDateDisplay');
 
-            function applyFilter(filterType, customDateValue = null) {
+            function formatNiceDate(dateStr) {
+                try {
+                    const parts = dateStr.split('-');
+                    if (parts.length === 3) {
+                        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+                        return d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                    }
+                } catch(e) {}
+                return dateStr;
+            }
+
+            function applyFilter(customDateValue) {
                 let visibleCount = 0;
+                const targetDate = (customDateValue || '').trim();
 
                 scrimCards.forEach(card => {
-                    const cardDate = card.getAttribute('data-date');
-                    const cardPeriod = card.getAttribute('data-period');
-                    let isMatch = false;
-
-                    if (customDateValue) {
-                        isMatch = (cardDate === customDateValue);
-                    } else if (filterType === 'all') {
-                        isMatch = true;
-                    } else if (filterType === 'today') {
-                        isMatch = (cardPeriod === 'today' || cardDate === '2026-08-11');
-                    } else if (filterType === 'tomorrow') {
-                        isMatch = (cardPeriod === 'tomorrow' || cardDate === '2026-08-12');
-                    } else if (filterType === 'weekend') {
-                        isMatch = (cardPeriod === 'weekend' || cardDate === '2026-08-15' || cardDate === '2026-08-16');
-                    } else if (filterType === 'week') {
-                        isMatch = (cardDate >= '2026-08-11' && cardDate <= '2026-08-17');
-                    }
+                    const cardDate = (card.getAttribute('data-date') || '').trim();
+                    const isMatch = targetDate === 'all' || (cardDate === targetDate);
 
                     if (isMatch) {
-                        card.style.display = 'flex';
+                        card.style.setProperty('display', 'flex', 'important');
+                        card.classList.remove('is-hidden');
                         visibleCount++;
                     } else {
-                        card.style.display = 'none';
+                        card.style.setProperty('display', 'none', 'important');
+                        card.classList.add('is-hidden');
                     }
                 });
 
-                // Update counter and empty state
-                if (countDisplay) {
-                    countDisplay.textContent = `Showing ${visibleCount} of ${scrimCards.length} Scrims`;
-                }
-                if (visibleCount === 0) {
-                    emptyMsg.style.display = 'block';
-                } else {
-                    emptyMsg.style.display = 'none';
+                if (emptyMsg) {
+                    if (visibleCount === 0) {
+                        emptyMsg.style.setProperty('display', 'block', 'important');
+                        if (noScrimsTitle) noScrimsTitle.textContent = "No Scrims Scheduled for this Date";
+                        if (noScrimsDesc) noScrimsDesc.textContent = "Please pick another date from the calendar to view available scrims.";
+                    } else {
+                        emptyMsg.style.setProperty('display', 'none', 'important');
+                    }
                 }
 
-                // Update selected date display banner
-                const dateDisplay = document.getElementById('selectedDateDisplay');
                 if (dateDisplay) {
-                    if (customDateValue) {
-                        try {
-                            const dateParts = customDateValue.split('-');
-                            const formattedDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-                            const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-                            dateDisplay.textContent = formattedDate.toLocaleDateString('en-US', options);
-                        } catch(e) {
-                            dateDisplay.textContent = customDateValue;
-                        }
-                    } else if (filterType === 'all') {
-                        dateDisplay.textContent = "All Upcoming Matches";
+                    if (targetDate === 'all') {
+                        dateDisplay.textContent = "All Matches";
                     } else {
-                        dateDisplay.textContent = filterType.charAt(0).toUpperCase() + filterType.slice(1) + "'s Matches";
+                        dateDisplay.textContent = formatNiceDate(targetDate);
                     }
                 }
             }
 
-            // Quick Pill Clicks
-            datePills.forEach(pill => {
-                pill.addEventListener('click', function() {
-                    datePills.forEach(p => p.classList.remove('active'));
-                    this.classList.add('active');
-                    if (customDatePicker) customDatePicker.value = '';
-                    const filter = this.getAttribute('data-filter');
-                    applyFilter(filter);
-                });
-            });
+            window.showAllScrims = function() {
+                if (customDatePicker) customDatePicker.value = '';
+                applyFilter('all');
+            };
 
-            // Date Picker Change
             if (customDatePicker) {
                 customDatePicker.addEventListener('change', function() {
                     if (this.value) {
-                        datePills.forEach(p => p.classList.remove('active'));
-                        applyFilter('custom', this.value);
+                        applyFilter(this.value);
+                    } else {
+                        applyFilter('all');
                     }
                 });
             }
 
-            // Reset Button
-            if (resetBtn) {
-                resetBtn.addEventListener('click', function() {
-                    datePills.forEach(p => p.classList.remove('active'));
-                    const allPill = document.querySelector('.date-pill[data-filter="all"]');
-                    if (allPill) allPill.classList.add('active');
-                    if (customDatePicker) customDatePicker.value = '';
-                    applyFilter('all');
-                });
+            // Get local client today in YYYY-MM-DD
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const todayString = `${year}-${month}-${day}`;
+
+            const initialDate = (customDatePicker && customDatePicker.value) ? customDatePicker.value : todayString;
+            if (customDatePicker && !customDatePicker.value) {
+                customDatePicker.value = todayString;
             }
 
-            // Pre-fill current date (today) in YYYY-MM-DD format and apply filter
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            const todayString = `${year}-${month}-${day}`;
-            
-            if (customDatePicker) {
-                customDatePicker.value = todayString;
-                applyFilter('custom', todayString);
-            }
+            applyFilter(initialDate);
         })();
 
 
